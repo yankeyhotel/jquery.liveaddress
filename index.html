@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>LiveAddress.js Dev</title>
+	<script src="jquery-1_5.js"></script>
+	<script src="liveaddress.jquery.js"></script>
+	<!-- FOR TESTING ON LIVE SITES:
+
+
+	Volusion sites:
+
+	var h = $('#btnSubmitOrder').data('events')
+
+
+
+
+
+	$('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML;
+
+
+
+	(pull in jQuery 1.5+)
+
+
+
+
+
+	$('#btnSubmitOrder').click(h.click[0]);
+
+
+
+
+
+	(pull in our code; run it)
+
+
+
+
+
+
+	
+		OR, FOR: www.valuemailers.com ...
+
+	1. Create an HTML key for the domain you're testing on
+	2. Make sure it's not HTTPS... then in the console:
+
+
+
+
+	(Get at least jQuery 1.5... if needed...)
+
+	var element1 = document.createElement("script");element1.src = "http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js";element1.type="text/javascript";document.getElementsByTagName("head")[0].appendChild(element1);
+	
+	
+
+	(Pull in our script...)
+
+	var element2 = document.createElement("script");element2.src = "http://liveaddress.dev/liveaddress.jquery.js";element2.type="text/javascript";document.getElementsByTagName("head")[0].appendChild(element2);
+	
+	
+	
+	(Run our code... this is for ValueMailers)
+
+	
+	http://routerbitworld.com/one-page-checkout.asp
+	http://www.valuemailers.com/create_account.php
+
+	var ss = $.LiveAddress({
+		key: '3550738599099413488',
+		debug: true
+	});
+
+
+
+	3. Replace the key above with the key for that domain. Viola.
+
+	-->
+
+
+<style>
+body {
+	font-family: sans-serif;
+	line-height: 2em;
+	padding: 15px 25px;
+	color: #666;
+}
+
+article {
+	width: 850px;
+	margin: 0px auto;
+	padding: 10px;
+}
+
+.topLevel > li {
+	font-size: 16px;
+	padding: 10px 0;
+}
+
+.topLevel ol, .topLevel ul {
+	font-size: 14px;
+}
+
+h1 { font-size: 42px; text-align: center; }
+
+b, h1, h2, h3 { color: black; }
+
+h2 { margin-top: 2em; }
+
+.block {
+	display: block;
+}
+
+code.block {
+	background: #F0F0F0;
+	padding: 10px;
+	white-space: pre;
+	line-height: 1.5em;
+	text-shadow: 0 1px 1px #FFF;
+}
+
+</style>
+
+<script>
+
+
+//var liveAddress = $.LiveAddress("3550738597428720952");
+
+//var addr = liveAddress.makeAddress("123 main");
+
+
+$.LiveAddress({
+	key: '3550738597428720952',
+	debug: true
+});
+
+/*
+var ss = $.LiveAddress({
+	key: '3550738597428720952',
+	debug: true
+});
+*/
+/*
+ss.on("FieldsMapped", function(e, data, originalHandler) {
+	console.log("Intercepted!!", e, data);
+	$(document).triggerHandler("AddressAccepted", data);
+	//originalHandler(e, data);
+});
+*/
+
+/*
+var addr = new ss.Address({
+		street: '#str1',
+		street2: '#str2',
+		city: '#city',
+		state: '#state',
+		zipcode: '#zip'
+	}, $('#myForm'));
+*/
+//$.LiveAddress.verify(addr);
+
+
+
+/*$.LiveAddress({
+	key: '3550738597428720952',
+	debug: true,
+	addresses: [{
+		street: '#str1',
+		street2: '#str2',
+		city: '#city',
+		state: '#state',
+		zipcode: '#zip'
+	},
+	{
+		street: '#str12',
+		street2: '#str22',
+		city: '#city2',
+		state: '#state2',
+		zipcode: '#zip2'
+	},
+	{
+		street: '#str13',
+		street2: '#str23',
+		city: '#city3',
+		state: '#state3',
+		zipcode: '#zip3'
+	}]
+});
+*/
+/*
+var ss = $('#form1').LiveAddress({
+	key: '1234',
+	autoMap: false,
+	debug: true
+})
+
+$(function() { ss.mapFields("auto"); });
+*/
+
+
+
+/*
+$(document).triggerHandler("AddressChanged");
+
+ss.on("AddressChanged", function(e, data, originalHandler) {
+	console.log("Intercepted!!", e, data);
+	originalHandler(e, data);
+});
+*/
+
+</script>
+
+</head>
+<body>
+<article>
+
+	<h1>LiveAddress.js</h1>
+
+	<p>Brainstorming... TODO: Test with jQuery Validator plugin: http://docs.jquery.com/Plugins/Validation/Validator</p>
+
+
+	<form id="form1">
+		Street address: <input type="text" name="street" id="str1"><br>
+		Street address 2: <input type="text" name="street2" id="str2"><br>
+		City: <input type="text" name="city" id="city"><br>
+		State: <input type="text" name="state" id="state"><br>
+		Zip: <input type="text" name="zip" id="zip">
+
+		<!--<br><span class="smarty-address-verified">&#10003; Address verified! &nbsp;<a href="javascript:" class="smarty-undo">Undo</a></span>-->
+		<br>
+		<br>
+		<div style="position: relative;">
+			Street address: <input type="text" name="street" id="str13"><br>
+			Street address 2: <input type="text" name="street2" id="str23"><br>
+			City: <input type="text" name="city" id="city3"><br>
+			State: <input type="text" name="state" id="state3"><br>
+			Zip: <input type="text" name="zip" id="zip3"><br>
+			<input type="submit" value="Test">
+			<!--
+			<div class="smarty-address-ambiguous">
+				<div class="smarty-ambiguous-message">Please choose the most correct address.</div>
+				<a href="javascript:" class="smarty-choice">&rsaquo; <b>123 Main St #2</b> &nbsp;Anywhere, ST 12345</a>
+				<a href="javascript:" class="smarty-choice">&rsaquo; <b>123 Main St #2</b> &nbsp;Anywhere, ST 12345</a>
+				<a href="javascript:" class="smarty-choice">&rsaquo; <b>123 Main St #2</b> &nbsp;Anywhere, ST 12345</a>
+				<a href="javascript:" class="smarty-choice smarty-useoriginal">None of these; use what I typed (123 main anywhere, st)</a>
+			</div>
+
+			<div class="smarty-address-invalid">
+				<div class="smarty-invalid-message">Address could not be verified.</div>
+				<a href="javascript:" class="smarty-choice"><b>&rsaquo; I will double-check the address</b></a>
+				<a href="javascript:" class="smarty-choice smarty-useoriginal">&rsaquo; I certify what I typed is correct (sdfsdfsdf sdf)</a>
+			</div>-->
+		</div>
+	</form>
+	<br><br><br><br>
+	<form id="form2">
+		Street address: <input type="text" name="street" id="str12"><br>
+		Street address 2: <input type="text" name="street2" id="str22"><br>
+		City: <input type="text" name="city" id="city2"><br>
+		State: <input type="text" name="state" id="state2"><br>
+		Zip: <input type="text" name="zip" id="zip2"><br>
+		<input type="submit" value="Test">
+	</form>
+	<br><br>
+	<form id="form3">
+		Address: <textarea name="mailaddress" id="addrTb" rows="3" cols="30"></textarea><br>
+		<input type="submit" value="Test">
+	</form>
+
+	<h2>Events</h2>
+
+
+	<ol type="I" class="topLevel">
+		<li>
+			First, in order:
+			<ol type="1">
+				<li>
+					<b>FieldsMapped</b> &mdash;
+					The fields have been mapped, whether automatically or given by input
+				</li>
+				<li>
+					<b>AddressChanged</b> &mdash;
+					User types or changes their input in any mapped address field (can be done without UI, get/set)
+				</li>
+				<li>
+					<b>VerificationInvoked</b> &mdash;
+					The verification process is about to begin for an address
+				</li>
+				<li>
+					<b>RequestSubmitted</b> &mdash;
+					An address was just sent to LiveAddress API (asynchronously)
+				</li>
+				<li>
+					<b>ResponseReceived</b> &mdash;
+					Response was barely received for an address, is not yet parsed or examined
+				</li>
+				<li>
+					<b>RequestTimedOut</b> &mdash;
+					This event fires only if no response is received after a period of time
+				</li>
+			</ol>
+		</li>
+		<li>
+			Then, any one of these, upon initial examination of the response:
+			<ul>
+				<li>
+					<b>AddressWasValid</b> &mdash;
+					The address matched only one valid address with no ambiguity
+				</li>
+				<li>
+					<b>AddressWasAmbiguous</b> &mdash;
+					Matched at least 2 valid addresses and ambiguity will need to be resolved
+				</li>
+				<li>
+					<b>AddressWasInvalid</b> &mdash;
+					The input could not be matched to any valid addresses; empty response
+				</li>
+			</ul>
+		</li>
+		<li>
+			If the input is ambiguous or bad, these could happen:
+			<ul>
+				<li>
+					<b>OriginalInputSelected</b> &mdash;
+					The user said "No thanks, use mine" (applies to: ambiguous or invalid)
+				</li>
+				<li>
+					<b>UsedSuggestedAddress</b> &mdash;
+					User chose a suggested address (applies to: ambiguous)
+				</li>
+				<li>
+					<b>InvalidAddressRejected</b> &mdash;
+					User chose to go back to try fixing the bad address (applies to: invalid)
+				</li>
+			</ul>
+		</li>
+		<li>
+			In the end...
+			<ul>
+				<li>
+					<b>AddressAccepted</b> &mdash;
+					An address was flagged as verified or accepted; we're done with it unless it changes
+				</li>
+				<li>
+					<b>Completed</b> &mdash;
+					The process is finished, at least for now, on an address (or the user aborted)
+				</li>
+			</ul>
+		</li>
+	</ol>
+
+
+	<h2>Initialization</h2>
+
+	<p>Pick from one of the following valid syntaxes...</p>
+
+	<ul class="topLevel">
+		<li>
+			<code><b>$.LiveAddress(htmlKey);</b></code>
+			<br>
+			Pass in your HTML key (preferably as a string) and
+			LiveAddress.js will automatically figure out which form
+			fields contain which type of data and will use all
+			default settings. Automap may fail, however,
+			if the markup is unclear or formatted strange. Otherwise,
+			this is all that may be required to have it work on your page.
+		</li>
+
+		<li>
+			<code><b>$.LiveAddress(config);</b></code>
+			<br>
+			Pass in an object, where <code>config</code> may have any
+			of these properties:
+			<ul>
+				<li>
+					<code><b>key:</b></code> Required. Your HTML key.
+				</li>
+				<li>
+					<code><b>autoMap:</b></code> Default: <code>true</code>. If false,
+					does not enable automatic form field mapping. You'll have
+					to supply the map or call <code>mapFields("auto")</code> to force it.
+				</li>
+				<li>
+					<code><b>candidates:</b></code> Default: <code>3</code>. The number
+					of suggestions to return for each address, if ambiguous.
+				</li>
+				<li>
+					<code><b>addresses:</b></code> An <i>array</i> of objects representing addresses. For example:
+					<code class="block">[
+	{
+		street: "#streetField",
+		street2: "#street2Field",
+		city: "#cityField",
+		state: "#stateField",
+		zipcode: "#zipField"
+	}
+]</code>
+					Where "#streetField" (et al.) is a selector for the HTML element
+					which contains that value. Separate multiple address objects (bounded
+					by <code>{</code> and <code>}</code>)
+					with commas, without a comma after the last object.
+				</li>
+				<li>
+					<code><b>ui:</b></code> Default: <code>true</code>. Provide
+					and execute the default UI for handling address verification
+					results. Disable this to use your own user interface.
+				</li>
+				<li>
+					<code><b>timeout:</b></code> Default: <code>5000</code>. Number of milliseconds
+					before an API request is considered failed if no response has been received. 5000 ms
+					is 5 seconds.
+				</li>
+				<li>
+					<code><b>autoVerify:</b></code> Default: <code>true</code>. When an address
+					changes, and that address contains enough input, and the form has not yet
+					been submitted, the address will be verified, unless this is false.
+				</li>
+				<!--<li> 	NOTE: CANNOT SEND CUSTOM HEADERS WITH JSONP REQUEST, SO THIS IS DISABLED.
+					<code><b>standardizeOnly:</b></code> Default: <code>false</code>. If
+					enabled, don't actually verify the address, only standardize it.
+				</li>-->
+				<li>
+					<code><b>debug:</b></code> Default: <code>false</code>. If true,
+					print some debugging info to the console and show helpful stuff on
+					the DOM around mapped forms and fields.
+				</li>
+			</ul>
+		</li>
+	</ul>
+
+
+	<h2>Functions</h2>
+
+
+	<ul class="topLevel">
+		<li>
+			<code><b>.on(eventType, callback(event, data, previousHandler))</b></code>
+			<br>
+			Binds a function to an event raised by LiveAddress. Any previous handler
+			will not be executed unless you specifically call it as a function:
+			<code>previousHandler(event, data)</code>. You could also do this yourself:
+			<code>.events.EventType = function() { ... } // or null</code>
+		</li>
+		<li>
+			<code><b>.mapFields(<i>[map]</i>)</b></code>
+			<br>
+			Maps the address fields to the type of data they contain. Pass in an object
+			which maps fields to values (street: "myStreetField", like above). Pass in "auto"
+			to force an automap. If nothing is passed in, but a map was passed in during
+			initialization, that map is used. If not, and autoMap is not disabled, it
+			will automap your fields. Otherwise fails.
+		</li>
+		<li>
+			<code><b>.getAddresses()</b></code>
+			<br>
+			Obtains a list of all the Address objects stored currently.
+		</li>
+		<li>
+			<code><b>.getAddressByID(id)</b></code>
+			<br>
+			Form input fields for address data are organized into Javascript objects
+			called Addresses. Each Address has a unique ID, and is used primarily
+			for DOM interaction. Input fields and other DOM elements are associated
+			with an address by using an Address object's ID.
+		</li>
+	</ul>
+	
+
+</article>	
+</body>
+</html>
