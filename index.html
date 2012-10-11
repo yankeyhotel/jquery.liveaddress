@@ -123,22 +123,71 @@ code.block {
 <script>
 
 
-//var liveAddress = $.LiveAddress("3550738597428720952");
+// TODO: Clean up EVERYTHING (data attributes, added classes, etc) when mapping fields...
 
-//var addr = liveAddress.makeAddress("123 main");
+//var ss = $.LiveAddress("3550738597428720952");
 
 
-$.LiveAddress({
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ss = $.LiveAddress({
 	key: '3550738597428720952',
-	debug: true
+	debug: true,
+	candidates: 10
 });
 
 /*
-var ss = $.LiveAddress({
-	key: '3550738597428720952',
-	debug: true
-});
+var addr = ss.makeAddress("123 main 52001");
+console.log(addr.set("street", "760 800 provo ut"));
+console.log(addr.get("street"));
+addr.verify();
 */
+
+//$(function() { ss.mapFields("auto"); });
+
+
+/*
+ss.verify("123 main 52001", function(resp) {
+	console.log(resp.raw);
+});
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 ss.on("FieldsMapped", function(e, data, originalHandler) {
 	console.log("Intercepted!!", e, data);
@@ -256,13 +305,11 @@ ss.on("AddressChanged", function(e, data, originalHandler) {
 		Street address: <input type="text" name="street" id="str12"><br>
 		Street address 2: <input type="text" name="street2" id="str22"><br>
 		City: <input type="text" name="city" id="city2"><br>
-		State: <input type="text" name="state" id="state2"><br>
-		Zip: <input type="text" name="zip" id="zip2"><br>
 		<input type="submit" value="Test">
 	</form>
 	<br><br>
 	<form id="form3">
-		Address: <textarea name="mailaddress" id="addrTb" rows="3" cols="30"></textarea><br>
+		Address: <textarea name="addr" id="addrTb" rows="3" cols="30"></textarea><br>
 		<input type="submit" value="Test">
 	</form>
 

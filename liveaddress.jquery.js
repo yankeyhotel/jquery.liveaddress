@@ -4,8 +4,7 @@
 	/*
 	  *	PRIVATE MEMBERS
 	*/
-	
-	//var LiveAddress;// $.fn.LiveAddress;	// Self-pointer for internal use (TODO)
+
 	var instance;			// Public-facing functions and variables
 	var ui = new UI;		// Internal, for UI-related tasks
 
@@ -30,10 +29,12 @@
 		return $('body').LiveAddress(arg);	// 'body' needed to find ancestor in traversal (document won't work)
 	};
 
-	$.fn.LiveAddress = function(arg, maintainChainability)
+	$.fn.LiveAddress = function(arg)
 	{
 		if (instance)
 			return instance;
+
+		var selector = this.selector;
 
 		// Make sure the jQuery version is compatible
 		var vers = $.fn.jquery.split(".");
@@ -47,14 +48,14 @@
 		}
 
 		if (arg.debug)
-			console.log("LiveAddress v0.1 (Debug mode)");
+			console.log("LiveAddress v0.5 (Debug mode)");
 
-		if (typeof arg !== 'object')
+		if (typeof arg === 'string')
 		{
 			// Use the default configuration
 			config = { key: arg, candidates: defaults.candidates };
 		}
-		else
+		else if (typeof arg === 'object')
 		{
 			// Persist the user's configuration
 			config = $.extend(config, arg);
@@ -71,9 +72,6 @@
 			config.autoVerify = true;
 		if (typeof config.timeout === 'undefined')
 			config.timeout = defaults.timeout;
-
-		var selector = this.selector;
-
 
 		/*
 		  *	EXPOSED (PUBLIC) FUNCTIONS
@@ -103,14 +101,20 @@
 				else
 					return false;
 			},
-		 	makeAddress: function(addressData)
+		 	makeAddress: function(addressData, formElement)
 		 	{
 		 		if (typeof addressData === "string")
-		 			console.log("String!", addressData);
+		 			return new Address({ street: addressData }, formElement);
 		 		else if (typeof addressData === "object")
-		 			console.log("String!", addressData);
+		 			return new Address(addressData, formElement);
 		 	},
-			getAddresses: function()
+		 	Address: Address, // TODO keep this? we have makeAddress...
+		 	verify: function(input, callback)
+		 	{
+		 		var addr = instance.makeAddress(input);
+		 		addr.verify(callback);
+		 	},
+			getMappedAddresses: function()
 			{
 				var addr = [];
 				for (var i = 0; i < forms.length; i++)
@@ -118,7 +122,7 @@
 						addr.push(forms[i].addresses[j])
 				return addr;
 			},
-			getAddressByID: function(id)
+			getMappedAddressByID: function(id)
 			{
 				for (var i = 0; i < forms.length; i++)
 					for (var j = 0; j < forms[i].addresses.length; j++)
@@ -130,6 +134,7 @@
 				config.key = htmlkey;
 			}
 		};
+
 		
 		// Bind each handler to an event
 		for (var prop in EventHandlers)
@@ -143,8 +148,6 @@
 		});
 
 		return instance;
-		//if (maintainChainability !== false) TODO
-		//	return this;
 	};
 
 
@@ -192,9 +195,9 @@
 				streets: {				// both street1 and street2, separated later.
 					names: [
 						'street',
-						//'address',	// This has proven to be a bad idea; only safe if exact match. Don't enable this unless the algorithm is improved.
-						'address1',
-						'address2',
+						'address',		// This is a dangerous inclusion; but we have a strong set of exclusions below to prevent false positives.
+						'address1',		// If there are automapping issues, namely, it is too greedy when mapping fields, it will be because
+						'address2',		// of these arrays for the "streets" fields, namely the "address" entry right above here, or potentially others.
 						'addr1',
 						'addr2',
 						'address-1',
@@ -276,8 +279,8 @@
 						'postcode',
 						'locality'
 					]
-				}/*,			 We don't currently accept country input
-				country: {
+				},
+				country: {				// We only use country to see if we should submit to the API
 					names: [
 						'country',
 						'nation',
@@ -288,7 +291,7 @@
 						'nation',
 						'sovereignty'
 					]
-				}*/
+				}
 			},	// We'll iterate through these (above) to make a basic map of fields, then refine:
 			street1exacts: {		// List of case-insensitive exact matches for street1 field
 				names: [
@@ -327,8 +330,8 @@
 					'box'
 				]
 			},
-			exclude: {			// Terms we look for to exclude an element from the mapped set
-				names: [
+			exclude: {			// Terms we look for to exclude an element from the mapped set to prevent false positives
+				names: [		// The intent is to keep non-address elements from being mapped accidently.
 					'email',
 					'e-mail',
 					'e_mail',
@@ -340,13 +343,21 @@
 					'last_name',
 					'fname',
 					'lname',
+					'name',
 					'eml',
 					'type',
 					'method',
 					'location',
 					'store',
 					'save',
-					'keep'
+					'keep',
+					'phn',
+					'phone',
+					'number',
+					'cardholder',	// I hesitate to exclude "card" because of common names like: "card_city" or something...
+					'security',
+					'cvc',
+					'cvv',
 				],
 				labels: [
 					'email',
@@ -355,7 +366,12 @@
 					' type',
 					'save ',
 					'keep',
-					'method'
+					'name',
+					'method',
+					'phone',
+					'cardholder',
+					'cvc',
+					'cvv'
 				]
 			}
 		};
@@ -386,27 +402,28 @@
 		{
 			// Injects materials into the DOM, binds to form submit events, etc...
 
-
-			// Prepend CSS to head tag to allow cascading and give their style rules priority
-			$('head').prepend(uiCss);
-
-			// For each address on the page, inject the loader and "address verified" markup after the last element
-			var addresses = instance.getAddresses();
-			for (var i = 0; i < addresses.length; i++)
+			if (config.ui)
 			{
-				var id = addresses[i].id();
-				$(addresses[i].lastField).after('<img src="http://liveaddress.dev/dots.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'"><div class="smarty-address-verified smarty-addr-'+id+'">&#10003; Address verified! &nbsp;<a href="javascript:" class="smarty-undo" data-addressid="'+id+'">Undo</a></div>');
+				// Prepend CSS to head tag to allow cascading and give their style rules priority
+				$('head').prepend(uiCss);
+
+				// For each address on the page, inject the loader and "address verified" markup after the last element
+				var addresses = instance.getMappedAddresses();
+				for (var i = 0; i < addresses.length; i++)
+				{
+					var id = addresses[i].id();
+					$(addresses[i].lastField).after('<img src="http://liveaddress.dev/dots.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'"><div class="smarty-address-verified smarty-addr-'+id+'">&#10003; Address verified! &nbsp;<a href="javascript:" class="smarty-undo" data-addressid="'+id+'">Undo</a></div>');
+				}
+
+				$('body').delegate('.smarty-undo', 'click', function(e)
+				{
+					// Undo button clicked
+					var addrId = $(this).data('addressid');
+					var addr = instance.getMappedAddressByID(addrId);
+					addr.undo(true);
+					$(this).hide();
+				});
 			}
-
-			$('body').delegate('.smarty-undo', 'click', function(e)
-			{
-				// Undo button clicked
-				var addrId = $(this).data('addressid');
-				var addr = instance.getAddressByID(addrId);//instance.getAddressByID(addrId);
-				addr.undo(true);
-				$(this).hide();
-			});
-
 
 			// Bind to form submits through form submit or submit button click
 			for (var i = 0; i < forms.length; i++)
@@ -415,12 +432,12 @@
 
 				var handler = function(e)
 				{
-					if (e.data.form.processing)
+					if (e.data.form && e.data.form.processing)
 						return suppress(e);
 					
-					if (!e.data.form.allAddressesAccepted(true))
+					if (!e.data.form.allAddressesAccepted())
 					{
-						var unaccepted = e.data.form.addressesNotAccepted(true);
+						var unaccepted = e.data.form.addressesNotAccepted();
 						for (var i = 0; i < unaccepted.length; i++)
 						{
 							trigger("VerificationInvoked", { address: unaccepted[i], invocation: e.data.invocation });
@@ -429,11 +446,19 @@
 					}
 				};
 
-				// Take any existing handlers and re-bind them for AFTER our handler(s).
+				// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
 				var jqForm = $(f.dom);
 				var jqFormSubmits = $('[type=submit], [type=image]', f.dom);
 
-				// TODO: (Do this maybe: Example code, which rips out an element, replaces with clone, IE-safe: $('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML; )
+				// TODO: If it really came down between our code not working
+				// and their code not working, right now we opt that our
+				// code not work. If we wanted to reverse this and give our
+				// code a higher percent chance of running successfully (but break theirs),
+				// we could rip out their DOM elements (removing event handlers they bound)
+				// and replace them with clones of themselves, then bind our code
+				// to the shiny new clone elements. An IE-safe example to do this:
+				// $('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML;
+
 
 				// First through form submit events...
 				jqForm.each(function(idx)
@@ -549,6 +574,11 @@
 		// User aborted the verification process (X click or esc keyup)
 		function userAborted(selector, e)
 		{
+			// Even though there may be more than one bound, and this disables the others,
+			// this is for simplicity: and I figure, it won't happen too often.
+			// (Otherwise "Completed" events are raised by pressing Esc even if nothing is happening)
+			$(document).unbind('keyup');
+
 			$(selector).slideUp(defaults.speed, function()
 			{
 				$(this).remove();
@@ -569,11 +599,7 @@
 			{
 				var form = new Form(this);
 				var potential = {};
-				
-				// TODO: SLAP SUPPORT. 
-				// 1. If field has "address", make sure it doesn't contain any other field name like city or email
-				// 2. If only a street field is found, it is its own address.
-				
+
 				// Look for each type of field in this form
 				for (var fieldName in mapMeta.identifiers)
 				{
@@ -595,24 +621,43 @@
 							// "Street address line 1" is a special case because "address" is an ambiguous
 							// term, so we pre-screen this field by looking for exact matches.
 							if (fieldName == "streets")
+							{
 								for (var i = 0; i < mapMeta.street1exacts.names.length; i++)
 									if (name == mapMeta.street1exacts.names[i] || id == mapMeta.street1exacts.names[i])
 										return true;
+							}
 
-							// The rest of the fields we can generally match fuzzy.
-							return filterDomElement(this, names, labels);
+							// Now perform the main filtering.
+							// If this is TRUE, then this form element is probably a match for this field type.
+							var filterResult = filterDomElement(this, names, labels);
+
+							if (fieldName == "streets")
+							{
+								// Looking for "address" is a very liberal search, so we need to see if it contains another
+								// field name, too... this helps us find freeform addresses (SLAP).
+								var otherFields = ["city", "state", "zipcode", "country"];
+								for (var i = 0; i < otherFields.length; i ++)
+								{
+									// If any of these filters turns up true, then it's
+									// probably neither a "street" field, nor a SLAP address.
+									if (filterDomElement(this, mapMeta.identifiers[otherFields[i]].names,
+											mapMeta.identifiers[otherFields[i]].labels))
+										return false;
+								}
+							}
+
+							return filterResult;
 						})
 						.not(function()
 						{
 							// The filter above can be a bit liberal at times, so we need to filter out
 							// results that are actually false positives (fields that aren't part of the address)
 							// Returning true from this function excludes the element from the result set.
-							//var name = lowercase(this.name), id = lowercase(this.id);
-							//if (name == "name" || id == "name")	// Exclude fields like "First Name", et al.
-							//	return true;
-							console.log(this);
-							return false;
-							//return filterDomElement(this, mapMeta.exclude.names, mapMeta.exclude.labels);
+							var name = lowercase(this.name), id = lowercase(this.id);
+							if (name == "name" || id == "name")	// Exclude fields like "First Name", et al.
+								return true;
+
+							return filterDomElement(this, mapMeta.exclude.names, mapMeta.exclude.labels);
 						})
 						.toArray();
 				}
@@ -656,19 +701,8 @@
 				delete potential.streets;	// No longer needed; we've moved them into street/street2.
 
 				if (config.debug)
-					console.log("For form " + idx + ", initial scan found these fields:", potential);
-				
+					console.log("For form " + idx + ", the initial scan found these fields:", potential);
 
-				// Don't save this form or its fields if not enough info was acquired for
-				// a complete address...
-				// TODO: What about SLAP?
-				if (potential.street.length == 0
-					&& (potential.zipcode.length == 0 || (potential.state.length == 0 && potential.city.length == 0)))
-				{
-					if (config.debug)
-						console.log("Form " + idx + " is finished, but no complete addresses were found in it.");
-					return true; // go to the next form (we're in $.each)
-				}
 
 
 				// Now organize the mapped fields into addresses
@@ -687,6 +721,18 @@
 						if (current)
 							addrObj[field] = current;
 					}
+
+
+					// Don't map the address if there's not enough fields for a complete address
+					var hasCityAndStateOrZip = addrObj.zipcode || (addrObj.state && addrObj.city);
+					var hasCityOrStateOrZip = addrObj.city || addrObj.state || addrObj.zipcode;
+					if ((!addrObj.street && hasCityAndStateOrZip) || (addrObj.street && !hasCityAndStateOrZip && hasCityOrStateOrZip))
+					{
+						if (config.debug)
+							console.log("Form " + idx + " is finished, but no complete sets of address input elements were found in it.");
+						continue;
+					}
+
 					form.addresses.push(new Address(addrObj, form));
 				}
 
@@ -699,12 +745,18 @@
 			});
 		
 			postMappingOperations();
+
+			if (config.debug)
+				console.log("Automapping complete.");
 			
 			trigger("FieldsMapped");
 		};
 
 		this.mapFields = function(map, selector)
 		{
+			// TODO: Clean up EVERYTHING (data attributes, added classes, etc) when mapping fields... (or when automapping)
+
+
 			// "map" should be an array of objects mapping field types
 			// to a field by a selector, all supplied by the user.
 			// "selector" should be a selector in which fields will be mapped.
@@ -761,6 +813,9 @@
 
 		this.disableFields = function(address)
 		{
+			if (!config.ui)
+				return;
+
 			// Given an address, disables the input fields for the address
 			var fields = address.getDomFields();
 			for (var prop in fields)
@@ -772,6 +827,9 @@
 
 		this.enableFields = function(address)
 		{
+			if (!config.ui)
+				return;
+
 			// Given an address, re-enables the input fields for the address
 			var fields = address.getDomFields();
 			for (var prop in fields)
@@ -783,21 +841,27 @@
 
 		this.showLoader = function(addr)
 		{
-			$('.smarty-dots.smarty-addr-'+addr.id()).css('visibility', 'visible');
+			if (config.ui)
+				$('.smarty-dots.smarty-addr-'+addr.id()).css('visibility', 'visible');
 		};
 
 		this.hideLoader = function(addr)
 		{
-			$('.smarty-dots.smarty-addr-'+addr.id()).css('visibility', 'hidden');
+			if (config.ui)
+				$('.smarty-dots.smarty-addr-'+addr.id()).css('visibility', 'hidden');
 		};
 
 		this.showValid = function(addr)
 		{
-			$(addr.lastField).nextAll('.smarty-address-verified').first().show(defaults.speed);
+			if (config.ui)
+				$(addr.lastField).nextAll('.smarty-address-verified').first().show(defaults.speed);
 		};
 
 		this.hideValid = function(addr)
 		{
+			if (!config.ui)
+				return;
+
 			$('.smarty-address-verified.smarty-addr-'+addr.id()).hide(defaults.speed, function()
 			{
 				$('.smarty-undo', this).show();
@@ -807,6 +871,10 @@
 
 		this.showAmbiguous = function(data)
 		{
+			if (!config.ui)
+				return;
+
+
 			var addr = data.address;
 			var response = data.response;
 			var corners = addr.corners();
@@ -886,6 +954,9 @@
 
 		this.showInvalid = function(data)
 		{
+			if (!config.ui)
+				return;
+
 			var addr = data.address;
 			var response = data.response;
 			var corners = addr.corners();
@@ -916,6 +987,8 @@
 				// User rejects original input and agrees to double-check it
 				$('.smarty-addr-'+addr.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
 				{
+					// See "userAborted()" for the reason why we unbind here
+					$(document).unbind('keyup');
 					$(this).remove();
 				});
 
@@ -927,6 +1000,8 @@
 				// User certifies that what they typed is correct
 				$('.smarty-addr-'+addr.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
 				{
+					// See "userAborted()" for the reason why we unbind here
+					$(document).unbind('keyup');
 					$(this).remove();
 				});
 
@@ -968,10 +1043,10 @@
 		var id = randomInt(1, 99999);					// An ID by which to classify this address on the DOM
 		var addrCssClassPrefix = "smarty-field-";		// Related to the CSS class info in the UI object below (TODO: NOT USED??? Do a search...)
 		var cssClass = addrCssClassPrefix + id;			// CSS class used to group fields in this address on the DOM
-		var state = "unchanged"; 						// Can be: unchanged, changed, accepted -- TODO: Consolidate to accepted, changed?
+		var state = "accepted"; 						// Can be: "accepted" or "changed"
 		var acceptableFields = ["street", "street2", "secondary",
 								"city", "state", "zipcode", "lastline",
-								"addressee", "urbanization"];
+								"addressee", "urbanization", "country"];
 		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai" }
 		// Some of the above fields will only be mapped manually, not automatically.
 
@@ -979,9 +1054,9 @@
 		// Constructor-esque functionality (save the fields in this address object)
 		if (typeof domMap === 'object')
 		{
-
 			// Find the last field likely to appear on the DOM
-			this.lastField = domMap.country || domMap.zipcode  || domMap.state || domMap.city || domMap.street;
+			this.lastField = domMap.country || domMap.lastline || domMap.zipcode
+								|| domMap.state || domMap.city || domMap.street;
 
 			for (var prop in domMap)
 			{
@@ -989,18 +1064,27 @@
 					continue;
 
 				var elem = $(domMap[prop]).addClass(cssClass);
-				var val = elem.val();
-
-				if (config.debug)
-				{
-					elem.css('background', '#FFFFCC');
-					elem.attr('placeholder', prop);
-				}
+				var isData = elem.toArray().length == 0;
+				var val;
+				if (elem.toArray().length == 0) // No matches; treat it as a string of address data instead
+					val = domMap[prop];
+				else
+					var val = elem.val();
 
 				fields[prop] = {};
-				fields[prop].dom = domMap[prop];
 				fields[prop].value = val;
 				fields[prop].undo = val;
+
+				if (!isData)
+				{
+					if (config.debug)
+					{
+						elem.css('background', '#FFFFCC');
+						elem.attr('placeholder', prop);
+					}
+
+					fields[prop].dom = domMap[prop];
+				}
 
 
 				// This has to be passed in at bind-time; they cannot be obtained at run-time
@@ -1013,16 +1097,16 @@
 				// Bind the DOM element to needed events, passing in the data above
 				$(domMap[prop]).change(data, function(e)
 				{
-					e.data.address.set(e.data.field, e.target.value, false, e);
+					e.data.address.set(e.data.field, e.target.value, false, false, false, e);
 				});
 			}
 		}
 		
-		// Internal method that actually changes the address
-		// The keepState parameter is used by the results of verification
-		// after an address is chosen; otherwise an infinite loop of requests
-		// is executed because the address keeps changing!	
-		var doSet = function(key, value, updateDomElement, sourceEvent, keepState)
+		// Internal method that actually changes the address. The keepState parameter is
+		// used by the results of verification after an address is chosen; (or an "undo"
+		// on a freeform address), otherwise an infinite loop of requests is executed
+		// because the address keeps changing!	
+		var doSet = function(key, value, updateDomElement, keepState, fromUndo, sourceEvent)
 		{
 			if (!arrayContains(acceptableFields, key))
 				return false;
@@ -1037,22 +1121,26 @@
 			
 			if (updateDomElement && fields[key].dom)
 				$(fields[key].dom).val(value);
-
-			if (differentVal && !keepState)
-			{
-				state = "changed";
-				ui.hideValid(self);
-			}
 			
 			var eventMeta = {
 				sourceEvent: sourceEvent,	// may be undefined
 				field: key,
 				address: self,
-				value: value
+				value: value,
+				suppressAutoVerification: fromUndo || false
 			};
 			
-			if (differentVal && state != "accepted")
-				trigger("AddressChanged", eventMeta);
+			if (differentVal && !keepState)
+			{
+				ui.hideValid(self);
+				if (self.isDomestic())
+				{
+					state = "changed";
+					trigger("AddressChanged", eventMeta);
+				}
+				else
+					self.accept(undefined, false, sourceEvent, { address: self })
+			}
 
 			return true;
 		};
@@ -1066,15 +1154,17 @@
 		this.verifyCount = 0;	// Number of times this address was submitted for verification
 		this.lastField;			// The last field found (last to appear in the DOM) during mapping, or the order given
 
-		this.set = function(key, value, updateDomElement, sourceEvent, keepState)
+
+
+		this.set = function(key, value, updateDomElement, keepState, fromUndo, sourceEvent)
 		{
 			if (typeof key === 'string' && arguments.length >= 2)
-				return doSet(key, value, updateDomElement, sourceEvent, keepState);
+				return doSet(key, value, updateDomElement, keepState, fromUndo, sourceEvent);
 			else if (typeof key === 'object')
 			{
 				var successful = true;
 				for (var prop in key)
-					successful = doSet(prop, key[prop], updateDomElement, sourceEvent, keepState) ? successful : false;
+					successful = doSet(prop, key[prop], updateDomElement, keepState, fromUndo, sourceEvent) ? successful : false;
 				return successful;
 			}
 		};
@@ -1098,24 +1188,24 @@
 					(resp.components.urbanization ? resp.components.urbanization + " " : "") +
 					(resp.last_line ? resp.last_line : "");
 
-				this.set("street", singleLineAddr, updateDomElement, e, true);
+				this.set("street", singleLineAddr, updateDomElement, true, false, e);
 			}
 			else
 			{
 				if (resp.addressee)
-					this.set("addressee", resp.addressee, updateDomElement, e, true);
+					this.set("addressee", resp.addressee, updateDomElement, true, false, e);
 				if (resp.delivery_line_1)
-					this.set("street", resp.delivery_line_1, updateDomElement, e, true);
-				this.set("street2", resp.delivery_line_2 || "", updateDomElement, e, true);	// Rarely used; must otherwise be blank.
-				this.set("secondary", "", updateDomElement, e, true);	// Not used in standardized addresses
+					this.set("street", resp.delivery_line_1, updateDomElement, true, false, e);
+				this.set("street2", resp.delivery_line_2 || "", updateDomElement, true, false, e);	// Rarely used; must otherwise be blank.
+				this.set("secondary", "", updateDomElement, true, false, e);	// Not used in standardized addresses
 				if (resp.components.urbanization)
-					this.set("urbanization", resp.components.urbanization, updateDomElement, e, true);
+					this.set("urbanization", resp.components.urbanization, updateDomElement, true, false, e);
 				if (resp.components.city_name)
-					this.set("city", resp.components.city_name, updateDomElement, e, true);
+					this.set("city", resp.components.city_name, updateDomElement, true, false, e);
 				if (resp.components.state_abbreviation)
-					this.set("state", resp.components.state_abbreviation, updateDomElement, e, true);
+					this.set("state", resp.components.state_abbreviation, updateDomElement, true, false, e);
 				if (resp.components.zipcode && resp.components.plus4_code)
-					this.set("zipcode", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, e, true);
+					this.set("zipcode", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, true, false, e);
 			}
 		};
 
@@ -1176,7 +1266,7 @@
 
 		this.verify = function(invocation)
 		{
-			// Invoke contains the method to perform on invokeOn once we're all done (may be undefined)
+			// Invoke contains the operation to perform on invokeOn once we're all done (may be undefined)
 			if (!invocation && !self.enoughInput())
 				return null;
 
@@ -1195,14 +1285,11 @@
 			.done(function(response, statusText, xhr)
 			{
 				trigger("ResponseReceived", { address: self, response: new Response(response), invocation: invocation });
-				//delete self.form.processing;	// Tell the potentially duplicate event handlers that we're done.
-				//console.log("Success!", Response, statusText, xhr);
 			})
 			.fail(function(xhr, statusText)
 			{
 				trigger("RequestTimedOut", { address: self, status: statusText, invocation: invocation });
 				self.verifyCount --; 			// Address verification didn't actually work
-				//delete self.form.processing;	// Tell the potentially duplicate event handlers (from postMappingOperations) that we're done.
 			});
 			/* 
 				This next one acts like a "complete" callback, no matter failed or successful.
@@ -1265,9 +1352,7 @@
 
 		this.mark = function(status)
 		{
-			if (status != "changed" &&
-				status != "unchanged" &&
-				status != "accepted")
+			if (status != "changed" && status != "accepted")
 				return false;
 			state = status;
 			return true;
@@ -1281,13 +1366,8 @@
 		this.undo = function(updateDomElement)
 		{
 			updateDomElement = typeof updateDomElement === 'undefined' ? true : updateDomElement;
-
 			for (var key in fields)
-			{
-				this.set(key, fields[key].undo);
-				if (updateDomElement && fields[key].dom)
-					fields[key].dom.value = fields[key].value;
-			}
+				this.set(key, fields[key].undo, updateDomElement, false, true);
 		};
 
 		this.accept = function(replacement, updateDomElement, event, data)
@@ -1325,6 +1405,53 @@
 			return obj;
 		};
 
+		this.hasDomFields = function()
+		{
+			for (var prop in fields)
+				if (fields[prop].dom)
+					return true;
+		}
+
+		this.isDomestic = function()
+		{
+			if (!fields.country)
+				return true;
+
+			switch (fields.country.value.toUpperCase())
+			{
+				case "US": return true;
+				case "U.S.": return true;
+				case "U S": return true;
+				case "U. S.": return true;
+
+				case "USA": return true;
+				case "U.S.A.": return true;
+				case "U S A": return true;
+				case "U. S. A.": return true;
+
+				case "US OF A": return true;
+				case "U S OF A": return true;
+				case "U.S. OF A": return true;
+				case "U. S. OF A": return true;
+				case "U. S. OF A.": return true;
+
+				case "US OF AMERICA": return true;
+				case "U S OF AMERICA": return true;
+				case "U.S. OF AMERICA": return true;
+				case "U. S. OF AMERICA": return true;
+
+				case "UNITED STATES": return true;
+				case "UNITED STATES - AMERICA": return true;
+				case "UNITED STATES OF AMERICA": return true;
+				case "AMERICA - UNITED STATES": return true;
+
+				case "840": return true; // ISO: 3166
+				case "223": return true; // Zen Cart
+
+				default: return false;
+			}
+		}
+
 		this.id = function()
 		{
 			return id;
@@ -1356,25 +1483,25 @@
 			return triedSubmit;
 		}
 
-		this.allAddressesAccepted = function(orUnchanged)
+		this.allAddressesAccepted = function()
 		{
 			for (var i = 0; i < this.addresses.length; i++)
 			{
 				var addr = this.addresses[i];
-				if (addr.status() != "accepted" && (!orUnchanged || (orUnchanged && addr.status() != "unchanged")))
+				if (addr.status() != "accepted")
 					return false;
 			}
 			return true;
 		};
 
-		this.addressesNotAccepted = function(andNotUnchanged)
+		this.addressesNotAccepted = function()
 		{
 			var addrs = [];
 
 			for (var i = 0; i < this.addresses.length; i++)
 			{
 				var addr = this.addresses[i];
-				if (addr.status() != "accepted" && (!andNotUnchanged || (andNotUnchanged && addr.status() != "unchanged")))
+				if (addr.status() != "accepted")
 					addrs.push(addr);
 			}
 
@@ -1477,7 +1604,16 @@
 			if (config.debug)
 				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
 			
-			if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 || data.address.isFreeform()))
+			// If autoVerify is on, there's enough input in the address,
+			// AND it hasn't been verified automatically before OR it's a freeform address,
+			// AND autoVerification isn't suppressed (from an Undo click even on a freeform address)
+			// AND it has a DOM element (it's not just a programmatic Address object)...
+			// THEN verification has been invoked.
+
+			if (config.autoVerify && data.address.enoughInput()
+				&& (data.address.verifyCount == 0 || data.address.isFreeform())
+				&& !data.suppressAutoVerification
+				&& data.address.hasDomFields())
 				trigger("VerificationInvoked", { address: data.address });
 		},
 
@@ -1486,7 +1622,8 @@
 			if (config.debug)
 				console.log("EVENT:", "VerificationInvoked", "(Verification invoked)", event, data);
 
-			data.address.form.processing = true;
+			if (data.address.form)
+				data.address.form.processing = true;
 			data.address.verify(data.invocation);
 		},
 
@@ -1505,17 +1642,16 @@
 
 			ui.hideLoader(data.address);
 			
-			if (data.response.isInvalid())
-			{
-				trigger("AddressWasInvalid", data);
-			}
-			else if (data.response.isValid())
-			{
-				trigger("AddressWasValid", data);
-			}
+			if (typeof data.invocation === "function")
+				data.invocation(data.response);
 			else
 			{
-				trigger("AddressWasAmbiguous", data);
+				if (data.response.isInvalid())
+					trigger("AddressWasInvalid", data);
+				else if (data.response.isValid())
+					trigger("AddressWasValid", data);
+				else
+					trigger("AddressWasAmbiguous", data);
 			}
 		},
 
@@ -1524,7 +1660,8 @@
 			if (config.debug)
 				console.log("EVENT:", "RequestTimedOut", "(Request timed out)", event, data);
 
-			delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
+			if (data.address.form)
+				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
 
 			// If this was a form submit, don't let a network failure hold back the user. Invoke the submit event.
 			if (data.invocation)
@@ -1584,8 +1721,10 @@
 		{
 			if (config.debug)
 				console.log("EVENT:", "InvalidAddressRejected", "(User chose to correct an invalid address)", event, data);
-
-			delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
+			
+			if (data.address.form)
+				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
+			
 			trigger("Completed", data);
 		},
 
@@ -1594,7 +1733,8 @@
 			if (config.debug)
 				console.log("EVENT:", "AddressAccepted", "(Address marked accepted)", event, data);
 
-			delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
+			if (data.address.form)
+				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
 
 			// If this was the result of a form submit somehow, re-submit the form
 			if (data.invocation)
@@ -1607,7 +1747,9 @@
 				console.log("EVENT:", "Completed", "(All done)", event, data);
 
 			ui.enableFields(data.address);
-			delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
+
+			if (data.address.form)
+				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
 		},
 	};
 
