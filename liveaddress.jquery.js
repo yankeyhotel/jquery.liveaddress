@@ -584,10 +584,21 @@
 			$(selector).slideUp(defaults.speed, function()
 			{
 				$(this).remove();
+				$(this).unbind('click');
 			});
 
 			trigger("Completed", e.data);
 		}
+
+		// When we're done with a "pop-up" where the user chooses what to do,
+		// we need to remove all other events bound on that whole "pop-up"
+		// so that it doesn't interfere with any future "pop-ups".
+		function undelegateAllClicks(selectors)
+		{
+			for (var selector in selectors)
+				$('body').undelegate(selectors[selector], 'click');
+		}
+
 
 		// If anything was previously mapped, this resets it all for a new mapping.
 		this.clean = function()
@@ -914,7 +925,6 @@
 			if (!config.ui)
 				return;
 
-
 			var addr = data.address;
 			var response = data.response;
 			var corners = addr.corners();
@@ -926,7 +936,7 @@
 				+ '<a href="javascript:" class="smarty-abort">x</a>'
 				+ '<div class="smarty-ambiguous-message">Please choose the most correct address.</div>';
 
-			for (var i = 0; i < response.length; i++)
+			for (var i = 0; i < response.raw.length; i++)
 			{
 				var line1 = response.raw[i].delivery_line_1, city = response.raw[i].components.city_name,
 					st = response.raw[i].components.state_abbreviation,
@@ -950,14 +960,23 @@
 				}, 500);
 			}
 
-			$('body').delegate('.smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-good-addr', 'click', data, function(e)
+			data.selectors = {
+				goodAddr: '.smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-good-addr',
+				useOriginal: '.smarty-address-ambiguous .smarty-useoriginal',
+				abort: '.smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-abort, .smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-choiceabort'
+			};
+
+			$('body').delegate(data.selectors.goodAddr, 'click', data, function(e)
 			{
 				// User chose a candidate address
 				$('.smarty-addr-'+addr.id()+'.smarty-address-ambiguous').slideUp(defaults.speed, function()
 				{
 					$(this).remove();
 				});
-				
+
+				undelegateAllClicks(e.data.selectors);
+				delete e.data.selectors;
+
 				trigger("UsedSuggestedAddress", {
 					address: e.data.address,
 					response: e.data.response,
@@ -966,14 +985,16 @@
 				});
 			});
 
-			$('body').delegate('.smarty-address-ambiguous .smarty-useoriginal', 'click', data, function(e)
+			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e)
 			{
 				// User wants to revert to what they typed
-				$('.smarty-addr-'+addr.id()+'.smarty-address-ambiguous').slideUp(defaults.speed, function()
+				$('.smarty-addr-'+e.data.address.id()+'.smarty-address-ambiguous').slideUp(defaults.speed, function()
 				{
 					$(this).remove();
 				});
 
+				undelegateAllClicks(e.data.selectors);
+				delete e.data.selectors;
 				trigger("OriginalInputSelected", e.data);
 			});
 
@@ -981,12 +1002,18 @@
 			$(document).keyup(data, function(e)
 			{
 				if (e.keyCode == 27) //Esc
+				{
+					undelegateAllClicks(e.data.selectors);
+					delete e.data.selectors;
 					userAborted('.smarty-addr-'+e.data.address.id()+'.smarty-address-ambiguous', e);
+				}
 			});
 
 			// User clicks "x" in corner (same effect as Esc key)
-			$('.smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-abort, .smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-choiceabort').click(data, function(e)
+			$(data.selectors.abort).click(data, function(e)
 			{
+				undelegateAllClicks(e.data.selectors);
+				delete e.data.selectors;
 				userAborted($(this).parents('.smarty-address-ambiguous')[0], e);
 			});
 		};
@@ -1013,6 +1040,13 @@
 			$(html).hide().appendTo('body').slideDown(defaults.speed);
 			//$('body *').not('.smarty-address-invalid, .smarty-address-invalid *').css('opacity', '.8'); NOTE: Looks bad on dark sites, also needs code to revert when done
 
+
+			data.selectors = {
+				rejectOriginal: '.smarty-address-invalid .smarty-invalid-rejectoriginal',
+				useOriginal: '.smarty-address-invalid .smarty-useoriginal',
+				abort: '.smarty-address-invalid.smarty-addr-'+addr.id()+' .smarty-abort'
+			};
+
 			// Scroll to it if necessary
 			if ($(document).scrollTop() > corners.top - 100
 				|| $(document).scrollTop() < corners.top - $(window).height() + 100)
@@ -1022,28 +1056,33 @@
 				}, 500);
 			}
 
-			$('body').delegate('.smarty-address-invalid .smarty-invalid-rejectoriginal', 'click', data, function(e)
+			$('body').delegate(data.selectors.rejectOriginal, 'click', data, function(e)
 			{
 				// User rejects original input and agrees to double-check it
-				$('.smarty-addr-'+addr.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
+				$('.smarty-addr-'+e.data.address.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
 				{
 					// See "userAborted()" for the reason why we unbind here
-					$(document).unbind('keyup');
 					$(this).remove();
 				});
+
+				$(document).unbind('keyup');
+				undelegateAllClicks(e.data.selectors);
+				delete e.data.selectors;
 
 				trigger("InvalidAddressRejected", e.data);
 			});
 
-			$('body').delegate('.smarty-address-invalid .smarty-useoriginal', 'click', data, function(e)
+			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e)
 			{
 				// User certifies that what they typed is correct
 				$('.smarty-addr-'+addr.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
 				{
-					// See "userAborted()" for the reason why we unbind here
-					$(document).unbind('keyup');
 					$(this).remove();
 				});
+
+				$(document).unbind('keyup');
+				undelegateAllClicks(e.data.selectors);
+				delete e.data.selectors;
 
 				trigger("OriginalInputSelected", e.data);
 			});
@@ -1052,12 +1091,16 @@
 			$(document).keyup(data, function(e)
 			{
 				if (e.keyCode == 27) //Esc
+				{
+					undelegateAllClicks(e.data.selectors);
 					userAborted('.smarty-addr-'+e.data.address.id()+'.smarty-address-invalid', e);
+				}
 			});
 
 			// User clicks "x" in corner (same effect as Esc key)
-			$('.smarty-address-invalid.smarty-addr-'+addr.id()+' .smarty-abort').click(data, function(e)
+			$(data.selectors.abort).click(data, function(e)
 			{
+				undelegateAllClicks(e.data.selectors);
 				userAborted($(this).parents('.smarty-address-invalid')[0], e);
 			});
 		};
@@ -1106,7 +1149,7 @@
 
 			fields[key].undo = fields[key].value || "";
 			fields[key].value = value;
-			
+
 			if (updateDomElement && fields[key].dom)
 				$(fields[key].dom).val(value);
 			
@@ -1231,7 +1274,7 @@
 			// then change the values in the fields on the page accordingly.
 			// NOTE: "resp" should contain just the candidate to replace with, not all
 			// of them! If an array is passed in, the 0th element is chosen.
-
+			
 			if (typeof resp === 'array' && resp.length > 0)
 				resp = resp[0];
 
@@ -1447,14 +1490,24 @@
 			return state;
 		};
 
-		this.syncWithDom = function()
+		this.syncWithDom = function(internalPriority)
 		{
 			// Since programmatic changes to form field values (e.g. jQuery's .val() function)
 			// don't necessarily raise the "change" event, at form submit time we should
 			// sync internally-stored values with those on the DOM.
+
+			// Set "internalPriority" to true if a field value exists internally but
+			// does not exist on the DOM, and yet you want to keep the internal value.
+			// This can cause problems for an address that is ambiguous more than once
+			// (for example, addressee may be populated by the response but not in the DOM.
 			for (var prop in fields)
 			{
-				if (fields[prop].dom && fields[prop].value)
+				if (!fields[prop].dom && fields[prop].value && !internalPriority)
+				{
+					delete fields[prop];
+					continue;
+				}
+				else if (fields[prop].dom && fields[prop].value)
 				{
 					var domValue = $(fields[prop].dom).val();
 					if (fields[prop].value != domValue)
@@ -1903,6 +1956,8 @@
 			// If this was the result of a form submit, re-submit the form
 			if (data.invokeClick)
 				$(data.invokeClick).click();
+
+			trigger("Completed", data);
 		},
 
 		Completed: function(event, data)
@@ -1910,10 +1965,12 @@
 			if (config.debug)
 				console.log("EVENT:", "Completed", "(All done)", event, data);
 
-			ui.enableFields(data.address);
-
-			if (data.address.form)
-				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
+			if (data.address)
+			{
+				ui.enableFields(data.address);
+				if (data.address.form)
+					delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
+			}
 		},
 	};
 
