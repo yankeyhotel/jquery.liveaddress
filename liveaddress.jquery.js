@@ -189,8 +189,9 @@
 	{
 		var mapMeta = {
 			formDataProperty: "smarty-form",	// Indicates whether we've stored the form already
-			//fieldCssClass: "smarty-field",		// Indicates a form field with address data (as opposed to the loading gif, etc...)
+			//fieldCssClass: "smarty-field",		// Indicates a form field with address data (as opposed to the loading gif, etc...) TODO: USED?
 			fieldSelector: "input[type=text], input[type=], textarea, select", // Selectors for possible address-related form elements
+			submitSelector: "[type=submit], [type=image]",	// Selector to find a submit button or submit image (in a form)
 			identifiers: {
 				streets: {				// both street1 and street2, separated later.
 					names: [
@@ -377,7 +378,7 @@
 		};
 
 		var uiCss = "<style>"
-			+ ".smarty-dots { visibility: hidden; margin-left: 5px; }"
+			+ ".smarty-dots { visibility: hidden; margin-left: 5px; display: inline !important; margin-left: 10px !important; }"
 			+ ".smarty-address-verified { display: none; max-width: 200px; padding: 10px 15px; margin-top: 15px; font-size: 14px; font-family: sans-serif; color: #2D8D0D; line-height: 1.25em; background: #E2FFBE; border-radius: 5px; text-align: left; }"
 			+ ".smarty-undo { font-size: small; color: #0055D4; } .smarty-undo:hover { color: #119FF2; }"
 			+ ".smarty-address-ambiguous, .smarty-address-invalid { font-size: 14px; font-family: sans-serif; text-align: left; line-height: 1em !important; color: black; background: #EEE; padding: 10px; border-radius: 5px; z-index: 999; box-shadow: 0px 10px 35px rgba(0, 0, 0, .7); }"
@@ -435,20 +436,27 @@
 					if (e.data.form && e.data.form.processing)
 						return suppress(e);
 					
+					// In case programmatic changes were made to input fields, we need to sync
+					// those with internally-stored values (since the .change() event isn't fired
+					// by jQuery's val() function).
+					for (var j = 0; j < e.data.form.addresses.length; j++)
+						e.data.form.addresses[j].syncWithDom();
+
 					if (!e.data.form.allAddressesAccepted())
 					{
+						// We could verify all the addresses at once, but that can
+						// be overwhelming for the user. An API request is usually quick,
+						// so let's do one at a time: it's much cleaner.
 						var unaccepted = e.data.form.addressesNotAccepted();
-						for (var i = 0; i < unaccepted.length; i++)
-						{
-							trigger("VerificationInvoked", { address: unaccepted[i], invocation: e.data.invocation });
-						}
+						if (unaccepted.length > 0)
+							trigger("VerificationInvoked", { address: unaccepted[0], invokeClick: e.data.invokeClick });
 						return suppress(e);
 					}
 				};
 
 				// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
-				var jqForm = $(f.dom);
-				var jqFormSubmits = $('[type=submit], [type=image]', f.dom);
+				//var jqForm = $(f.dom);
+				var formSubmitElements = $(mapMeta.submitSelector, f.dom);
 
 				// TODO: If it really came down between our code not working
 				// and their code not working, right now we opt that our
@@ -459,8 +467,8 @@
 				// to the shiny new clone elements. An IE-safe example to do this:
 				// $('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML;
 
-
-				// First through form submit events...
+				// First through form submit events... TODO: These appear to actually be artificial...
+				/*
 				jqForm.each(function(idx)
 				{
 					if ($(this).data('events') && $(this).data('events').submit && $(this).data('events').submit.length > 0)
@@ -489,37 +497,31 @@
 							}
 						}, handler);
 				});
+				*/
 
 
-
-				// Also through clicking the submit button (or input type=image)
-				jqFormSubmits.each(function(idx)
+				// Form submit() events are invoked apparently by clicking the submit button (even jQuery does this at its core)
+				formSubmitElements.each(function(idx)
 				{
+					var oldHandlers;
+
 					if ($(this).data('events') && $(this).data('events').click && $(this).data('events').click.length > 0)
 					{
-						// Form submit event
-						var oldHandlers = $.extend(true, [], $(this).data('events').click);
-						$(this).unbind('click');
-						$(this).click({
-							form: f,
-							invocation: {
-								event: "click",
-								element: $(this)
-							}
-						}, handler); // Bind ours
-						for (var j = 0; j < oldHandlers.length; j++)
-							$(this).click(oldHandlers[j].data, oldHandlers[j].handler); // Bind theirs after
+						// Get a reference to the old handlers previously bound by jQuery
+						oldHandlers = $.extend(true, [], $(this).data('events').click);
 					}
-					else
-						$(this).click({
-							form: f,
-							invocation: {
-								event: "click",
-								element: $(this)
-							}
-						}, handler); // Bind ours
-				});
 
+					// Unbind them...
+					$(this).unbind('click');
+
+					// ... then bind ours first ...
+					$(this).click({ form: f, invokeClick: this }, handler);
+
+					// ... then bind theirs last.
+					if (oldHandlers)
+						for (var j = 0; j < oldHandlers.length; j++)
+							$(this).click(oldHandlers[j].data, oldHandlers[j].handler);
+				});
 			}
 		}
 
@@ -587,12 +589,48 @@
 			trigger("Completed", e.data);
 		}
 
+		// If anything was previously mapped, this resets it all for a new mapping.
+		this.clean = function()
+		{
+			if (forms.length == 0)
+				return;
+
+			if (config.debug)
+				console.log("Cleaning up old form map data...");
+
+			// Spare none alive!
+
+			for (var i = 0; i < forms.length; i++)
+			{
+				$(forms[i].dom).data(mapMeta.formDataProperty, '');
+				$(mapMeta.submitSelector, forms[i].dom).unbind('click');
+
+				for (var j = 0; j < forms[i].addresses.length; j++)
+				{
+					var doms = forms[i].addresses[j].getDomFields();
+					for (var prop in doms)
+					{
+						if (config.debug)
+							$(doms[prop]).css('background', 'none').attr('placeholder', '');
+						$(doms[prop]).unbind('change');
+					}
+				}		
+			}
+
+			forms = [];
+
+			if (config.debug)
+				console.log("Done cleaning up form map data; ready for new mapping.");
+		};
 
 
+		// ** AUTOMAPPING ** //
 		this.automap = function(contextSelector)
 		{
 			if (config.debug)
 				console.log("Automapping fields...");
+
+			this.clean();
 
 			// For each form...
 			$('form').each(function(idx)
@@ -752,10 +790,10 @@
 			trigger("FieldsMapped");
 		};
 
+
+		// ** MANUAL MAPPING ** //
 		this.mapFields = function(map, selector)
 		{
-			// TODO: Clean up EVERYTHING (data attributes, added classes, etc) when mapping fields... (or when automapping)
-
 
 			// "map" should be an array of objects mapping field types
 			// to a field by a selector, all supplied by the user.
@@ -763,6 +801,8 @@
 
 			if (config.debug)
 				console.log("Manually mapping fields given this data:", map);
+
+			this.clean();
 
 			var formsFound = [];
 
@@ -921,7 +961,7 @@
 				trigger("UsedSuggestedAddress", {
 					address: e.data.address,
 					response: e.data.response,
-					invocation: e.data.invocation,
+					invokeClick: e.data.invokeClick,
 					chosenCandidate: response.raw[$(this).data('index')]
 				});
 			});
@@ -947,7 +987,7 @@
 			// User clicks "x" in corner (same effect as Esc key)
 			$('.smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-abort, .smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-choiceabort').click(data, function(e)
 			{
-					userAborted($(this).parents('.smarty-address-ambiguous')[0], e);
+				userAborted($(this).parents('.smarty-address-ambiguous')[0], e);
 			});
 		};
 
@@ -1018,7 +1058,7 @@
 			// User clicks "x" in corner (same effect as Esc key)
 			$('.smarty-address-invalid.smarty-addr-'+addr.id()+' .smarty-abort').click(data, function(e)
 			{
-					userAborted($(this).parents('.smarty-address-invalid')[0], e);
+				userAborted($(this).parents('.smarty-address-invalid')[0], e);
 			});
 		};
 	}
@@ -1038,69 +1078,17 @@
 	{
 		// PRIVATE MEMBERS //
 
-		var self = this;								// Pointer to self so that internal functions can reference its parent
-		var fields = {};								// Data values and references to DOM elements
-		var id = randomInt(1, 99999);					// An ID by which to classify this address on the DOM
-		var addrCssClassPrefix = "smarty-field-";		// Related to the CSS class info in the UI object below (TODO: NOT USED??? Do a search...)
-		var cssClass = addrCssClassPrefix + id;			// CSS class used to group fields in this address on the DOM
-		var state = "accepted"; 						// Can be: "accepted" or "changed"
+		var self = this;							// Pointer to self so that internal functions can reference its parent
+		var fields;									// Data values and references to DOM elements
+		var id;										// An ID by which to classify this address on the DOM
+		var addrCssClassPrefix = "smarty-field-";	// Related to the CSS class info in the UI object below // TODO -- NOT USED... only used for lca stuff...
+		var cssClass = ui.addrCssClassPrefix + id;	// CSS class used to group fields in this address on the DOM // TODO -- NOT USED ... "           "
+		var state = "accepted"; 					// Can be: "accepted" or "changed"
 		var acceptableFields = ["street", "street2", "secondary",
 								"city", "state", "zipcode", "lastline",
 								"addressee", "urbanization", "country"];
 		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai" }
 		// Some of the above fields will only be mapped manually, not automatically.
-
-
-		// Constructor-esque functionality (save the fields in this address object)
-		if (typeof domMap === 'object')
-		{
-			// Find the last field likely to appear on the DOM
-			this.lastField = domMap.country || domMap.lastline || domMap.zipcode
-								|| domMap.state || domMap.city || domMap.street;
-
-			for (var prop in domMap)
-			{
-				if (!arrayContains(acceptableFields, prop))
-					continue;
-
-				var elem = $(domMap[prop]).addClass(cssClass);
-				var isData = elem.toArray().length == 0;
-				var val;
-				if (elem.toArray().length == 0) // No matches; treat it as a string of address data instead
-					val = domMap[prop];
-				else
-					var val = elem.val();
-
-				fields[prop] = {};
-				fields[prop].value = val;
-				fields[prop].undo = val;
-
-				if (!isData)
-				{
-					if (config.debug)
-					{
-						elem.css('background', '#FFFFCC');
-						elem.attr('placeholder', prop);
-					}
-
-					fields[prop].dom = domMap[prop];
-				}
-
-
-				// This has to be passed in at bind-time; they cannot be obtained at run-time
-				var data = {
-					address: this,
-					field: prop,
-					value: val
-				};
-				
-				// Bind the DOM element to needed events, passing in the data above
-				$(domMap[prop]).change(data, function(e)
-				{
-					e.data.address.set(e.data.field, e.target.value, false, false, false, e);
-				});
-			}
-		}
 		
 		// Internal method that actually changes the address. The keepState parameter is
 		// used by the results of verification after an address is chosen; (or an "undo"
@@ -1154,6 +1142,73 @@
 		this.verifyCount = 0;	// Number of times this address was submitted for verification
 		this.lastField;			// The last field found (last to appear in the DOM) during mapping, or the order given
 
+
+		// Constructor-esque functionality (save the fields in this address object)
+		this.load = function(domMap, formObj)
+		{
+			fields = {};
+			id = randomInt(1, 99999);
+
+			if (typeof domMap === 'object')
+			{
+				// Find the last field likely to appear on the DOM
+				this.lastField = domMap.country || domMap.lastline || domMap.zipcode
+									|| domMap.state || domMap.city || domMap.street;
+
+				var isEmpty = true;	// Whether the address has data in it (pre-populated)
+
+				for (var prop in domMap)
+				{
+					if (!arrayContains(acceptableFields, prop))
+						continue;
+
+					var elem = $(domMap[prop]).addClass(cssClass);
+					var isData = elem.toArray().length == 0;
+					var val;
+					if (elem.toArray().length == 0) // No matches; treat it as a string of address data instead
+						val = domMap[prop];
+					else
+						val = elem.val();
+
+					fields[prop] = {};
+					fields[prop].value = val;
+					fields[prop].undo = val;
+					
+					isEmpty = isEmpty ? val.length == 0 || domMap[prop].tagName == "SELECT" : isEmpty;
+
+					if (!isData)
+					{
+						if (config.debug)
+						{
+							elem.css('background', '#FFFFCC');
+							elem.attr('placeholder', prop);
+						}
+
+						fields[prop].dom = domMap[prop];
+					}
+
+
+					// This has to be passed in at bind-time; they cannot be obtained at run-time
+					var data = {
+						address: this,
+						field: prop,
+						value: val
+					};
+					
+					// Bind the DOM element to needed events, passing in the data above
+					$(domMap[prop]).change(data, function(e)
+					{
+						e.data.address.set(e.data.field, e.target.value, false, false, false, e);
+					});
+				}
+
+				if (!isEmpty)
+					state = "changed";
+			}
+		};
+
+		// Run the "constructor" to load up the address
+		this.load(domMap, formObj);
 
 
 		this.set = function(key, value, updateDomElement, keepState, fromUndo, sourceEvent)
@@ -1264,10 +1319,10 @@
 			return corners;
 		};
 
-		this.verify = function(invocation)
+		this.verify = function(invokeClick)
 		{
 			// Invoke contains the operation to perform on invokeOn once we're all done (may be undefined)
-			if (!invocation && !self.enoughInput())
+			if (!invokeClick && !self.enoughInput())
 				return null;
 
 			ui.disableFields(self);
@@ -1284,11 +1339,11 @@
 			})
 			.done(function(response, statusText, xhr)
 			{
-				trigger("ResponseReceived", { address: self, response: new Response(response), invocation: invocation });
+				trigger("ResponseReceived", { address: self, response: new Response(response), invokeClick: invokeClick });
 			})
 			.fail(function(xhr, statusText)
 			{
-				trigger("RequestTimedOut", { address: self, status: statusText, invocation: invocation });
+				trigger("RequestTimedOut", { address: self, status: statusText, invokeClick: invokeClick });
 				self.verifyCount --; 			// Address verification didn't actually work
 			});
 			/* 
@@ -1390,6 +1445,25 @@
 		this.status = function()
 		{
 			return state;
+		};
+
+		this.syncWithDom = function()
+		{
+			// Since programmatic changes to form field values (e.g. jQuery's .val() function)
+			// don't necessarily raise the "change" event, at form submit time we should
+			// sync internally-stored values with those on the DOM.
+			for (var prop in fields)
+			{
+				if (fields[prop].dom && fields[prop].value)
+				{
+					var domValue = $(fields[prop].dom).val();
+					if (fields[prop].value != domValue)
+					{
+						state = "changed";
+						fields[prop].value = domValue;
+					}
+				}
+			}
 		};
 
 		this.getDomFields = function()
@@ -1558,12 +1632,100 @@
 			return this.length > 1;
 		};
 
+		// These next functions are not comprehensive, but helpful for common tasks.
+
 		this.isMissingSecondary = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1;
+			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1
+					|| this.raw[idx].analysis.footnotes.indexOf("H#") > -1;
 		};
+
+		this.isBadSecondary = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.footnotes.indexOf("S#") > -1;
+		}
+
+		this.componentChanged = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.footnotes.indexOf("L#") > -1;
+		}
+
+		this.betterAddressExists = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.footnotes.indexOf("P#") > -1;
+		}
+
+		this.isExactMatch = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.dpv_footnotes == "AABB";
+		}
+
+		this.isUniqueZipCode = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.dpv_footnotes.indexOf("U1") > -1
+					|| this.raw[idx].analysis.footnotes.indexOf("Q#") > -1;
+		}
+
+		this.fixedAbbreviations = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.footnotes.indexOf("N#") > -1;
+		}
+
+		this.fixedZipCode = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.footnotes.indexOf("A#") > -1;
+		}
+
+		this.fixedSpelling = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].metadata.building_default_indicator;
+		}
+
+		this.isBuildingDefault = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.footnotes.indexOf("S#") > -1;
+		}
+
+		this.isMilitary = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.dpv_footnotes.indexOf("F1") > -1;
+		}
+
+		this.isSecondaryExtra = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.dpv_footnotes.indexOf("CC") > -1;
+		}
+
+		this.isLacsLink = function(idx)
+		{
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.lacslink_code == "A";
+		}
 	}
 
 
@@ -1604,8 +1766,9 @@
 			if (config.debug)
 				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
 			
-			// If autoVerify is on, there's enough input in the address,
-			// AND it hasn't been verified automatically before OR it's a freeform address,
+			// If autoVerify is on,
+			// AND there's enough input in the address,
+			// AND it hasn't been verified automatically before -OR- it's a freeform address,
 			// AND autoVerification isn't suppressed (from an Undo click even on a freeform address)
 			// AND it has a DOM element (it's not just a programmatic Address object)...
 			// THEN verification has been invoked.
@@ -1624,7 +1787,8 @@
 
 			if (data.address.form)
 				data.address.form.processing = true;
-			data.address.verify(data.invocation);
+
+			data.address.verify(data.invokeClick);
 		},
 
 		RequestSubmitted: function(event, data)
@@ -1642,8 +1806,8 @@
 
 			ui.hideLoader(data.address);
 			
-			if (typeof data.invocation === "function")
-				data.invocation(data.response);
+			if (typeof data.invokeClick === "function")
+				data.invokeClick(data.response);
 			else
 			{
 				if (data.response.isInvalid())
@@ -1664,10 +1828,10 @@
 				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
 
 			// If this was a form submit, don't let a network failure hold back the user. Invoke the submit event.
-			if (data.invocation)
+			if (data.invokeClick)
 			{
 				data.address.accept(undefined, false, event, data);
-				data.invocation.element[data.invocation.event]();
+				$(data.invokeClick).click();
 			}
 
 			ui.enableFields(data.address);
@@ -1723,7 +1887,7 @@
 				console.log("EVENT:", "InvalidAddressRejected", "(User chose to correct an invalid address)", event, data);
 			
 			if (data.address.form)
-				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
+				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 			
 			trigger("Completed", data);
 		},
@@ -1734,11 +1898,11 @@
 				console.log("EVENT:", "AddressAccepted", "(Address marked accepted)", event, data);
 
 			if (data.address.form)
-				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
-
-			// If this was the result of a form submit somehow, re-submit the form
-			if (data.invocation)
-				data.invocation.element[data.invocation.event]();
+				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
+			
+			// If this was the result of a form submit, re-submit the form
+			if (data.invokeClick)
+				$(data.invokeClick).click();
 		},
 
 		Completed: function(event, data)
@@ -1749,7 +1913,7 @@
 			ui.enableFields(data.address);
 
 			if (data.address.form)
-				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
+				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 		},
 	};
 
