@@ -147,6 +147,15 @@ var ss = $.LiveAddress({
 	candidates: 10
 });
 
+ss.on("AddressAccepted", function(event, data, previousHandler) {
+	if (data.response.isMissingSecondary())
+	{
+		data.address.abort(event);
+		alert("Don't forget your apartment number!");
+	}
+	else
+		previousHandler(event, data);
+});
 
 /*
 var addr = ss.makeAddress("123 main 52001");

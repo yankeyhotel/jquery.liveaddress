@@ -73,6 +73,12 @@
 		if (typeof config.timeout === 'undefined')
 			config.timeout = defaults.timeout;
 
+
+		if (config.candidates == 0)
+			config.candidates = 1;
+		else if (config.candidates > 10)
+			config.candidates = 10;
+
 		/*
 		  *	EXPOSED (PUBLIC) FUNCTIONS
 		*/
@@ -101,19 +107,19 @@
 				else
 					return false;
 			},
-		 	makeAddress: function(addressData, formElement)
+		 	makeAddress: function(addressData)//, formElement) // TODO is formElement used? We would have to make or find a form OBJECT to pass in...
 		 	{
 		 		if (typeof addressData === "string")
-		 			return new Address({ street: addressData }, formElement);
+		 			return new Address({ street: addressData });//, formElement); // TODO is formElement used? We would have to make or find a form OBJECT to pass in...
 		 		else if (typeof addressData === "object")
-		 			return new Address(addressData, formElement);
+		 			return new Address(addressData);//, formElement); // TODO is formElement used? We would have to make or find a form OBJECT to pass in...
 		 	},
-		 	Address: Address, // TODO keep this? we have makeAddress...
+		 	//Address: Address, // TODO keep this? we have makeAddress...
 		 	verify: function(input, callback)
 		 	{
 		 		var addr = instance.makeAddress(input);
 		 		addr.verify(callback);
-		 	},
+		 	}, // TODO: MAKE THESE NEXT TWO PRIVATE?
 			getMappedAddresses: function()
 			{
 				var addr = [];
@@ -196,7 +202,7 @@
 				streets: {				// both street1 and street2, separated later.
 					names: [
 						'street',
-						'address',		// This is a dangerous inclusion; but we have a strong set of exclusions below to prevent false positives.
+						'address',		// This ("address") is a dangerous inclusion; but we have a strong set of exclusions below to prevent false positives.
 						'address1',		// If there are automapping issues, namely, it is too greedy when mapping fields, it will be because
 						'address2',		// of these arrays for the "streets" fields, namely the "address" entry right above here, or potentially others.
 						'addr1',
@@ -390,8 +396,8 @@
 			+ ".smarty-invalid-message { color: #000; }"
 			+ "a.smarty-choice { font-size: 14px !important; padding: 17px !important; text-decoration: none !important; display: block !important; background: #F5F5F5; color: #222; border-bottom: 1px solid #CCC; }"
 			+ ".smarty-address-ambiguous .smarty-choice:hover, .smarty-address-ambiguous .smarty-choice:hover * { background: #444; color: #FFF; }"
-			+ ".smarty-address-invalid .smarty-choice, .smarty-address-invalid .smarty-choice * { background: #F5F5F5; color: #60AD08; }"
-			+ ".smarty-address-invalid .smarty-choice:hover, .smarty-address-invalid .smarty-choice:hover * { background: #A3C952; color: #FFF; }"
+			+ ".smarty-address-invalid .smarty-choice { background: #F5F5F5; color: #60AD08; }"
+			+ ".smarty-address-invalid .smarty-choice:hover { background: #A3C952; color: #FFF; }"
 			+ ".smarty-address-invalid a:hover { color: #CC0000; }"
 			+ ".smarty-address-ambiguous a.smarty-useoriginal { font-size: 12px !important; padding: 7px 17px !important; }"
 			+ ".smarty-address-invalid a.smarty-useoriginal { color: #CC0000 !important; }"
@@ -449,7 +455,7 @@
 						// so let's do one at a time: it's much cleaner.
 						var unaccepted = e.data.form.addressesNotAccepted();
 						if (unaccepted.length > 0)
-							trigger("VerificationInvoked", { address: unaccepted[0], invokeClick: e.data.invokeClick });
+							trigger("VerificationInvoked", { address: unaccepted[0], invoke: e.data.invoke });
 						return suppress(e);
 					}
 				};
@@ -467,39 +473,6 @@
 				// to the shiny new clone elements. An IE-safe example to do this:
 				// $('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML;
 
-				// First through form submit events... TODO: These appear to actually be artificial...
-				/*
-				jqForm.each(function(idx)
-				{
-					if ($(this).data('events') && $(this).data('events').submit && $(this).data('events').submit.length > 0)
-					{
-						// Form submit event
-						var oldHandlers = $(this).data('events').submit;
-						$(this).unbind('submit');
-						$(this).submit({
-							form: f,
-							invocation: {
-								event: "submit",
-								element: $(this)
-							}
-						}, handler) // Bind ours
-						for (var j = 0; j < oldHandlers.length; j++)
-						{
-							$(this).submit(oldHandlers[j].data, oldHandlers[j].handler); // Bind theirs after
-						}
-					}
-					else
-						jqForm.submit({
-							form: f,
-							invocation: {
-								event: "submit",
-								element: $(this)
-							}
-						}, handler);
-				});
-				*/
-
-
 				// Form submit() events are invoked apparently by clicking the submit button (even jQuery does this at its core)
 				formSubmitElements.each(function(idx)
 				{
@@ -515,7 +488,7 @@
 					$(this).unbind('click');
 
 					// ... then bind ours first ...
-					$(this).click({ form: f, invokeClick: this }, handler);
+					$(this).click({ form: f, invoke: this }, handler);
 
 					// ... then bind theirs last.
 					if (oldHandlers)
@@ -904,8 +877,11 @@
 
 		this.showValid = function(addr)
 		{
-			if (config.ui)
-				$(addr.lastField).nextAll('.smarty-address-verified').first().show(defaults.speed);
+			if (!config.ui)
+				return;
+			var validDom = $(addr.lastField).nextAll('.smarty-address-verified').first();
+			if (validDom.length > 0 && !validDom.is(':visible'))
+				validDom.show(defaults.speed);
 		};
 
 		this.hideValid = function(addr)
@@ -946,7 +922,7 @@
 			}
 			
 			html += '<a href="javascript:" class="smarty-choice smarty-choiceabort">None of these; I\'ll type another address</a>';
-			html += '<a href="javascript:" class="smarty-choice smarty-useoriginal">None of these; use the address I typed<br>('+addr.toString()+')</a></div>';
+			html += '<a href="javascript:" class="smarty-choice smarty-useoriginal">I certify what I typed is correct<br>('+addr.toString()+')</a></div>';
 			
 			$(html).hide().appendTo('body').slideDown(defaults.speed);
 			//$('body *').not('.smarty-address-ambiguous, .smarty-address-ambiguous *').css('opacity', '.8'); NOTE: Looks bad on dark sites, also needs code to revert when done
@@ -980,7 +956,7 @@
 				trigger("UsedSuggestedAddress", {
 					address: e.data.address,
 					response: e.data.response,
-					invokeClick: e.data.invokeClick,
+					invoke: e.data.invoke,
 					chosenCandidate: response.raw[$(this).data('index')]
 				});
 			});
@@ -1034,8 +1010,8 @@
 				+ 'top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<a href="javascript:" class="smarty-abort">x</a>'
 				+ '<div class="smarty-invalid-message">Address could not be verified.</div>'
-				+ '<a href="javascript:" class="smarty-choice smarty-invalid-rejectoriginal"><b>&rsaquo; I will double-check the address</b></a>'
-				+ '<a href="javascript:" class="smarty-choice smarty-useoriginal">&rsaquo; I certify what I typed is correct ('+addr.toString()+')</a></div>';
+				+ '<a href="javascript:" class="smarty-choice smarty-invalid-rejectoriginal">&rsaquo; I will double-check the address</a>'
+				+ '<a href="javascript:" class="smarty-choice smarty-useoriginal">&rsaquo; I certify what I typed is correct<br> &nbsp; ('+addr.toString()+')</a></div>';
 
 			$(html).hide().appendTo('body').slideDown(defaults.speed);
 			//$('body *').not('.smarty-address-invalid, .smarty-address-invalid *').css('opacity', '.8'); NOTE: Looks bad on dark sites, also needs code to revert when done
@@ -1116,6 +1092,7 @@
 	/*
 		Represents an address inputted by the user,
 		whether it has been verified yet or not.
+		formObj must be a Form OBJECT, not a <form> tag...
 	*/
 	function Address(domMap, formObj)
 	{
@@ -1136,8 +1113,8 @@
 		// Internal method that actually changes the address. The keepState parameter is
 		// used by the results of verification after an address is chosen; (or an "undo"
 		// on a freeform address), otherwise an infinite loop of requests is executed
-		// because the address keeps changing!	
-		var doSet = function(key, value, updateDomElement, keepState, fromUndo, sourceEvent)
+		// because the address keeps changing! (Set "fromUndo" to true when coming from the "Undo" link)	
+		var doSet = function(key, value, updateDomElement, keepState, sourceEvent, fromUndo)
 		{
 			if (!arrayContains(acceptableFields, key))
 				return false;
@@ -1166,11 +1143,11 @@
 				ui.hideValid(self);
 				if (self.isDomestic())
 				{
-					state = "changed";
+					self.unaccept();
 					trigger("AddressChanged", eventMeta);
 				}
 				else
-					self.accept(undefined, false, sourceEvent, { address: self })
+					self.accept({ address: self })
 			}
 
 			return true;
@@ -1181,13 +1158,13 @@
 
 		// PUBLIC MEMBERS //
 
-		this.form = formObj;	// Reference to the parent form object
+		this.form = formObj;	// Reference to the parent form object (NOT THE DOM ELEMENT)
 		this.verifyCount = 0;	// Number of times this address was submitted for verification
 		this.lastField;			// The last field found (last to appear in the DOM) during mapping, or the order given
 
 
 		// Constructor-esque functionality (save the fields in this address object)
-		this.load = function(domMap, formObj)
+		this.load = function(domMap)//, formObj) // TODO is formObj used?
 		{
 			fields = {};
 			id = randomInt(1, 99999);
@@ -1241,7 +1218,7 @@
 					// Bind the DOM element to needed events, passing in the data above
 					$(domMap[prop]).change(data, function(e)
 					{
-						e.data.address.set(e.data.field, e.target.value, false, false, false, e);
+						e.data.address.set(e.data.field, e.target.value, false, false, e, false);
 					});
 				}
 
@@ -1251,18 +1228,18 @@
 		};
 
 		// Run the "constructor" to load up the address
-		this.load(domMap, formObj);
+		this.load(domMap);//, formObj); // TODO Is formObj used?
 
 
-		this.set = function(key, value, updateDomElement, keepState, fromUndo, sourceEvent)
+		this.set = function(key, value, updateDomElement, keepState, sourceEvent, fromUndo)
 		{
 			if (typeof key === 'string' && arguments.length >= 2)
-				return doSet(key, value, updateDomElement, keepState, fromUndo, sourceEvent);
+				return doSet(key, value, updateDomElement, keepState, sourceEvent, fromUndo);
 			else if (typeof key === 'object')
 			{
 				var successful = true;
 				for (var prop in key)
-					successful = doSet(prop, key[prop], updateDomElement, keepState, fromUndo, sourceEvent) ? successful : false;
+					successful = doSet(prop, key[prop], updateDomElement, keepState, sourceEvent, fromUndo) ? successful : false;
 				return successful;
 			}
 		};
@@ -1278,7 +1255,7 @@
 			if (typeof resp === 'array' && resp.length > 0)
 				resp = resp[0];
 
-			if (this.isFreeform())
+			if (self.isFreeform())
 			{
 				var singleLineAddr = (resp.addressee ? resp.addressee + " " : "") +
 					(resp.delivery_line_1 ? resp.delivery_line_1 + " " : "") +
@@ -1286,24 +1263,24 @@
 					(resp.components.urbanization ? resp.components.urbanization + " " : "") +
 					(resp.last_line ? resp.last_line : "");
 
-				this.set("street", singleLineAddr, updateDomElement, true, false, e);
+				self.set("street", singleLineAddr, updateDomElement, true, e, false);
 			}
 			else
 			{
 				if (resp.addressee)
-					this.set("addressee", resp.addressee, updateDomElement, true, false, e);
+					self.set("addressee", resp.addressee, updateDomElement, true, e, false);
 				if (resp.delivery_line_1)
-					this.set("street", resp.delivery_line_1, updateDomElement, true, false, e);
-				this.set("street2", resp.delivery_line_2 || "", updateDomElement, true, false, e);	// Rarely used; must otherwise be blank.
-				this.set("secondary", "", updateDomElement, true, false, e);	// Not used in standardized addresses
+					self.set("street", resp.delivery_line_1, updateDomElement, true, e, false);
+				self.set("street2", resp.delivery_line_2 || "", updateDomElement, true, e, false);	// Rarely used; must otherwise be blank.
+				self.set("secondary", "", updateDomElement, true, e, false);	// Not used in standardized addresses
 				if (resp.components.urbanization)
-					this.set("urbanization", resp.components.urbanization, updateDomElement, true, false, e);
+					self.set("urbanization", resp.components.urbanization, updateDomElement, true, e, false);
 				if (resp.components.city_name)
-					this.set("city", resp.components.city_name, updateDomElement, true, false, e);
+					self.set("city", resp.components.city_name, updateDomElement, true, e, false);
 				if (resp.components.state_abbreviation)
-					this.set("state", resp.components.state_abbreviation, updateDomElement, true, false, e);
+					self.set("state", resp.components.state_abbreviation, updateDomElement, true, e, false);
 				if (resp.components.zipcode && resp.components.plus4_code)
-					this.set("zipcode", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, true, false, e);
+					self.set("zipcode", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, true, e, false);
 			}
 		};
 
@@ -1362,10 +1339,10 @@
 			return corners;
 		};
 
-		this.verify = function(invokeClick)
+		this.verify = function(invoke)
 		{
 			// Invoke contains the operation to perform on invokeOn once we're all done (may be undefined)
-			if (!invokeClick && !self.enoughInput())
+			if (!invoke && !self.enoughInput())
 				return null;
 
 			ui.disableFields(self);
@@ -1382,11 +1359,11 @@
 			})
 			.done(function(response, statusText, xhr)
 			{
-				trigger("ResponseReceived", { address: self, response: new Response(response), invokeClick: invokeClick });
+				trigger("ResponseReceived", { address: self, response: new Response(response), invoke: invoke });
 			})
 			.fail(function(xhr, statusText)
 			{
-				trigger("RequestTimedOut", { address: self, status: statusText, invokeClick: invokeClick });
+				trigger("RequestTimedOut", { address: self, status: statusText, invoke: invoke });
 				self.verifyCount --; 			// Address verification didn't actually work
 			});
 			/* 
@@ -1440,6 +1417,15 @@
 				+ (fields.zipcode ? fields.zipcode.value : "");
 		}
 
+		this.abort = function(event, keepAccept)
+		{
+			keepAccept = typeof keepAccet === 'undefined' ? false : keepAccept;
+			if (!keepAccept)
+				self.unaccept();
+			delete self.form.processing;
+			return suppress(event);
+		}
+
 		// Based on the properties in "fields," determines if this is a single-line address
 		this.isFreeform = function()
 		{
@@ -1447,14 +1433,6 @@
 					&& !fields.addressee && !fields.city && !fields.state
 					&& !fields.zipcode && !fields.urbanization && !fields.lastline;
 		}
-
-		this.mark = function(status)
-		{
-			if (status != "changed" && status != "accepted")
-				return false;
-			state = status;
-			return true;
-		};
 		
 		this.get = function(key)
 		{
@@ -1465,19 +1443,23 @@
 		{
 			updateDomElement = typeof updateDomElement === 'undefined' ? true : updateDomElement;
 			for (var key in fields)
-				this.set(key, fields[key].undo, updateDomElement, false, true);
+				this.set(key, fields[key].undo, updateDomElement, false, undefined, true);
 		};
 
-		this.accept = function(replacement, updateDomElement, event, data)
+		this.accept = function(data, showValid)
 		{
-			self.mark("accepted");
-			if (replacement)		// This could be undefined if the user is using their original input
-				self.replaceWith(replacement, updateDomElement, event);
+			showValid = typeof showValid === 'undefined' ? true : showValid;
+			state = "accepted";
 			ui.enableFields(self);
-			if (replacement)		// Again, if user chooses original input, the address wasn't "verified"
+			if (showValid)	// If user chooses original input or the request timed out, the address wasn't "verified"
 				ui.showValid(self);
-
 			trigger("AddressAccepted", data);
+		};
+
+		this.unaccept = function()
+		{
+			state = "changed";
+			ui.hideValid(self);
 		};
 
 		this.getUndoValue = function(key)
@@ -1499,7 +1481,7 @@
 			// Set "internalPriority" to true if a field value exists internally but
 			// does not exist on the DOM, and yet you want to keep the internal value.
 			// This can cause problems for an address that is ambiguous more than once
-			// (for example, addressee may be populated by the response but not in the DOM.
+			// (for example, addressee may be populated by the response but is not in the DOM.
 			for (var prop in fields)
 			{
 				if (!fields[prop].dom && fields[prop].value && !internalPriority)
@@ -1512,7 +1494,7 @@
 					var domValue = $(fields[prop].dom).val();
 					if (fields[prop].value != domValue)
 					{
-						state = "changed";
+						self.unaccept();
 						fields[prop].value = domValue;
 					}
 				}
@@ -1692,35 +1674,35 @@
 			idx = maybeDefault(idx);
 			checkBounds(idx);
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1
-					|| this.raw[idx].analysis.footnotes.indexOf("H#") > -1;
+					|| (this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("H#") > -1);
 		};
 
 		this.isBadSecondary = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes.indexOf("S#") > -1;
+			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("S#") > -1;
 		}
 
 		this.componentChanged = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes.indexOf("L#") > -1;
+			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("L#") > -1;
 		}
 
 		this.betterAddressExists = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes.indexOf("P#") > -1;
+			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("P#") > -1;
 		}
 
 		this.isExactMatch = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.dpv_footnotes == "AABB";
+			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.dpv_footnotes == "AABB";
 		}
 
 		this.isUniqueZipCode = function(idx)
@@ -1728,35 +1710,36 @@
 			idx = maybeDefault(idx);
 			checkBounds(idx);
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("U1") > -1
-					|| this.raw[idx].analysis.footnotes.indexOf("Q#") > -1;
+					|| (this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("Q#") > -1);
 		}
 
 		this.fixedAbbreviations = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes.indexOf("N#") > -1;
+			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("N#") > -1;
 		}
 
 		this.fixedZipCode = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes.indexOf("A#") > -1;
+			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("A#") > -1;
 		}
 
 		this.fixedSpelling = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].metadata.building_default_indicator;
+			return this.raw[idx].analysis.footnotes.indexOf("B#") > -1
+				|| (this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("M#") > -1);
 		}
 
 		this.isBuildingDefault = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes.indexOf("S#") > -1;
+			return this.raw[idx].metadata.building_default_indicator;
 		}
 
 		this.isMilitary = function(idx)
@@ -1766,7 +1749,7 @@
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("F1") > -1;
 		}
 
-		this.isSecondaryExtra = function(idx)
+		this.hasExtraSecondary = function(idx)
 		{
 			idx = maybeDefault(idx);
 			checkBounds(idx);
@@ -1841,7 +1824,7 @@
 			if (data.address.form)
 				data.address.form.processing = true;
 
-			data.address.verify(data.invokeClick);
+			data.address.verify(data.invoke);
 		},
 
 		RequestSubmitted: function(event, data)
@@ -1859,8 +1842,8 @@
 
 			ui.hideLoader(data.address);
 			
-			if (typeof data.invokeClick === "function")
-				data.invokeClick(data.response);
+			if (typeof data.invoke === "function")
+				data.invoke(data.response);
 			else
 			{
 				if (data.response.isInvalid())
@@ -1881,10 +1864,13 @@
 				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
 
 			// If this was a form submit, don't let a network failure hold back the user. Invoke the submit event.
-			if (data.invokeClick)
+			if (data.invoke)
 			{
-				data.address.accept(undefined, false, event, data);
-				$(data.invokeClick).click();
+				data.address.accept(data, false);
+				if (typeof data.invoke !== 'function')
+					$(data.invoke).click();
+				else
+					data.invoke(data);
 			}
 
 			ui.enableFields(data.address);
@@ -1899,7 +1885,8 @@
 			var addr = data.address;
 			var resp = data.response;
 
-			addr.accept(resp.raw[0], true, event, data);
+			addr.replaceWith(resp.raw[0], true, event);
+			addr.accept(data);
 		},
 
 		AddressWasAmbiguous: function(event, data)
@@ -1923,7 +1910,7 @@
 			if (config.debug)
 				console.log("EVENT:", "OriginalInputSelected", "(User chose to use original input)", event, data);
 
-			data.address.accept(undefined, false, event, data);
+			data.address.accept(data, false);
 		},
 
 		UsedSuggestedAddress: function(event, data)
@@ -1931,7 +1918,8 @@
 			if (config.debug)
 				console.log("EVENT:", "UsedSuggestedAddress", "(User chose to a suggested address)", event, data);
 
-			data.address.accept(data.chosenCandidate, true, event, data);
+			data.address.replaceWith(data.chosenCandidate, true, event);
+			data.address.accept(data);
 		},
 
 		InvalidAddressRejected: function(event, data)
@@ -1954,8 +1942,8 @@
 				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 			
 			// If this was the result of a form submit, re-submit the form
-			if (data.invokeClick)
-				$(data.invokeClick).click();
+			if (data.invoke && typeof data.invoke !== 'function')
+				$(data.invoke).click();
 
 			trigger("Completed", data);
 		},
