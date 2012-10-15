@@ -3,7 +3,8 @@
 <head>
 	<title>LiveAddress.js Dev</title>
 	<script src="jquery-1_5.js"></script>
-	<script src="liveaddress.jquery.js"></script>
+	<script src="jquery.validate.js"></script>
+	<script src="jquery.liveaddress.js"></script>
 	<!-- FOR TESTING ON LIVE SITES:
 
 
@@ -119,7 +120,11 @@ code.block {
 }
 
 </style>
-
+ <script>
+  $(document).ready(function(){
+    $("#form1").validate();
+  });
+  </script>
 <script>
 
 
@@ -248,15 +253,15 @@ $.LiveAddress({
 	}]
 });
 
-/*
+
 var ss = $('#form1').LiveAddress({
 	key: '1234',
 	autoMap: false,
 	debug: true
-})
+});
 
 $(function() { ss.mapFields("auto"); });
-*/
+
 
 
 
@@ -282,7 +287,7 @@ ss.on("AddressChanged", function(e, data, originalHandler) {
 
 	<form id="form1">
 		Street address: <input type="text" name="street" id="str1"><br>
-		Street address 2: <input type="text" name="street2" id="str2"><br>
+		Street address 2: <input type="text" name="street2" id="str2" class="required"><br>
 		City: <input type="text" name="city" id="city"><br>
 		State: <input type="text" name="state" id="state"><br>
 		Zip: <input type="text" name="zip" id="zip">
