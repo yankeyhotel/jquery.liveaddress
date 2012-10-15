@@ -12,7 +12,10 @@
 		candidates: 3,
 		requestUrl: "https://api.qualifiedaddress.com/street-address",
 		timeout: 5000,
-		speed: "medium"
+		speed: "medium",
+		validMessage: "&#10003; Address verified!",
+		ambiguousMessage: "Please choose the most correct address.",
+		invalidMessage: "Address could not be verified."
 	};
 	var config = {};		// Configuration settings, either from use or defaults
 	var forms = [];			// List of forms which hold lists of addresses
@@ -48,7 +51,7 @@
 		}
 
 		if (arg.debug)
-			console.log("LiveAddress v0.5 (Debug mode)");
+			console.log("LiveAddress API jQuery Plugin v2.0 (Debug mode)");
 
 		if (typeof arg === 'string')
 		{
@@ -72,7 +75,12 @@
 			config.autoVerify = true;
 		if (typeof config.timeout === 'undefined')
 			config.timeout = defaults.timeout;
-
+		if (typeof config.validMessage === 'undefined')
+			config.validMessage = defaults.validMessage;
+		if (typeof config.ambiguousMessage === 'undefined')
+			config.ambiguousMessage = defaults.ambiguousMessage;
+		if (typeof config.invalidMessage === 'undefined')
+			config.invalidMessage = defaults.invalidMessage;
 
 		if (config.candidates == 0)
 			config.candidates = 1;
@@ -114,7 +122,6 @@
 		 		else if (typeof addressData === "object")
 		 			return new Address(addressData);//, formElement); // TODO is formElement used? We would have to make or find a form OBJECT to pass in...
 		 	},
-		 	//Address: Address, // TODO keep this? we have makeAddress...
 		 	verify: function(input, callback)
 		 	{
 		 		var addr = instance.makeAddress(input);
@@ -389,7 +396,7 @@
 			+ ".smarty-undo { font-size: small; color: #0055D4; } .smarty-undo:hover { color: #119FF2; }"
 			+ ".smarty-address-ambiguous, .smarty-address-invalid { font-size: 14px; font-family: sans-serif; text-align: left; line-height: 1em !important; color: black; background: #EEE; padding: 10px; border-radius: 5px; z-index: 999; box-shadow: 0px 10px 35px rgba(0, 0, 0, .7); }"
 			+ ".smarty-address-ambiguous a, .smarty-address-invalid a { color: #0055D4; font-weight: normal; } .smarty-address-ambiguous a:hover, .smarty-address-invalid a:hover { color: #119FF2 }"
-			+ ".smarty-ambiguous-message, .smarty-invalid-message { font-family: 'Helvetica Neue', sans-serif; font-weight: 300; padding: 10px 0 25px; font-size: 20px; border-bottom: 1px solid #888; text-align: center; }"
+			+ ".smarty-ambiguous-message, .smarty-invalid-message { font-family: 'Helvetica Neue', sans-serif; font-weight: 300; padding: 10px 0 25px; font-size: 18px; border-bottom: 1px solid #888; text-align: center; }"
 			+ ".smarty-address-ambiguous { border: 1px solid #AAA; border-top: 10px solid #AAA; }"
 			+ ".smarty-ambiguous-message { color: #000; }"
 			+ ".smarty-address-invalid { border: 1px solid #CC0000; border-top: 10px solid #CC0000; }"
@@ -419,7 +426,7 @@
 				for (var i = 0; i < addresses.length; i++)
 				{
 					var id = addresses[i].id();
-					$(addresses[i].lastField).after('<img src="http://liveaddress.dev/dots.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'"><div class="smarty-address-verified smarty-addr-'+id+'">&#10003; Address verified! &nbsp;<a href="javascript:" class="smarty-undo" data-addressid="'+id+'">Undo</a></div>');
+					$(addresses[i].lastField).after('<img src="http://liveaddress.dev/dots.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'"><div class="smarty-address-verified smarty-addr-'+id+'">'+config.validMessage+' &nbsp;<a href="javascript:" class="smarty-undo" data-addressid="'+id+'">Undo</a></div>');
 				}
 
 				$('body').delegate('.smarty-undo', 'click', function(e)
@@ -910,7 +917,7 @@
 			var html = '<div class="smarty-address-ambiguous smarty-addr-'+addr.id()+'" style="position: absolute; '
 				+ 'top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<a href="javascript:" class="smarty-abort">x</a>'
-				+ '<div class="smarty-ambiguous-message">Please choose the most correct address.</div>';
+				+ '<div class="smarty-ambiguous-message">'+config.ambiguousMessage+'</div>';
 
 			for (var i = 0; i < response.raw.length; i++)
 			{
@@ -1009,7 +1016,7 @@
 			var html = '<div class="smarty-address-invalid smarty-addr-'+addr.id()+'" style="position: absolute; '
 				+ 'top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<a href="javascript:" class="smarty-abort">x</a>'
-				+ '<div class="smarty-invalid-message">Address could not be verified.</div>'
+				+ '<div class="smarty-invalid-message">'+config.invalidMessage+'</div>'
 				+ '<a href="javascript:" class="smarty-choice smarty-invalid-rejectoriginal">&rsaquo; I will double-check the address</a>'
 				+ '<a href="javascript:" class="smarty-choice smarty-useoriginal">&rsaquo; I certify what I typed is correct<br> &nbsp; ('+addr.toString()+')</a></div>';
 

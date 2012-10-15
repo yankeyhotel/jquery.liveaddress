@@ -138,7 +138,7 @@ code.block {
 
 
 
-
+/*
 
 
 var ss = $.LiveAddress({
@@ -156,7 +156,7 @@ ss.on("AddressAccepted", function(event, data, previousHandler) {
 	else
 		previousHandler(event, data);
 });
-
+*/
 /*
 var addr = ss.makeAddress("123 main 52001");
 console.log(addr.set("street", "760 800 provo ut"));
@@ -219,7 +219,7 @@ var addr = new ss.Address({
 
 
 
-/*$.LiveAddress({
+$.LiveAddress({
 	key: '3550738597428720952',
 	debug: true,
 	addresses: [{
@@ -228,23 +228,26 @@ var addr = new ss.Address({
 		city: '#city',
 		state: '#state',
 		zipcode: '#zip'
-	},
+	},/*
 	{
 		street: '#str12',
 		street2: '#str22',
 		city: '#city2',
 		state: '#state2',
 		zipcode: '#zip2'
-	},
+	},*/
 	{
 		street: '#str13',
 		street2: '#str23',
 		city: '#city3',
 		state: '#state3',
 		zipcode: '#zip3'
+	},
+	{
+		street: "#addrTb"
 	}]
 });
-*/
+
 /*
 var ss = $('#form1').LiveAddress({
 	key: '1234',
