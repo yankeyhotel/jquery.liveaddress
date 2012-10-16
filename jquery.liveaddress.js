@@ -373,9 +373,9 @@
 		};
 
 		var uiCss = "<style>"
-			+ ".smarty-dots { visibility: hidden; margin-left: 5px; display: inline !important; margin-left: 10px !important; }"
-			+ ".smarty-address-verified { display: none; max-width: 200px; padding: 10px 15px; margin-top: 15px; font-size: 14px; font-family: sans-serif; color: #2D8D0D; line-height: 1.25em; background: #E2FFBE; border-radius: 5px; text-align: left; }"
-			+ ".smarty-undo { font-size: small; color: #0055D4; } .smarty-undo:hover { color: #119FF2; }"
+			+ ".smarty-dots { display: none; position: absolute; z-index: 999; }"
+			+ ".smarty-address-verified { display: none; position: absolute; z-index: 999; width: 55px; border: 1px solid #80AA00; padding: 1px; font-size: 16px; font-family: sans-serif; color: #2D8D0D; line-height: 1em; background: #E2FFBE; border-radius: 0px; padding-left: 3px; }"
+			+ ".smarty-undo { font-size: 11px; padding: 4px; color: #537700; vertical-align: top; text-decoration: none; } .smarty-undo:hover { color: #CC0000; }"
 			+ ".smarty-address-ambiguous, .smarty-address-invalid { font-size: 14px; font-family: sans-serif; text-align: left; line-height: 1em !important; color: black; background: #EEE; padding: 10px; border-radius: 5px; z-index: 999; box-shadow: 0px 10px 35px rgba(0, 0, 0, .7); }"
 			+ ".smarty-address-ambiguous a, .smarty-address-invalid a { color: #0055D4; font-weight: normal; } .smarty-address-ambiguous a:hover, .smarty-address-invalid a:hover { color: #119FF2 }"
 			+ ".smarty-ambiguous-message, .smarty-invalid-message { font-family: 'Helvetica Neue', sans-serif; font-weight: 300; padding: 10px 0 25px; font-size: 18px; border-bottom: 1px solid #888; text-align: center; }"
@@ -408,7 +408,9 @@
 				for (var i = 0; i < addresses.length; i++)
 				{
 					var id = addresses[i].id();
-					$(addresses[i].lastField).after('<img src="http://liveaddress.dev/dots.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'"><div class="smarty-address-verified smarty-addr-'+id+'">'+config.validMessage+' &nbsp;<a href="javascript:" class="smarty-undo" data-addressid="'+id+'">Undo</a></div>');
+
+					$('body').append('<img src="http://i.imgur.com/w6tAo.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'">');
+					$('body').append('<div class="smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Undo" data-addressid="'+id+'">Verified</a></div>');
 				}
 
 				$('body').delegate('.smarty-undo', 'click', function(e)
@@ -418,6 +420,16 @@
 					var addr = instance.getMappedAddressByID(addrId);
 					addr.undo(true);
 					$(this).hide();
+				});
+
+				$('body').delegate('.smarty-address-verified', 'mouseover', function(e)
+				{
+					$('.smarty-undo', this).text('Undo?');
+				});
+
+				$('body').delegate('.smarty-address-verified', 'mouseout', function(e)
+				{
+					$('.smarty-undo', this).text('Verified');
 				});
 			}
 
@@ -587,8 +599,11 @@
 							$(doms[prop]).css('background', 'none').attr('placeholder', '');
 						$(doms[prop]).unbind('change');
 					}
-				}		
+				}
 			}
+
+			$('.smarty-dots, .smarty-address-verified').remove();
+			$('body').undelegate('.smarty-undo', 'click');
 
 			forms = [];
 
@@ -847,21 +862,37 @@
 
 		this.showLoader = function(addr)
 		{
-			if (config.ui)
-				$('.smarty-dots.smarty-addr-'+addr.id()).css('visibility', 'visible');
+			if (!config.ui)
+				return;
+
+			// Get position information now instead of earlier in case elements shifted since page load
+
+			var lastFieldCorners = addr.corners(true);
+			var loaderWidth = 24, loaderHeight = 8;		// TODO: Keep this updated if the image changes...
+			var loaderElement = $('.smarty-dots.smarty-addr-'+addr.id());
+
+			loaderElement.css("top", (lastFieldCorners.top + lastFieldCorners.height / 2 - loaderHeight / 2 + 5) + "px")
+					   .css("left", (lastFieldCorners.right - loaderWidth) + "px");
+
+			$('.smarty-dots.smarty-addr-'+addr.id()).show();
 		};
 
 		this.hideLoader = function(addr)
 		{
 			if (config.ui)
-				$('.smarty-dots.smarty-addr-'+addr.id()).css('visibility', 'hidden');
+				$('.smarty-dots.smarty-addr-'+addr.id()).hide();
 		};
 
 		this.showValid = function(addr)
 		{
 			if (!config.ui)
 				return;
-			var validDom = $(addr.lastField).nextAll('.smarty-address-verified').first();
+			
+			var validDom = $('.smarty-address-verified.smarty-addr-'+addr.id());
+			var lastFieldCorners = addr.corners(true);
+
+			validDom.css("top", (lastFieldCorners.top - 3) + "px").css("left", (lastFieldCorners.right - 5) + "px");
+
 			if (validDom.length > 0 && !validDom.is(':visible'))
 				validDom.show(defaults.speed);
 		};
@@ -1151,9 +1182,8 @@
 
 			if (typeof domMap === 'object')
 			{
-				// Find the last field likely to appear on the DOM
-				this.lastField = domMap.country || domMap.lastline || domMap.zipcode
-									|| domMap.state || domMap.city || domMap.street;
+				// Find the last field likely to appear on the DOM (used for UI attachments)
+				this.lastField = domMap.lastline || domMap.zipcode || domMap.state || domMap.city || domMap.street;
 
 				var isEmpty = true;	// Whether the address has data in it (pre-populated)
 
@@ -1264,24 +1294,34 @@
 			}
 		};
 
-		this.corners = function()
+		this.corners = function(lastField)
 		{
 			var corners = {};
 
-			for (var prop in fields)
+			if (!lastField)
 			{
-				if (!fields[prop].dom)
-					continue;
+				for (var prop in fields)
+				{
+					if (!fields[prop].dom)
+						continue;
 
-				var dom = fields[prop].dom;
-				var offset = $(dom).offset();
-				offset.right = offset.left + $(dom).width();
-				offset.bottom = offset.top + $(dom).height();
+					var dom = fields[prop].dom;
+					var offset = $(dom).offset();
+					offset.right = offset.left + $(dom).width();
+					offset.bottom = offset.top + $(dom).height();
 
-				corners.top = !corners.top ? offset.top : Math.min(corners.top, offset.top);
-				corners.left = !corners.left ? offset.left : Math.min(corners.left, offset.left);
-				corners.right = !corners.right ? offset.right : Math.max(corners.right, offset.right);
-				corners.bottom = !corners.bottom ? offset.bottom : Math.max(corners.bottom, offset.bottom);
+					corners.top = !corners.top ? offset.top : Math.min(corners.top, offset.top);
+					corners.left = !corners.left ? offset.left : Math.min(corners.left, offset.left);
+					corners.right = !corners.right ? offset.right : Math.max(corners.right, offset.right);
+					corners.bottom = !corners.bottom ? offset.bottom : Math.max(corners.bottom, offset.bottom);
+				}
+			}
+			else
+			{
+				var jqDom = $(self.lastField);
+				corners = jqDom.offset();
+				corners.right = corners.left + jqDom.width();
+				corners.bottom = corners.top + jqDom.height();
 			}
 
 			corners.width = corners.right - corners.left;
