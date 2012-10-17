@@ -67,9 +67,9 @@
 
 		// Enforce some defaults
 		config.candidates = config.candidates || defaults.candidates;
-		config.ui = config.ui || true;
-		config.autoMap = config.autoMap || true;
-		config.autoVerify = config.autoVerify || true;
+		config.ui = typeof config.ui === 'undefined' ? true || config.ui;
+		config.autoMap = typeof config.autoMap === 'undefined' ? true || config.autoMap;
+		config.autoVerify = typeof config.autoVerify === 'undefined' ? true || config.autoVerify;
 		config.timeout = config.timeout || defaults.timeout;
 		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
 		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
