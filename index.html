@@ -3,7 +3,7 @@
 <head>
 	<title>LiveAddress.js Dev</title>
 	<script src="jquery-1_5.js"></script>
-	<script src="jquery.validate.js"></script>
+	<!--<script src="jquery.validate.js"></script>-->
 	<script src="jquery.liveaddress.js"></script>
 	<!-- FOR TESTING ON LIVE SITES:
 
@@ -122,7 +122,7 @@ code.block {
 </style>
  <script>
   $(document).ready(function(){
-    $("#form1").validate();
+    //$("#form1").validate();
   });
   </script>
 <script>
@@ -227,6 +227,7 @@ var addr = new ss.Address({
 $.LiveAddress({
 	key: '3550738597428720952',
 	debug: true,
+	submitSelector: "input[type=button]",
 	addresses: [{
 		street: '#str1',
 		street2: '#str2',
@@ -285,7 +286,7 @@ ss.on("AddressChanged", function(e, data, originalHandler) {
 	<p>Brainstorming... TODO: Test with jQuery Validator plugin: http://docs.jquery.com/Plugins/Validation/Validator</p>
 
 
-	<form id="form1">
+	<form id="form1" onsubmit="alert('SUBMIT')">
 		Street address: <input type="text" name="street" id="str1"><br>
 		Street address 2: <input type="text" name="street2" id="str2" class="required"><br>
 		City: <input type="text" name="city" id="city"><br>
@@ -301,7 +302,7 @@ ss.on("AddressChanged", function(e, data, originalHandler) {
 			City: <input type="text" name="city" id="city3"><br>
 			State: <input type="text" name="state" id="state3"><br>
 			Zip: <input type="text" name="zip" id="zip3"><br>
-			<input type="submit" value="Test">
+			<input type="button" value="Test" onclick="alert('CLICK'); this.form.submit();">
 			<!--
 			<div class="smarty-address-ambiguous">
 				<div class="smarty-ambiguous-message">Please choose the most correct address.</div>

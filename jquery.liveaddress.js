@@ -13,9 +13,10 @@
 		requestUrl: "https://api.qualifiedaddress.com/street-address",
 		timeout: 5000,
 		speed: "medium",
-		validMessage: "&#10003; Address verified!",
 		ambiguousMessage: "Please choose the most correct address.",
-		invalidMessage: "Address could not be verified."
+		invalidMessage: "Address could not be verified.",
+		fieldSelector: "input[type=text], input[type=], textarea, select",	// Selector for possible address-related form elements
+		submitSelector: "[type=submit], [type=image], input[type=button]",	// Selector to find a likely submit button or submit image (in a form)
 	};
 	var config = {};		// Configuration settings, either from use or defaults
 	var forms = [];			// List of forms which hold lists of addresses
@@ -65,22 +66,15 @@
 		}
 
 		// Enforce some defaults
-		if (typeof config.candidates === 'undefined')
-			config.candidates = defaults.candidates;
-		if (typeof config.ui === 'undefined')
-			config.ui = true;
-		if (typeof config.autoMap === 'undefined')
-			config.autoMap = true;
-		if (typeof config.autoVerify === 'undefined')
-			config.autoVerify = true;
-		if (typeof config.timeout === 'undefined')
-			config.timeout = defaults.timeout;
-		if (typeof config.validMessage === 'undefined')
-			config.validMessage = defaults.validMessage;
-		if (typeof config.ambiguousMessage === 'undefined')
-			config.ambiguousMessage = defaults.ambiguousMessage;
-		if (typeof config.invalidMessage === 'undefined')
-			config.invalidMessage = defaults.invalidMessage;
+		config.candidates = config.candidates || defaults.candidates;
+		config.ui = config.ui || true;
+		config.autoMap = config.autoMap || true;
+		config.autoVerify = config.autoVerify || true;
+		config.timeout = config.timeout || defaults.timeout;
+		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
+		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
+		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
+		config.submitSelector = config.submitSelector || defaults.submitSelector;
 
 		if (config.candidates == 0)
 			config.candidates = 1;
@@ -185,8 +179,6 @@
 	{
 		var mapMeta = {
 			formDataProperty: "smarty-form",	// Indicates whether we've stored the form already
-			fieldSelector: "input[type=text], input[type=], textarea, select", // Selectors for possible address-related form elements
-			submitSelector: "[type=submit], [type=image]",	// Selector to find a submit button or submit image (in a form)
 			identifiers: {
 				streets: {				// both street1 and street2, separated later.
 					names: [
@@ -374,7 +366,7 @@
 
 		var uiCss = "<style>"
 			+ ".smarty-dots { display: none; position: absolute; z-index: 999; }"
-			+ ".smarty-address-verified { display: none; position: absolute; z-index: 999; width: 55px; border: 1px solid #80AA00; padding: 1px; font-size: 16px; font-family: sans-serif; color: #2D8D0D; line-height: 1em; background: #E2FFBE; border-radius: 0px; padding-left: 3px; }"
+			+ ".smarty-address-verified { display: none; position: absolute; z-index: 999; width: 55px; border: 1px solid #80AA00; padding: 1px; font-size: 16px; font-family: sans-serif; color: #2D8D0D; line-height: 1.25em; background: #E2FFBE; border-radius: 10px 3px 3px 10px; padding-left: 3px; }"
 			+ ".smarty-undo { font-size: 11px; padding: 4px; color: #537700; vertical-align: top; text-decoration: none; } .smarty-undo:hover { color: #CC0000; }"
 			+ ".smarty-address-ambiguous, .smarty-address-invalid { font-size: 14px; font-family: sans-serif; text-align: left; line-height: 1em !important; color: black; background: #EEE; padding: 10px; border-radius: 5px; z-index: 999; box-shadow: 0px 10px 35px rgba(0, 0, 0, .7); }"
 			+ ".smarty-address-ambiguous a, .smarty-address-invalid a { color: #0055D4; font-weight: normal; } .smarty-address-ambiguous a:hover, .smarty-address-invalid a:hover { color: #119FF2 }"
@@ -408,9 +400,8 @@
 				for (var i = 0; i < addresses.length; i++)
 				{
 					var id = addresses[i].id();
-
 					$('body').append('<img src="http://i.imgur.com/w6tAo.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'">');
-					$('body').append('<div class="smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Undo" data-addressid="'+id+'">Verified</a></div>');
+					$('body').append('<div class="smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Your address was verified. Click to undo." data-addressid="'+id+'">Verified</a></div>');
 				}
 
 				$('body').delegate('.smarty-undo', 'click', function(e)
@@ -462,8 +453,7 @@
 				};
 
 				// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
-				//var jqForm = $(f.dom);
-				var formSubmitElements = $(mapMeta.submitSelector, f.dom);
+				var formSubmitElements = $(config.submitSelector, f.dom);
 
 				// TODO: If it really came down between our code not working
 				// and their code not working, right now we opt that _our_
@@ -479,6 +469,7 @@
 				{
 					var oldHandlers;
 
+					// If there are previously-bound-event-handlers (from jQuery), get those.
 					if ($(this).data('events') && $(this).data('events').click && $(this).data('events').click.length > 0)
 					{
 						// Get a reference to the old handlers previously bound by jQuery
@@ -491,7 +482,24 @@
 					// ... then bind ours first ...
 					$(this).click({ form: f, invoke: this }, handler);
 
-					// ... then bind theirs last.
+					// ... then bind theirs last:
+					// First bind their onclick="..." handles...
+					if (typeof this.onclick === 'function')
+					{
+						var temp = this.onclick;
+						this.onclick = null;
+						$(this).click(temp);
+					}
+
+					// ... then the form's onsubmit="..." handles...
+					if (typeof f.onsubmit === 'function')
+					{
+						var temp = this.onsubmit;
+						this.onsubmit = null;
+						$(f).submit(temp);
+					}
+
+					// ... then finish up with their old jQuery handles.
 					if (oldHandlers)
 						for (var j = 0; j < oldHandlers.length; j++)
 							$(this).click(oldHandlers[j].data, oldHandlers[j].handler);
@@ -588,7 +596,7 @@
 			for (var i = 0; i < forms.length; i++)
 			{
 				$(forms[i].dom).data(mapMeta.formDataProperty, '');
-				$(mapMeta.submitSelector, forms[i].dom).unbind('click');
+				//$(config.submitSelector, forms[i].dom).unbind('click'); // TODO: Without this line, remapping will preserve all re-bound handlers. This needs more testing.
 
 				for (var j = 0; j < forms[i].addresses.length; j++)
 				{
@@ -633,7 +641,7 @@
 					var labels = mapMeta.identifiers[fieldName].labels;
 
 					// Find matching form elements and store them away
-					potential[fieldName] = $(mapMeta.fieldSelector, this)
+					potential[fieldName] = $(config.fieldSelector, this)
 						.filter(function()
 						{
 							// Must be somewhere in the user's root node selector
@@ -871,8 +879,8 @@
 			var loaderWidth = 24, loaderHeight = 8;		// TODO: Keep this updated if the image changes...
 			var loaderElement = $('.smarty-dots.smarty-addr-'+addr.id());
 
-			loaderElement.css("top", (lastFieldCorners.top + lastFieldCorners.height / 2 - loaderHeight / 2 + 5) + "px")
-					   .css("left", (lastFieldCorners.right - loaderWidth) + "px");
+			loaderElement.css("top", (lastFieldCorners.top + lastFieldCorners.height / 2 - loaderHeight / 2) + "px")
+					   .css("left", (lastFieldCorners.right - loaderWidth - 3) + "px");
 
 			$('.smarty-dots.smarty-addr-'+addr.id()).show();
 		};
@@ -890,8 +898,9 @@
 			
 			var validDom = $('.smarty-address-verified.smarty-addr-'+addr.id());
 			var lastFieldCorners = addr.corners(true);
-
-			validDom.css("top", (lastFieldCorners.top - 3) + "px").css("left", (lastFieldCorners.right - 5) + "px");
+			
+			// Position the valid box in the right spot
+			validDom.css("top", (lastFieldCorners.top + lastFieldCorners.height / 2 - 12) + "px").css("left", (lastFieldCorners.right - 3) + "px");
 
 			if (validDom.length > 0 && !validDom.is(':visible'))
 				validDom.show(defaults.speed);
@@ -899,9 +908,10 @@
 
 		this.hideValid = function(addr)
 		{
-			if (!config.ui)
+			if (!addr || !config.ui || !$('.smarty-address-verified.smarty-addr-'+addr.id()).is(':visible'))
 				return;
 
+			// Hide the "verified" message then re-show undo button for possible later use
 			$('.smarty-address-verified.smarty-addr-'+addr.id()).hide(defaults.speed, function()
 			{
 				$('.smarty-undo', this).show();
@@ -1118,7 +1128,7 @@
 		var acceptableFields = ["street", "street2", "secondary",
 								"city", "state", "zipcode", "lastline",
 								"addressee", "urbanization", "country"];
-		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai" }
+		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai"}
 		// Some of the above fields will only be mapped manually, not automatically.
 		
 		// Internal method that actually changes the address. The keepState parameter is
@@ -1307,8 +1317,8 @@
 
 					var dom = fields[prop].dom;
 					var offset = $(dom).offset();
-					offset.right = offset.left + $(dom).width();
-					offset.bottom = offset.top + $(dom).height();
+					offset.right = offset.left + $(dom).outerWidth();
+					offset.bottom = offset.top + $(dom).outerHeight();
 
 					corners.top = !corners.top ? offset.top : Math.min(corners.top, offset.top);
 					corners.left = !corners.left ? offset.left : Math.min(corners.left, offset.left);
@@ -1320,8 +1330,8 @@
 			{
 				var jqDom = $(self.lastField);
 				corners = jqDom.offset();
-				corners.right = corners.left + jqDom.width();
-				corners.bottom = corners.top + jqDom.height();
+				corners.right = corners.left + jqDom.outerWidth();
+				corners.bottom = corners.top + jqDom.outerHeight();
 			}
 
 			corners.width = corners.right - corners.left;
