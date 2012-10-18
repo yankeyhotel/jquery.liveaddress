@@ -7,6 +7,7 @@
 
 	var instance;			// Public-facing functions and variables
 	var ui = new UI;		// Internal, for UI-related tasks
+	var version = "2.0.0";	// The official version of this copy of the script
 
 	var defaults = {
 		candidates: 3,
@@ -52,7 +53,7 @@
 		}
 
 		if (arg.debug)
-			console.log("LiveAddress API jQuery Plugin v2.0 (Debug mode)");
+			console.log("LiveAddress API jQuery Plugin version "+version+" (Debug mode)");
 
 		if (typeof arg === 'string')
 		{
@@ -67,9 +68,9 @@
 
 		// Enforce some defaults
 		config.candidates = config.candidates || defaults.candidates;
-		config.ui = typeof config.ui === 'undefined' ? true || config.ui;
-		config.autoMap = typeof config.autoMap === 'undefined' ? true || config.autoMap;
-		config.autoVerify = typeof config.autoVerify === 'undefined' ? true || config.autoVerify;
+		config.ui = typeof config.ui === 'undefined' ? true : config.ui;
+		config.autoMap = typeof config.autoMap === 'undefined' ? true : config.autoMap;
+		config.autoVerify = typeof config.autoVerify === 'undefined' ? true : config.autoVerify;
 		config.timeout = config.timeout || defaults.timeout;
 		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
 		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
@@ -139,7 +140,8 @@
 			setKey: function(htmlkey)
 			{
 				config.key = htmlkey;
-			}
+			},
+			version: version
 		};
 
 		
@@ -257,6 +259,8 @@
 						'postal-code',
 						'postalcode',
 						'postcode',
+						'post-code',
+						'post_code',
 						'postal',
 						'zcode'
 					],
@@ -400,8 +404,8 @@
 				for (var i = 0; i < addresses.length; i++)
 				{
 					var id = addresses[i].id();
-					$('body').append('<img src="http://i.imgur.com/w6tAo.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'">');
-					$('body').append('<div class="smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Your address was verified. Click to undo." data-addressid="'+id+'">Verified</a></div>');
+					$('body').append('<img src="//i.imgur.com/w6tAo.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'">');
+					$('body').append('<div class="smarty-container smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Your address was verified. Click to undo." data-addressid="'+id+'">Verified</a></div>');
 				}
 
 				$('body').delegate('.smarty-undo', 'click', function(e)
@@ -463,6 +467,11 @@
 				// and replace them with clones of themselves, then bind our code
 				// to the shiny new clone elements. An IE-safe example to do this:
 				// $('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML;
+				
+				// TODO FIX THIS?
+				//var oldFormSubmitHandlers = $.extend(true, [], $(f.dom).data('events').submit);
+				//$(f.dom).unbind('submit');
+
 
 				// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core)
 				formSubmitElements.each(function(idx)
@@ -491,19 +500,19 @@
 						$(this).click(temp);
 					}
 
-					// ... then the form's onsubmit="..." handles...
-					if (typeof f.onsubmit === 'function')
-					{
-						var temp = this.onsubmit;
-						this.onsubmit = null;
-						$(f).submit(temp);
-					}
-
 					// ... then finish up with their old jQuery handles.
 					if (oldHandlers)
 						for (var j = 0; j < oldHandlers.length; j++)
 							$(this).click(oldHandlers[j].data, oldHandlers[j].handler);
 				});
+				/*
+				// ... then the form's onsubmit="..." handles...
+				if (typeof f.onsubmit === 'function')
+				{
+					var temp = f.onsubmit;
+					f.onsubmit = null;
+					$(f).submit(temp);
+				}*/
 			}
 		}
 
@@ -771,7 +780,7 @@
 					console.log("Form " + idx + " is finished:", form);
 			});
 		
-			postMappingOperations();
+			setTimeout(postMappingOperations, 100);
 
 			if (config.debug)
 				console.log("Automapping complete.");
@@ -930,7 +939,7 @@
 			corners.width = Math.max(corners.width, 380); 	// minimum width
 			corners.height = Math.max(corners.height, response.length * 48 + 145);	// minimum height
 
-			var html = '<div class="smarty-address-ambiguous smarty-addr-'+addr.id()+'" style="position: absolute; '
+			var html = '<div class="smarty-container smarty-address-ambiguous smarty-addr-'+addr.id()+'" style="position: absolute; '
 				+ 'top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<a href="javascript:" class="smarty-abort">x</a>'
 				+ '<div class="smarty-ambiguous-message">'+config.ambiguousMessage+'</div>';
@@ -1029,7 +1038,7 @@
 			corners.width = Math.max(corners.width, 350); 	// minimum width
 			corners.height = Math.max(corners.height, 175);	// minimum height
 
-			var html = '<div class="smarty-address-invalid smarty-addr-'+addr.id()+'" style="position: absolute; '
+			var html = '<div class="smarty-container smarty-address-invalid smarty-addr-'+addr.id()+'" style="position: absolute; '
 				+ 'top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<a href="javascript:" class="smarty-abort">x</a>'
 				+ '<div class="smarty-invalid-message">'+config.invalidMessage+'</div>'
@@ -1402,7 +1411,7 @@
 			for (var key in fields)
 			{
 				var keyval = {};
-				keyval[key] = fields[key].value;
+				keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
 				$.extend(obj, keyval);
 			}
 			return $.extend(obj, {candidates: config.candidates});
@@ -1844,7 +1853,7 @@
 			ui.hideLoader(data.address);
 			
 			if (typeof data.invoke === "function")
-				data.invoke(data.response);
+				data.invoke(data.response);	// User-defined callback function
 			else
 			{
 				if (data.response.isInvalid())
@@ -1942,9 +1951,16 @@
 			if (data.address.form)
 				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 			
+			console.log("INVOKE IS:",data.invoke,$(data.invoke).data('events'));
+
 			// If this was the result of a form submit, re-submit the form
 			if (data.invoke && typeof data.invoke !== 'function')
+			{
+				// TODO FIX THIS WHOLE BLOCK -- FORM SUBMIT vs. CLICK HANDLER... WE SHOULD NOT BE LEAVING THE PAGE!
+				//$(data.invoke).data('events').click[1].handler();
+				//$(data.invoke).closest('form').submit();
 				$(data.invoke).click();
+			}
 
 			trigger("Completed", data);
 		},
