@@ -7,11 +7,12 @@
 	<script src="/lib/jquery-1_5.js"></script>
 	<script src="/src/jquery.liveaddress.js"></script>
 	<script>
+		var testRunnerRevision = "1.0.1";	// The official revision of this test runner page
+		var debug = true;					// Toggle debug mode
 		var liveaddress = $.LiveAddress({
 			key: "3550738597428720952",
-			debug: true
+			debug: debug
 		});
-		var testRunnerRevision = "1.0.1"; // The official revision of this test runner page
 	</script>
 
 	<style>
@@ -152,6 +153,10 @@
 		background: none;
 		clear: both;
 	}
+
+	label {
+		cursor: pointer;
+	}
 	</style>
 </head>
 <body>
@@ -159,7 +164,7 @@
 	<hgroup>
 		<h1>LiveAddress API jQuery Plugin</h1>
 		<h2>Test Runner &mdash; by <a href="http://smartystreets.com/" target="_blank">SmartyStreets</a></h2>
-		<span id="revision">Revision: <script>document.write(testRunnerRevision);</script></span>
+		<span id="revision">Revision: <script>document.write(testRunnerRevision);</script> / Debug mode: <script>document.write(debug ? "on" : "off");</script></span>
 		<span id="version">jQuery version: <script>document.write($.fn.jquery);</script> / Plugin version: <script>document.write(liveaddress.version);</script></span>
 	</hgroup>
 
@@ -280,7 +285,7 @@
 	<form id="twoAddresses">
 		<header>
 			<h3>Two addresses</h3>
-			<p>Likely, one would be a billing address, and the other would probably be shipping.</p>
+			<p>Likely, one would be a billing address, and the other would probably be shipping</p>
 		</header>
 		<table>
 			<tr>
@@ -307,14 +312,6 @@
 				<td><input type="text" name="street"></td>
 			</tr>
 			<tr>
-				<td>City:</td>
-				<td><input type="text" name="city"></td>
-			</tr>
-			<tr>
-				<td>State:</td>
-				<td><input type="text" name="state"></td>
-			</tr>
-			<tr>
 				<td>ZIP Code:</td>
 				<td><input type="text" name="zip"></td>
 			</tr>
@@ -330,7 +327,7 @@
 	<form id="country">
 		<header>
 			<h3>Country field</h3>
-			<p>Non-US addresses should be allowed to pass thru</p>
+			<p>Non-US addresses should be allowed to pass thru freely</p>
 		</header>
 		<table>
 			<tr>
@@ -394,7 +391,7 @@
 	<form id="onClick">
 		<header>
 			<h3>onclick Handler</h3>
-			<p>Submit button has an "onclick" attribute</p>
+			<p>Submit button has an "onclick" attribute which should fire if the button is clicked</p>
 		</header>
 		<table>
 			<tr>
@@ -415,10 +412,143 @@
 			</tr>
 			<tr>
 				<td></td>
-				<td><input type="submit" value="Submit Form" onclick="alert('This should happen after address verification')"></td>
+				<td><input type="submit" value="Submit Form" onclick="alert('onclick handler; this should happen AFTER address verification')"></td>
 			</tr>
 		</table>
 	</form>
+
+
+	<hr class="clear">
+
+
+	<form id="similarFieldNames">
+		<header>
+			<h3>Similar field names</h3>
+			<p>Fields all contain the word "address" and not all fields should be mapped</p>
+		</header>
+		<table>
+			<tr>
+				<td>Company:</td>
+				<td><input type="text" name="address_company"></td>
+			</tr>
+			<tr>
+				<td>Street address:</td>
+				<td><input type="text" name="address_street1"></td>
+			</tr>
+			<tr>
+				<td>City:</td>
+				<td><input type="text" name="address_city"></td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td><input type="text" name="address_state"></td>
+			</tr>
+			<tr>
+				<td>ZIP Code:</td>
+				<td><input type="text" name="address_zip"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><input type="submit" value="Submit Form"></td>
+			</tr>
+		</table>
+	</form>
+
+
+
+	<form id="easyLabels">
+		<header>
+			<h3>Map using labels</h3>
+			<p>Fields contain vague or irrelevant names/IDs; use associated labels instead</p>
+		</header>
+		<table>
+			<tr>
+				<td><label for="fieldTest1">Street address:</label></td>
+				<td><input type="text" name="field[0]" id="fieldTest1"></td>
+			</tr>
+			<tr>
+				<td><label for="fieldTest2">City:</label></td>
+				<td><input type="text" name="field[1]" id="fieldTest2"></td>
+			</tr>
+			<tr>
+				<td><label for="fieldTest3">State:</label></td>
+				<td><input type="text" name="field[2]" id="fieldTest3"></td>
+			</tr>
+			<tr>
+				<td><label for="fieldTest4">ZIP Code:</label></td>
+				<td><input type="text" name="field[3]" id="fieldTest4"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><input type="submit" value="Submit Form"></td>
+			</tr>
+		</table>
+	</form>
+
+
+
+	<form id="onClick" onsubmit="alert('onsubmit handler; this should happen AFTER address verification')">
+		<header>
+			<h3>onsubmit Handler</h3>
+			<p>Form has onsubmit="" attribute which should fire when form is submitted</p>
+		</header>
+		<table>
+			<tr>
+				<td>Street address:</td>
+				<td><input type="text" name="street"></td>
+			</tr>
+			<tr>
+				<td>City:</td>
+				<td><input type="text" name="city"></td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td><input type="text" name="state"></td>
+			</tr>
+			<tr>
+				<td>ZIP Code:</td>
+				<td><input type="text" name="zip"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><input type="submit" value="Submit Form"></td>
+			</tr>
+		</table>
+	</form>
+
+
+
+	<form id="onClick" onsubmit="alert('onsubmit handler; this should happen AFTER address verification and the onclick handlers')">
+		<header>
+			<h3>Two handlers</h3>
+			<p>First the address should be verified, then the submit button's onclick handlers should fire, then the form's onsubmit handlers last</p>
+		</header>
+		<table>
+			<tr>
+				<td>Street address:</td>
+				<td><input type="text" name="street"></td>
+			</tr>
+			<tr>
+				<td>City:</td>
+				<td><input type="text" name="city"></td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td><input type="text" name="state"></td>
+			</tr>
+			<tr>
+				<td>ZIP Code:</td>
+				<td><input type="text" name="zip"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><input type="submit" value="Submit Form" onclick="alert('onclick handler; this should happen AFTER address verification and BEFORE onsubmit handlers')"></td>
+			</tr>
+		</table>
+	</form>
+
+
+	<hr class="clear">
 
 
 
@@ -426,7 +556,7 @@
 $(function() {
 
 	// Prevent forms, by default, from leaving the page, so we can keep testing
-	$('form').submit(function() {
+	$('form').submit(function(event) {
 		alert("Default form submit; actual POST prevented");
 		return suppress(event);
 	});
@@ -438,15 +568,17 @@ $(function() {
 });
 
 // Enable this to prevent accidentally leaving the page
+/*
 window.onbeforeunload = function() {
 	return "Page is attempting to reload or leave";
 };
-
+*/
 
 function suppress(event) {
 	if (!event) return false;
 	if (event.preventDefault) event.preventDefault();
 	if (event.stopPropagation) event.stopPropagation();
+	if (event.stopImmediatePropagation) event.stopImmediatePropagation();
 	if (event.cancelBubble) event.cancelBubble = true;
 	return false;
 }

@@ -1,26 +1,28 @@
 (function($, window, document) {
 	"use strict";		//  http://ejohn.org/blog/ecmascript-5-strict-mode-json-and-more/
 
+
 	/*
 	  *	PRIVATE MEMBERS
 	*/
 
 	var instance;			// Public-facing functions and variables
-	var ui = new UI;		// Internal, for UI-related tasks
-	var version = "2.0.0";	// The official version of this copy of the script
+	var ui = new UI;		// Internal use only, for UI-related tasks
+	var version = "2.0.1";	// The official version of this copy of the script
 
 	var defaults = {
-		candidates: 3,
-		requestUrl: "https://api.qualifiedaddress.com/street-address",
-		timeout: 5000,
-		speed: "medium",
-		ambiguousMessage: "Please choose the most correct address.",
-		invalidMessage: "Address could not be verified.",
-		fieldSelector: "input[type=text], input[type=], textarea, select",	// Selector for possible address-related form elements
-		submitSelector: "[type=submit], [type=image], input[type=button]",	// Selector to find a likely submit button or submit image (in a form)
+		candidates: 3,															// Number of suggestions to show if ambiguous
+		requestUrl: "https://api.qualifiedaddress.com/street-address",			// API endpoint
+		timeout: 5000,															// How long to wait before the request timed out (5000 = 5 seconds)
+		speed: "medium",														// Animation speed
+		ambiguousMessage: "Please choose the most correct address.",			// Message when address is ambiguous
+		invalidMessage: "Address could not be verified.",						// Message when address is invalid
+		fieldSelector: "input[type=text], input[type=], textarea, select",		// Selector for possible address-related form elements
+		submitSelector: "[type=submit], [type=image], input[type=button]:last",	// Selector to find a likely submit button or submit image (in a form)
 	};
 	var config = {};		// Configuration settings, either from use or defaults
 	var forms = [];			// List of forms which hold lists of addresses
+
 
 
 	/*
@@ -31,7 +33,7 @@
 	
 	$.LiveAddress = function(arg)
 	{
-		return $('body').LiveAddress(arg);	// 'body' needed to find ancestor in traversal (document won't work)
+		return $('body').LiveAddress(arg);	// 'body' is needed to find ancestor in traversal (document won't work)
 	};
 
 	$.fn.LiveAddress = function(arg)
@@ -285,7 +287,7 @@
 					]
 				}
 			},	// We'll iterate through these (above) to make a basic map of fields, then refine:
-			street1exacts: {		// List of case-insensitive exact matches for street1 field
+			street1exacts: {		// List of case-insensitive EXACT matches for street1 field
 				names: [
 					'address',
 					'street',
@@ -301,7 +303,7 @@
 					'addr'
 				]
 			},
-			street2: {			// Terms which identify a "street2" field
+			street2: {			// Terms which would identify a "street2" field
 				names: [
 					'address2',
 					'street2',
@@ -348,8 +350,12 @@
 					'number',
 					'cardholder',	// I hesitate to exclude "card" because of common names like: "card_city" or something...
 					'security',
+					'comp',
+					'firm',
+					'org',
+					'group',
 					'cvc',
-					'cvv',
+					'cvv'
 				],
 				labels: [
 					'email',
@@ -361,6 +367,11 @@
 					'name',
 					'method',
 					'phone',
+					'organization',
+					'company',
+					'addressee',
+					'firm',
+					'group',
 					'cardholder',
 					'cvc',
 					'cvv'
@@ -404,7 +415,7 @@
 				for (var i = 0; i < addresses.length; i++)
 				{
 					var id = addresses[i].id();
-					$('body').append('<img src="//i.imgur.com/w6tAo.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'">');
+					$('body').append('<img src="http://i.imgur.com/w6tAo.gif" alt="Loading..." class="smarty-dots smarty-addr-'+id+'">');
 					$('body').append('<div class="smarty-container smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Your address was verified. Click to undo." data-addressid="'+id+'">Verified</a></div>');
 				}
 
@@ -467,10 +478,6 @@
 				// and replace them with clones of themselves, then bind our code
 				// to the shiny new clone elements. An IE-safe example to do this:
 				// $('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML;
-				
-				// TODO FIX THIS?
-				//var oldFormSubmitHandlers = $.extend(true, [], $(f.dom).data('events').submit);
-				//$(f.dom).unbind('submit');
 
 
 				// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core)
@@ -505,14 +512,19 @@
 						for (var j = 0; j < oldHandlers.length; j++)
 							$(this).click(oldHandlers[j].data, oldHandlers[j].handler);
 				});
+
 				/*
-				// ... then the form's onsubmit="..." handles...
-				if (typeof f.onsubmit === 'function')
-				{
-					var temp = f.onsubmit;
-					f.onsubmit = null;
-					$(f).submit(temp);
-				}*/
+					TODO: This isn't necessary, apparently, since onsubmit gets fired AFTER the click event handlers anyway?
+					If this does have to be considered, though, then don't forget jQuery-bound-submit handlers
+					
+					//  This would take care of the form's onsubmit="..." handles...
+					if (typeof f.onsubmit === 'function')
+					{
+						var temp = f.onsubmit;
+						f.onsubmit = null;
+						$(f).submit(temp);
+					}
+				*/
 			}
 		}
 
@@ -637,8 +649,8 @@
 
 			this.clean();
 
-			// For each form...
-			$('form').each(function(idx)
+			//$('form').add($('iframe').contents().find('form')).each(function(idx) 	// Include forms in iframes, but they must be hosted on same domain (and iframe must have already loaded)
+			$('form').each(function(idx)	 // For each form ...
 			{
 				var form = new Form(this);
 				var potential = {};
@@ -1177,7 +1189,7 @@
 					trigger("AddressChanged", eventMeta);
 				}
 				else
-					self.accept({ address: self })
+					self.accept({ address: self }, false);
 			}
 
 			return true;
@@ -1538,6 +1550,8 @@
 
 			switch (fields.country.value.toUpperCase())
 			{
+				case "": return true;	// Country is usually a dropdown; if blank by default, assume USA
+
 				case "US": return true;
 				case "U.S.": return true;
 				case "U S": return true;
@@ -1955,12 +1969,7 @@
 
 			// If this was the result of a form submit, re-submit the form
 			if (data.invoke && typeof data.invoke !== 'function')
-			{
-				// TODO FIX THIS WHOLE BLOCK -- FORM SUBMIT vs. CLICK HANDLER... WE SHOULD NOT BE LEAVING THE PAGE!
-				//$(data.invoke).data('events').click[1].handler();
-				//$(data.invoke).closest('form').submit();
-				$(data.invoke).click();
-			}
+				$(data.invoke)[0].click();	// Very particular! MUST call the native click(), NOT jQuery's!
 
 			trigger("Completed", data);
 		},
