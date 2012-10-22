@@ -13,11 +13,11 @@ Quick Start
 
 1. Be sure jQuery is brought into your page early on. If you don't already have it, something like this should do the trick:
 
-```<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>```
+```<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>```
 
 2. Bring the LiveAddress API jQuery Plugin onto your page:
 
-```<script type="text/javascript" src="//http://d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.0.1/jquery.liveaddress.min.js"></script>```
+```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.0/jquery.liveaddress.min.js"></script>```
 
 3. Initialize the plugin with an HTML key from your account:
 
