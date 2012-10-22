@@ -1,3 +1,20 @@
+/**
+	LiveAddress API jQuery Plugin
+	by SmartyStreets - smartystreets.com
+
+	(c) 2012-2013 SmartyStreets
+
+	License: MIT (attribution appreciated)
+	Documentation: http://smartystreets.com/kb/liveaddress-api/website-forms
+	Version: [See variable below for version]
+
+	Hosted on GitHub. Checkout the jquery.liveaddress repository
+	for latest version and to initiate pull requests.
+
+	THIS UN-MINIFIED COPY IS INTENDED FOR DEBUG AND DEVELOPMENT ONLY.
+**/
+
+
 (function($, window, document) {
 	"use strict";		//  http://ejohn.org/blog/ecmascript-5-strict-mode-json-and-more/
 
@@ -8,7 +25,7 @@
 
 	var instance;			// Public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.0.1";	// The official version of this copy of the script
+	var version = "2.0.1";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -79,7 +96,7 @@
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 
-		if (config.candidates == 0)
+		if (config.candidates < 1)
 			config.candidates = 1;
 		else if (config.candidates > 10)
 			config.candidates = 10;
@@ -151,7 +168,7 @@
 		for (var prop in EventHandlers)
 			bind(prop);
 		
-		// Wrap this part of initialization in document.ready so the DOM can fully establish
+		// Wrap this part of initialization in document.ready so the DOM can fully establish first
 		$(function() {
 			if (config.autoMap)
 				instance.mapFields(selector);
@@ -347,13 +364,13 @@
 					'keep',
 					'phn',
 					'phone',
-					'number',
 					'cardholder',	// I hesitate to exclude "card" because of common names like: "card_city" or something...
 					'security',
 					'comp',
 					'firm',
 					'org',
 					'group',
+					'gate',
 					'cvc',
 					'cvv'
 				],
@@ -372,6 +389,7 @@
 					'addressee',
 					'firm',
 					'group',
+					'gate',
 					'cardholder',
 					'cvc',
 					'cvv'
@@ -403,7 +421,7 @@
 
 		function postMappingOperations()
 		{
-			// Injects materials into the DOM, binds to form submit events, etc...
+			// Injects materials into the DOM, binds to form submit events, etc... very important.
 
 			if (config.ui)
 			{
@@ -470,15 +488,6 @@
 				// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
 				var formSubmitElements = $(config.submitSelector, f.dom);
 
-				// TODO: If it really came down between our code not working
-				// and their code not working, right now we opt that _our_
-				// code not work. If we wanted to reverse this and give our
-				// code a higher percent chance of running successfully (but break theirs),
-				// we could rip out their DOM elements (removing event handlers they bound)
-				// and replace them with clones of themselves, then bind our code
-				// to the shiny new clone elements. An IE-safe example to do this:
-				// $('#btnSubmitOrder')[0].outerHTML = $('#btnSubmitOrder')[0].outerHTML;
-
 
 				// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core)
 				formSubmitElements.each(function(idx)
@@ -512,19 +521,6 @@
 						for (var j = 0; j < oldHandlers.length; j++)
 							$(this).click(oldHandlers[j].data, oldHandlers[j].handler);
 				});
-
-				/*
-					TODO: This isn't necessary, apparently, since onsubmit gets fired AFTER the click event handlers anyway?
-					If this does have to be considered, though, then don't forget jQuery-bound-submit handlers
-					
-					//  This would take care of the form's onsubmit="..." handles...
-					if (typeof f.onsubmit === 'function')
-					{
-						var temp = f.onsubmit;
-						f.onsubmit = null;
-						$(f).submit(temp);
-					}
-				*/
 			}
 		}
 
@@ -617,7 +613,6 @@
 			for (var i = 0; i < forms.length; i++)
 			{
 				$(forms[i].dom).data(mapMeta.formDataProperty, '');
-				//$(config.submitSelector, forms[i].dom).unbind('click'); // TODO: Without this line, remapping will preserve all re-bound handlers. This needs more testing.
 
 				for (var j = 0; j < forms[i].addresses.length; j++)
 				{
@@ -717,7 +712,7 @@
 						.toArray();
 				}
 
-				// Now differentiate between street1 and street2.
+				// Now prepare to differentiate between street1 and street2.
 				potential.street = [], potential.street2 = [];
 
 				// If the ratio of 'street' fields to the number of addresses in the form
@@ -761,6 +756,9 @@
 				// in case a mapping went a little awry.
 				var addressCount = Math.max(potential.street.length, potential.street2.length);
 
+				if (config.debug && addressCount == 0)
+					console.log("No addresses were found in form " + idx + ".");
+
 				for (var i = 0; i < addressCount; i++)
 				{
 					var addrObj = {};
@@ -778,7 +776,7 @@
 					if ((!addrObj.street && hasCityAndStateOrZip) || (addrObj.street && !hasCityAndStateOrZip && hasCityOrStateOrZip))
 					{
 						if (config.debug)
-							console.log("Form " + idx + " is finished, but no complete sets of address input elements were found in it.");
+							console.log("Form " + idx + " contains some address input elements, but not enough for a complete address.");
 						continue;
 					}
 
@@ -792,7 +790,7 @@
 					console.log("Form " + idx + " is finished:", form);
 			});
 		
-			setTimeout(postMappingOperations, 100);
+			postMappingOperations();
 
 			if (config.debug)
 				console.log("Automapping complete.");
@@ -806,7 +804,7 @@
 		{
 
 			// "map" should be an array of objects mapping field types
-			// to a field by a selector, all supplied by the user.
+			// to a field by selector, all supplied by the user.
 			// "selector" should be a selector in which fields will be mapped.
 
 			if (config.debug)
@@ -819,12 +817,14 @@
 			for (var addrIdx in map)
 			{
 				var address = map[addrIdx];
+
 				if (!address.street)
 					continue;
 
 				// Convert ID names into actual DOM references
 				for (var fieldType in address)
 					address[fieldType] = $(address[fieldType], selector);
+
 				// Acquire the form based on the street address field (the required field)
 				var formDom = $(address.street).parents('form')[0];
 				var form = new Form(formDom);
@@ -854,9 +854,7 @@
 			}
 
 			forms = formsFound;
-
 			postMappingOperations();
-
 			trigger("FieldsMapped");
 		};
 
@@ -866,13 +864,16 @@
 			if (!config.ui)
 				return;
 
-			// Given an address, disables the input fields for the address
+			// Given an address, disables the input fields for the address, also the submit button
 			var fields = address.getDomFields();
 			for (var prop in fields)
 			{
-				// TODO: If we drop support for jQuery 1.5 and bump it up, we could be using .prop() here.
+				// TODO: If we drop support for jQuery 1.5 and bump it up, we could be using .prop() here. (and just below)
 				$(fields[prop]).attr('disabled', 'disabled');
 			}
+
+			// Disable submit buttons
+			$(config.submitSelector, address.form.dom).attr('disabled', 'disabled');
 		};
 
 		this.enableFields = function(address)
@@ -883,10 +884,10 @@
 			// Given an address, re-enables the input fields for the address
 			var fields = address.getDomFields();
 			for (var prop in fields)
-			{
-				// TODO: If we drop support for jQuery 1.5 and bump it up, we could be using .prop() here.
-				$(fields[prop]).removeAttr('disabled');
-			}
+				$(fields[prop]).removeAttr('disabled');	// Again, could be using .prop() if jQuery 1.6+
+
+			// Enable submit buttons
+			$(config.submitSelector, address.form.dom).removeAttr('disabled');
 		};
 
 		this.showLoader = function(addr)
@@ -895,7 +896,6 @@
 				return;
 
 			// Get position information now instead of earlier in case elements shifted since page load
-
 			var lastFieldCorners = addr.corners(true);
 			var loaderWidth = 24, loaderHeight = 8;		// TODO: Keep this updated if the image changes...
 			var loaderElement = $('.smarty-dots.smarty-addr-'+addr.id());
@@ -929,11 +929,12 @@
 
 		this.hideValid = function(addr)
 		{
-			if (!addr || !config.ui || !$('.smarty-address-verified.smarty-addr-'+addr.id()).is(':visible'))
+			var validSelector = '.smarty-address-verified.smarty-addr-'+addr.id();
+			if (!addr || !config.ui || !$(validSelector).is(':visible'))
 				return;
 
 			// Hide the "verified" message then re-show undo button for possible later use
-			$('.smarty-address-verified.smarty-addr-'+addr.id()).hide(defaults.speed, function()
+			$(validSelector).hide(defaults.speed, function()
 			{
 				$('.smarty-undo', this).show();
 			});
@@ -967,9 +968,7 @@
 			
 			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort">None of these; I\'ll type another address</a>';
 			html += '<a href="javascript:" class="smarty-choice smarty-use-original">I certify what I typed is correct<br>('+addr.toString()+')</a></div>';
-			
-			$(html).hide().appendTo('body').slideDown(defaults.speed);
-			//$('body *').not('.smarty-address-ambiguous, .smarty-address-ambiguous *').css('opacity', '.8'); NOTE: Looks bad on dark sites, also needs code to revert when done
+			$(html).hide().appendTo('body').show(defaults.speed);
 			
 			// Scroll to it if needed
 			if ($(document).scrollTop() > corners.top - 100
@@ -1057,9 +1056,7 @@
 				+ '<a href="javascript:" class="smarty-choice smarty-invalid-rejectoriginal">&rsaquo; I will double-check the address</a>'
 				+ '<a href="javascript:" class="smarty-choice smarty-use-original">&rsaquo; I certify what I typed is correct<br> &nbsp; ('+addr.toString()+')</a></div>';
 
-			$(html).hide().appendTo('body').slideDown(defaults.speed);
-			//$('body *').not('.smarty-address-invalid, .smarty-address-invalid *').css('opacity', '.8'); NOTE: Looks bad on dark sites, also needs code to revert when done
-
+			$(html).hide().appendTo('body').show(defaults.speed);
 
 			data.selectors = {
 				rejectOriginal: '.smarty-address-invalid .smarty-invalid-rejectoriginal',
@@ -1081,8 +1078,7 @@
 				// User rejects original input and agrees to double-check it
 				$('.smarty-addr-'+e.data.address.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
 				{
-					// See "userAborted()" for the reason why we unbind here
-					$(this).remove();
+					$(this).remove();	// See "userAborted()" for the reason why we unbind here
 				});
 
 				$(document).unbind('keyup');
@@ -1363,7 +1359,7 @@
 
 		this.verify = function(invoke)
 		{
-			// Invoke contains the operation to perform on invokeOn once we're all done (may be undefined)
+			// Invoke contains the element to "click" on once we're all done, or is a user-defined callback function (may also be undefined)
 			if (!invoke && !self.enoughInput())
 				return null;
 
@@ -1376,8 +1372,7 @@
 				url: defaults.requestUrl+"?auth-token="+config.key+"&callback=?",
 				dataType: "jsonp",
 				data: addrData,
-				timeout: config.timeout//,	NOTE: Cannot add custom headers to JSONP requests
-				//headers: { "x-standardize-only": config.standardizeOnly ? "true": "false" }
+				timeout: config.timeout
 			})
 			.done(function(response, statusText, xhr)
 			{
@@ -1388,16 +1383,6 @@
 				trigger("RequestTimedOut", { address: self, status: statusText, invoke: invoke });
 				self.verifyCount --; 			// Address verification didn't actually work
 			});
-			/* 
-				This next one acts like a "complete" callback, no matter failed or successful.
-				Added in jQuery 1.6, but we're trying to stay compatible with jQuery 1.5...
-				
-				.always(function(response, statusText, xhr)
-				{
-					console.log("Complete", response, statusText, xhr);
-				});
-			*/
-
 
 			// Remember, the above callbacks happen later and this function is
 			// executed immediately afterward, probably before a response is received.
@@ -1548,41 +1533,11 @@
 			if (!fields.country)
 				return true;
 
-			switch (fields.country.value.toUpperCase())
-			{
-				case "": return true;	// Country is usually a dropdown; if blank by default, assume USA
-
-				case "US": return true;
-				case "U.S.": return true;
-				case "U S": return true;
-				case "U. S.": return true;
-
-				case "USA": return true;
-				case "U.S.A.": return true;
-				case "U S A": return true;
-				case "U. S. A.": return true;
-
-				case "US OF A": return true;
-				case "U S OF A": return true;
-				case "U.S. OF A": return true;
-				case "U. S. OF A": return true;
-				case "U. S. OF A.": return true;
-
-				case "US OF AMERICA": return true;
-				case "U S OF AMERICA": return true;
-				case "U.S. OF AMERICA": return true;
-				case "U. S. OF AMERICA": return true;
-
-				case "UNITED STATES": return true;
-				case "UNITED STATES - AMERICA": return true;
-				case "UNITED STATES OF AMERICA": return true;
-				case "AMERICA - UNITED STATES": return true;
-
-				case "840": return true; // ISO: 3166
-				case "223": return true; // Zen Cart
-
-				default: return false;
-			}
+			var countryValue = fields.country.value.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
+			var usa = ["", "0", "COUNTRY", "NONE", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN",
+						"UNITEDSTATES", "UNITEDSTATESAMERICA",	"UNITEDSTATESOFAMERICA", "AMERICA",
+						"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"];	// 840 is ISO: 3166, and 223 is Zen Cart
+			return arrayContains(usa, countryValue) || fields.country.value == "-1";
 		}
 
 		this.id = function()
@@ -1595,26 +1550,15 @@
 
 
 
-	
-
-
 
 
 	/*
-		Represents a <form> tag which must house mapped
-		fields.
+		Represents a <form> tag which must house mapped fields.
 	*/
 	function Form(domElement)
 	{
-		var triedSubmit = false;
-
 		this.addresses = [];
 		this.dom = domElement;
-
-		this.triedSubmit = function()
-		{
-			return triedSubmit;
-		}
 
 		this.allAddressesAccepted = function()
 		{
@@ -1630,20 +1574,24 @@
 		this.addressesNotAccepted = function()
 		{
 			var addrs = [];
-
 			for (var i = 0; i < this.addresses.length; i++)
 			{
 				var addr = this.addresses[i];
 				if (addr.status() != "accepted")
 					addrs.push(addr);
 			}
-
 			return addrs;
 		};
 	}
 
 
 
+
+
+
+	/*
+		Wraps output from the API in an easier-to-handle way
+	*/
 
 	function Response(json)
 	{
@@ -1787,8 +1735,6 @@
 			return this.raw[idx].analysis.lacslink_code == "A";
 		}
 	}
-
-
 
 
 
@@ -1965,8 +1911,6 @@
 			if (data.address.form)
 				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 			
-			console.log("INVOKE IS:",data.invoke,$(data.invoke).data('events'));
-
 			// If this was the result of a form submit, re-submit the form
 			if (data.invoke && typeof data.invoke !== 'function')
 				$(data.invoke)[0].click();	// Very particular! MUST call the native click(), NOT jQuery's!
@@ -1987,8 +1931,6 @@
 			}
 		},
 	};
-
-
 
 
 

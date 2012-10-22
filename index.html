@@ -3,15 +3,15 @@
 <head>
 	<title>LiveAddress API jQuery Plugin &mdash; TEST RUNNER</title>
 	<meta charset="utf-8">
-	<link href="http://fonts.googleapis.com/css?family=Signika+Negative:300|Open+Sans:400,700,600,300,800" rel="stylesheet" type="text/css">
+	<link href="//fonts.googleapis.com/css?family=Signika+Negative:300|Open+Sans:400,700,600,300,800" rel="stylesheet" type="text/css">
 	<script src="/lib/jquery-1_5.js"></script>
 	<script src="/src/jquery.liveaddress.js"></script>
 	<script>
 		var testRunnerRevision = "1.0.1";	// The official revision of this test runner page
 		var debug = true;					// Toggle debug mode
 		var liveaddress = $.LiveAddress({
-			key: "3550738597428720952",
-			debug: debug
+			key: "3550738597428720952",		// Put your HTML key here
+			debug: debug					// Show debug stuff
 		});
 	</script>
 
@@ -120,6 +120,10 @@
 		padding: 5px 5px 3px;
 		font: 14px/1em 'Signika Negative', 'Helvetica Neue', sans-serif;
 		min-width: 165px;
+		outline: none;
+	}
+
+	form select {
 		outline: none;
 	}
 
@@ -570,7 +574,7 @@ $(function() {
 // Enable this to prevent accidentally leaving the page
 /*
 window.onbeforeunload = function() {
-	return "Page is attempting to reload or leave";
+	return "Page is attempting to leave or reload";
 };
 */
 
