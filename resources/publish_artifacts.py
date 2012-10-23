@@ -14,15 +14,13 @@ from utils import get_mime_type
 def main():
     authenticate()
 
-    connection = S3Connection(os.environ['aws-access-id'], os.environ['aws-secret-key'])
+    connection = S3Connection(AWS_ACCESS_ID, os.environ['aws-secret-key'])
     bucket = Bucket(connection, S3_BUCKET)
 
     publish(bucket)
 
 
 def authenticate():
-    if 'aws-access-id' not in os.environ:
-        os.environ['aws-access-id'] = raw_input('Enter the aws access id: ')
     if 'aws-secret-key' not in os.environ:
         os.environ['aws-secret-key'] = raw_input('Enter the aws-secret-key: ')
 
@@ -47,7 +45,8 @@ def upload_to_s3(resource, bucket):
 EXCLUDES = ['.DS_Store']
 DESTINATION = '/jquery.liveaddress/2.0/'
 WORKING_DIRECTORY = './working/'
-S3_BUCKET = 'liveaddress'
+S3_BUCKET = 'static.smartystreets.com'
+AWS_ACCESS_ID = 'AKIAIEPRJ7EJNOIBIJBA' # tatooine
 
 
 if __name__ == '__main__':
