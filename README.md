@@ -12,17 +12,11 @@ Quick Start
 -----------------------
 
 1. Be sure jQuery is brought into your page early on. If you don't already have it, something like this should do the trick:
-```html
-<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
-```
+```<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>```
 2. Bring the LiveAddress API jQuery Plugin onto your page:
-```html
-<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.0/jquery.liveaddress.min.js"></script>
-```
+```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.0/jquery.liveaddress.min.js"></script>```
 3. Initialize the plugin with an HTML key from your account:
-```html
-<script type="text/javascript">$.LiveAddress("YOUR-HTML-KEY");</script>
-```
+```<script type="text/javascript">$.LiveAddress("YOUR-HTML-KEY");</script>```
 
 That's it! Ensure it works before using it on a live site. SmartyStreets
 assumes no responsibility if something goes wrong on your web page. Enable debug mode
