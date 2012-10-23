@@ -25,7 +25,7 @@
 
 	var instance;			// Public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.0.1";	// The version of this copy of the script
+	var version = "2.0.2";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -34,8 +34,8 @@
 		speed: "medium",														// Animation speed
 		ambiguousMessage: "Please choose the most correct address.",			// Message when address is ambiguous
 		invalidMessage: "Address could not be verified.",						// Message when address is invalid
-		fieldSelector: "input[type=text], input[type=], textarea, select",		// Selector for possible address-related form elements
-		submitSelector: "[type=submit], [type=image], input[type=button]:last",	// Selector to find a likely submit button or submit image (in a form)
+		fieldSelector: "input[type=text], input:not([type]), textarea, select",	// Selector for possible address-related form elements
+		submitSelector: "[type=submit], [type=image], [type=button]:last",		// Selector to find a likely submit button or submit image (in a form)
 	};
 	var config = {};		// Configuration settings, either from use or defaults
 	var forms = [];			// List of forms which hold lists of addresses
@@ -205,8 +205,8 @@
 					names: [
 						'street',
 						'address',		// This ("address") is a dangerous inclusion; but we have a strong set of exclusions below to prevent false positives.
-						'address1',		// If there are automapping issues, namely, it is too greedy when mapping fields, it will be because
-						'address2',		// of these arrays for the "streets" fields, namely the "address" entry right above here, or potentially others.
+						'address1',		// If there are automapping issues (specifically if it is too greedy when mapping fields) it will be because
+						'address2',		// of these arrays for the "streets" fields, namely the "address" entry right around here, or potentially others.
 						'addr1',
 						'addr2',
 						'address-1',
@@ -308,6 +308,7 @@
 				names: [
 					'address',
 					'street',
+					'address1',
 					'streetaddress',
 					'street-address',
 					'street_address',
@@ -372,7 +373,9 @@
 					'group',
 					'gate',
 					'cvc',
-					'cvv'
+					'cvv',
+					'list',
+					'book'
 				],
 				labels: [
 					'email',
@@ -392,7 +395,9 @@
 					'gate',
 					'cardholder',
 					'cvc',
-					'cvv'
+					'cvv',
+					' list',
+					'book'
 				]
 			}
 		};
@@ -1534,7 +1539,7 @@
 				return true;
 
 			var countryValue = fields.country.value.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
-			var usa = ["", "0", "COUNTRY", "NONE", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN",
+			var usa = ["", "0", "1", "COUNTRY", "NONE", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
 						"UNITEDSTATES", "UNITEDSTATESAMERICA",	"UNITEDSTATESOFAMERICA", "AMERICA",
 						"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"];	// 840 is ISO: 3166, and 223 is Zen Cart
 			return arrayContains(usa, countryValue) || fields.country.value == "-1";
