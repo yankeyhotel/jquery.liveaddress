@@ -12,21 +12,31 @@ Quick Start
 -----------------------
 
 1. Be sure jQuery is brought into your page early on. If you don't already have it, something like this should do the trick:
-
-```<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>```
+```html
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>```
 
 2. Bring the LiveAddress API jQuery Plugin onto your page:
-
-```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.0/jquery.liveaddress.min.js"></script>```
+```html
+<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.0/jquery.liveaddress.min.js"></script>```
 
 3. Initialize the plugin with an HTML key from your account:
+```html
+<script type="text/javascript">$.LiveAddress("YOUR-HTML-KEY");</script>```
 
-```<script type="text/javascript">$.LiveAddress("YOUR-HTML-KEY");</script>```
-
-That's it! Give it a try to make sure it works, before deploying it live. SmartyStreets
-assumes no responsibility if something goes wrong on your site. Turn on debug mode
+That's it! Ensure it works before using it on a live site. SmartyStreets
+assumes no responsibility if something goes wrong on your web page. Enable debug mode
 to help you find problems, and if necessary, map the fields manually. See the
-full documentation (link above) for more info.
+[full documentation](http://smartystreets.com/kb/liveaddress-api/website-forms) for details.
+
+
+
+Test Runner File
+-----------------------
+
+The [index.html](https://github.com/smartystreets/jquery.liveaddress/blob/master/index.html) file provided can be used
+as a convenient, mostly-isolated environment in which to test different scenarios. Knock yourself out! Better
+in testing than in production, right?
+
 
 
 
