@@ -374,8 +374,7 @@
 					'gate',
 					'cvc',
 					'cvv',
-					'list',
-					'book'
+					'list'			// AmeriCommerce cart uses this as an "Address Book" dropdown to choose an entire address...
 				],
 				labels: [
 					'email',
