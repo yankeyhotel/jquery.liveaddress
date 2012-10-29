@@ -25,7 +25,7 @@
 
 	var instance;			// Public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.0.2";	// The version of this copy of the script
+	var version = "2.0.3";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -50,7 +50,7 @@
 	
 	$.LiveAddress = function(arg)
 	{
-		return $('body').LiveAddress(arg);	// 'body' is needed to find ancestor in traversal (document won't work)
+		return $('body').LiveAddress(arg);	// 'body' is needed to find ancestors in traversal (document won't work)
 	};
 
 	$.fn.LiveAddress = function(arg)
@@ -118,16 +118,24 @@
 			},
 			mapFields: function(map)
 			{
-				if (typeof map === 'object')
-					return ui.mapFields(map, selector);
-				else if (map === "auto")
-					return ui.automap(selector);
-				else if (typeof config.addresses === 'object')
-					return ui.mapFields(config.addresses, selector)
-				else if (config.autoMap)
-					return ui.automap(selector);
+				var doMap = function(map)
+				{
+					if (map === "auto")
+						return ui.automap(selector);
+					else if (typeof map === 'object')
+						return ui.mapFields(map, selector);
+					else if (!map && typeof config.addresses === 'object')
+						return ui.mapFields(config.addresses, selector)
+					else if (config.autoMap)
+						return ui.automap(selector);
+					else
+						return false;
+				};
+				
+				if ($.isReady)
+					doMap(map);
 				else
-					return false;
+					$(function() { doMap(map); });
 			},
 		 	makeAddress: function(addressData)
 		 	{
@@ -168,26 +176,17 @@
 		for (var prop in EventHandlers)
 			bind(prop);
 		
-		// Wrap this part of initialization in document.ready so the DOM can fully establish first
-		$(function() {
-			if (config.autoMap)
-				instance.mapFields(selector);
-		});
+		// Map the fields
+		instance.mapFields();
 
 		return instance;
 	};
 
 
 
-
-
-
-
 	/*
 	  *	PRIVATE FUNCTIONS / OBJECTS
 	*/
-
-
 
 
 
@@ -497,13 +496,13 @@
 				// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core)
 				formSubmitElements.each(function(idx)
 				{
-					var oldHandlers;
+					var oldHandlers, eventsRef = $._data(this, 'events');
 
 					// If there are previously-bound-event-handlers (from jQuery), get those.
-					if ($(this).data('events') && $(this).data('events').click && $(this).data('events').click.length > 0)
+					if (eventsRef && eventsRef.click && eventsRef.click.length > 0)
 					{
 						// Get a reference to the old handlers previously bound by jQuery
-						oldHandlers = $.extend(true, [], $(this).data('events').click);
+						oldHandlers = $.extend(true, [], eventsRef.click);
 					}
 
 					// Unbind them...
@@ -807,7 +806,6 @@
 		// ** MANUAL MAPPING ** //
 		this.mapFields = function(map, selector)
 		{
-
 			// "map" should be an array of objects mapping field types
 			// to a field by selector, all supplied by the user.
 			// "selector" should be a selector in which fields will be mapped.
@@ -825,6 +823,10 @@
 
 				if (!address.street)
 					continue;
+
+				// Pull out a user-assigned ID if one exists
+				var addrID = address.id;
+				delete address.id;
 
 				// Convert ID names into actual DOM references
 				for (var fieldType in address)
@@ -855,7 +857,10 @@
 				}
 
 				// Add this address to the form
-				form.addresses.push(new Address(address, form));
+				form.addresses.push(new Address(address, form, addrID));
+
+				if (config.debug)
+					console.log("Finished mapping address with ID: "+form.addresses[form.addresses.length-1].id());
 			}
 
 			forms = formsFound;
@@ -1134,11 +1139,10 @@
 
 
 	/*
-		Represents an address inputted by the user,
-		whether it has been verified yet or not.
-		formObj must be a Form OBJECT, not a <form> tag...
+		Represents an address inputted by the user, whether it has been verified yet or not.
+		formObj must be a Form OBJECT, not a <form> tag... and the addressID is optional.
 	*/
-	function Address(domMap, formObj)
+	function Address(domMap, formObj, addressID)
 	{
 		// PRIVATE MEMBERS //
 
@@ -1206,10 +1210,10 @@
 
 
 		// Constructor-esque functionality (save the fields in this address object)
-		this.load = function(domMap)
+		this.load = function(domMap, addressID)
 		{
 			fields = {};
-			id = randomInt(1, 99999);
+			id = addressID || randomInt(1, 99999);
 
 			if (typeof domMap === 'object')
 			{
@@ -1269,7 +1273,7 @@
 		};
 
 		// Run the "constructor" to load up the address
-		this.load(domMap);
+		this.load(domMap, addressID);
 
 
 		this.set = function(key, value, updateDomElement, keepState, sourceEvent, fromUndo)
@@ -1554,8 +1558,6 @@
 
 
 
-
-
 	/*
 		Represents a <form> tag which must house mapped fields.
 	*/
@@ -1739,7 +1741,6 @@
 			return this.raw[idx].analysis.lacslink_code == "A";
 		}
 	}
-
 
 
 
@@ -1935,8 +1936,6 @@
 			}
 		},
 	};
-
-
 
 
 	/*

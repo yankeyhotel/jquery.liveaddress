@@ -4,17 +4,16 @@
 	<title>LiveAddress API jQuery Plugin &mdash; TEST RUNNER</title>
 	<meta charset="utf-8">
 	<link href="//fonts.googleapis.com/css?family=Signika+Negative:300|Open+Sans:400,700,600,300,800" rel="stylesheet" type="text/css">
-	<script src="/lib/jquery-1_5.js"></script>
+	<script src="/lib/jquery-1_8_2.js"></script>
 	<script src="/src/jquery.liveaddress.js"></script>
 	<script>
-		var testRunnerRevision = "1.0.1";	// The official revision of this test runner page
+		var testRunnerVersion = "1.0.2";	// The version of this test runner page
 		var debug = true;					// Toggle debug mode
 		var liveaddress = $.LiveAddress({
 			key: "YOUR-HTML-KEY",			// Put your HTML key here
 			debug: debug					// Show debug stuff
 		});
 	</script>
-
 	<style>
 	body {
 		font: 400 16px/1.5em 'Open Sans', 'Signika Negative', sans-serif;
@@ -168,7 +167,7 @@
 	<hgroup>
 		<h1>LiveAddress API jQuery Plugin</h1>
 		<h2>Test Runner &mdash; by <a href="http://smartystreets.com/" target="_blank">SmartyStreets</a></h2>
-		<span id="revision">Revision: <script>document.write(testRunnerRevision);</script> / Debug mode: <script>document.write(debug ? "on" : "off");</script></span>
+		<span id="revision">Revision: <script>document.write(testRunnerVersion);</script> / Debug mode: <script>document.write(debug ? "on" : "off");</script></span>
 		<span id="version">jQuery version: <script>document.write($.fn.jquery);</script> / Plugin version: <script>document.write(liveaddress.version);</script></span>
 	</hgroup>
 
@@ -491,7 +490,7 @@
 
 
 
-	<form id="onClick" onsubmit="alert('onsubmit handler; this should happen AFTER address verification')">
+	<form id="onSubmit" onsubmit="alert('onsubmit handler; this should happen AFTER address verification')">
 		<header>
 			<h3>onsubmit Handler</h3>
 			<p>Form has onsubmit="" attribute which should fire when form is submitted</p>
@@ -522,7 +521,7 @@
 
 
 
-	<form id="onClick" onsubmit="alert('onsubmit handler; this should happen AFTER address verification and the onclick handlers')">
+	<form id="twoHandlers" onsubmit="alert('onsubmit handler; this should happen AFTER address verification and the onclick handlers')">
 		<header>
 			<h3>Two handlers</h3>
 			<p>First the address should be verified, then the submit button's onclick handlers should fire, then the form's onsubmit handlers last</p>
@@ -558,7 +557,6 @@
 
 <script>
 $(function() {
-
 	// Prevent forms, by default, from leaving the page, so we can keep testing
 	$('form').submit(function(event) {
 		alert("Default form submit; actual POST prevented");
