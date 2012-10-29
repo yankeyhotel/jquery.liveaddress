@@ -30,7 +30,7 @@
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
 		requestUrl: "https://api.qualifiedaddress.com/street-address",			// API endpoint
-		timeout: 5000,															// How long to wait before the request timed out (5000 = 5 seconds)
+		timeout: 5000,															// How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium",														// Animation speed
 		ambiguousMessage: "Please choose the most correct address.",			// Message when address is ambiguous
 		invalidMessage: "Address could not be verified.",						// Message when address is invalid
