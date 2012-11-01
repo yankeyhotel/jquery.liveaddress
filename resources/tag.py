@@ -8,6 +8,8 @@ import subprocess
 
 
 def main():
+    if "branch" not in os.environ:
+        os.environ['branch'] = raw_input("Enter the major.minor version number: ")
     branch = os.environ['branch']
     print 'Current branch: \'{0}\''.format(branch)
     tags = call('git tag').split('\n')

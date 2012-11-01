@@ -25,7 +25,7 @@
 
 	var instance;			// Public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.0.3";	// The version of this copy of the script
+	var version = "2.0.4";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -45,8 +45,6 @@
 	/*
 	  *	ENTRY POINT
 	*/
-
-	
 	
 	$.LiveAddress = function(arg)
 	{
@@ -197,6 +195,7 @@
 	*/
 	function UI()
 	{
+		var submitHandler;				// Function which is later bound to handle form submits
 		var mapMeta = {
 			formDataProperty: "smarty-form",	// Indicates whether we've stored the form already
 			identifiers: {
@@ -447,7 +446,9 @@
 					var addrId = $(this).data('addressid');
 					var addr = instance.getMappedAddressByID(addrId);
 					addr.undo(true);
-					$(this).hide();
+					// If fields are re-mapped after an address was verified, it loses its "accepted" status even if no values were changed.
+					// Thus, in some rare occasions, the undo link and the "verified!" text may not disappear when the user clicks "Undo",
+					// The undo functionality still works in those cases, but with no visible changes, the address doesn't fire "AddressChanged"...
 				});
 
 				$('body').delegate('.smarty-address-verified', 'mouseover', function(e)
@@ -466,7 +467,7 @@
 			{
 				var f = forms[i];
 
-				var handler = function(e)
+				submitHandler = function(e)
 				{
 					if (e.data.form && e.data.form.processing)
 						return suppress(e);
@@ -509,7 +510,7 @@
 					$(this).unbind('click');
 
 					// ... then bind ours first ...
-					$(this).click({ form: f, invoke: this }, handler);
+					$(this).click({ form: f, invoke: this }, submitHandler);
 
 					// ... then bind theirs last:
 					// First bind their onclick="..." handles...
@@ -618,6 +619,7 @@
 			{
 				$(forms[i].dom).data(mapMeta.formDataProperty, '');
 
+				// Clean up each form's DOM by resetting the address fields to the way they were
 				for (var j = 0; j < forms[i].addresses.length; j++)
 				{
 					var doms = forms[i].addresses[j].getDomFields();
@@ -628,6 +630,13 @@
 						$(doms[prop]).unbind('change');
 					}
 				}
+
+				// Unbind our form submit handlers
+				$(config.submitSelector, forms[i].dom).each(function(idx)
+				{
+					var oldHandlers, eventsRef = $._data(this, 'events');
+					$(this).unbind('click', submitHandler);
+				});
 			}
 
 			$('.smarty-dots, .smarty-address-verified').remove();
@@ -824,13 +833,10 @@
 				if (!address.street)
 					continue;
 
-				// Pull out a user-assigned ID if one exists
-				var addrID = address.id;
-				delete address.id;
-
 				// Convert ID names into actual DOM references
 				for (var fieldType in address)
-					address[fieldType] = $(address[fieldType], selector);
+					if (fieldType != "id")
+						address[fieldType] = $(address[fieldType], selector);
 
 				// Acquire the form based on the street address field (the required field)
 				var formDom = $(address.street).parents('form')[0];
@@ -857,7 +863,7 @@
 				}
 
 				// Add this address to the form
-				form.addresses.push(new Address(address, form, addrID));
+				form.addresses.push(new Address(address, form, address.id));
 
 				if (config.debug)
 					console.log("Finished mapping address with ID: "+form.addresses[form.addresses.length-1].id());
@@ -1162,7 +1168,7 @@
 		// because the address keeps changing! (Set "fromUndo" to true when coming from the "Undo" link)	
 		var doSet = function(key, value, updateDomElement, keepState, sourceEvent, fromUndo)
 		{
-			if (!arrayContains(acceptableFields, key))
+			if (!arrayContains(acceptableFields, key))	// Skip "id" and other unacceptable fields
 				return false;
 
 			if (!fields[key])
@@ -1220,17 +1226,17 @@
 				// Find the last field likely to appear on the DOM (used for UI attachments)
 				this.lastField = domMap.lastline || domMap.zipcode || domMap.state || domMap.city || domMap.street;
 
-				var isEmpty = true;	// Whether the address has data in it (pre-populated)
+				var isEmpty = true;	// Whether the address has data in it (pre-populated) -- first assume it is empty.
 
 				for (var prop in domMap)
 				{
-					if (!arrayContains(acceptableFields, prop))
+					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
 						continue;
 
 					var elem = $(domMap[prop]);
 					var isData = elem.toArray().length == 0;
 					var val;
-					if (elem.toArray().length == 0) // No matches; treat it as a string of address data instead
+					if (elem.toArray().length == 0) // No matches; treat it as a string of address data ("street1") instead
 						val = domMap[prop];
 					else
 						val = elem.val();
@@ -1238,8 +1244,7 @@
 					fields[prop] = {};
 					fields[prop].value = val;
 					fields[prop].undo = val;
-					
-					isEmpty = isEmpty ? val.length == 0 || domMap[prop].tagName == "SELECT" : isEmpty;
+					isEmpty = isEmpty ? val.length == 0 || domMap[prop][0].tagName.toUpperCase() == "SELECT" : false;
 
 					if (!isData)
 					{
@@ -1248,7 +1253,6 @@
 							elem.css('background', '#FFFFCC');
 							elem.attr('placeholder', prop);
 						}
-
 						fields[prop].dom = domMap[prop];
 					}
 
@@ -1780,7 +1784,7 @@
 			// If autoVerify is on,
 			// AND there's enough input in the address,
 			// AND it hasn't been verified automatically before -OR- it's a freeform address,
-			// AND autoVerification isn't suppressed (from an Undo click even on a freeform address)
+			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
 			// AND it has a DOM element (it's not just a programmatic Address object)...
 			// THEN verification has been invoked.
 
