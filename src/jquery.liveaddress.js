@@ -1508,7 +1508,7 @@
 					delete fields[prop];
 					continue;
 				}
-				else if (fields[prop].dom && fields[prop].value)
+				else if (fields[prop].dom && typeof fields[prop].value !== 'undefined')
 				{
 					var domValue = $(fields[prop].dom).val();
 					if (fields[prop].value != domValue)
