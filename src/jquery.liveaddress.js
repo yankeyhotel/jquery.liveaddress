@@ -1195,7 +1195,7 @@
 				ui.hideValid(self);
 				if (self.isDomestic())
 				{
-					self.unaccept();
+					self.unaccept().syncWithDom();
 					trigger("AddressChanged", eventMeta);
 				}
 				else
@@ -1375,6 +1375,9 @@
 			if (!invoke && !self.enoughInput())
 				return null;
 
+			if (!self.enoughInput())
+				return trigger("AddressWasInvalid", { address: self, response: [], invoke: invoke });
+
 			ui.disableFields(self);
 			self.verifyCount ++;
 			var addrData = self.toRequest();
@@ -1479,6 +1482,7 @@
 		{
 			state = "changed";
 			ui.hideValid(self);
+			return self;
 		};
 
 		this.getUndoValue = function(key)
