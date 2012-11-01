@@ -25,7 +25,7 @@
 
 	var instance;			// Public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.0.4";	// The version of this copy of the script
+	var version = "2.1.0";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -129,7 +129,6 @@
 					else
 						return false;
 				};
-				
 				if ($.isReady)
 					doMap(map);
 				else
@@ -138,7 +137,7 @@
 		 	makeAddress: function(addressData)
 		 	{
 		 		if (typeof addressData === "string")
-		 			return new Address({ street: addressData });
+		 			return instance.getMappedAddressByID(addressData) || new Address({ street: addressData })
 		 		else if (typeof addressData === "object")
 		 			return new Address(addressData);
 		 	},
@@ -165,6 +164,18 @@
 			setKey: function(htmlkey)
 			{
 				config.key = htmlkey;
+			},
+			activate: function(addressID)
+			{
+				var addr = instance.getMappedAddressByID(addressID);
+				if (addr)
+					addr.active = true;
+			},
+			deactivate: function(addressID)
+			{
+				var addr = instance.getMappedAddressByID(addressID);
+				if (addr)
+					addr.active = false;
 			},
 			version: version
 		};
@@ -478,12 +489,12 @@
 					for (var j = 0; j < e.data.form.addresses.length; j++)
 						e.data.form.addresses[j].syncWithDom();
 
-					if (!e.data.form.allAddressesAccepted())
+					if (!e.data.form.allActiveAddressesAccepted())
 					{
 						// We could verify all the addresses at once, but that can
 						// be overwhelming for the user. An API request is usually quick,
 						// so let's do one at a time: it's much cleaner.
-						var unaccepted = e.data.form.addressesNotAccepted();
+						var unaccepted = e.data.form.activeAddressesNotAccepted();
 						if (unaccepted.length > 0)
 							trigger("VerificationInvoked", { address: unaccepted[0], invoke: e.data.invoke });
 						return suppress(e);
@@ -1213,7 +1224,7 @@
 		this.form = formObj;	// Reference to the parent form object (NOT THE DOM ELEMENT)
 		this.verifyCount = 0;	// Number of times this address was submitted for verification
 		this.lastField;			// The last field found (last to appear in the DOM) during mapping, or the order given
-
+		this.active = true;		// If true, verify the address. If false, pass-thru entirely.
 
 		// Constructor-esque functionality (save the fields in this address object)
 		this.load = function(domMap, addressID)
@@ -1567,38 +1578,30 @@
 
 
 	/*
-		Represents a <form> tag which must house mapped fields.
+		Represents a <form> tag which contains mapped fields.
 	*/
 	function Form(domElement)
 	{
 		this.addresses = [];
 		this.dom = domElement;
 
-		this.allAddressesAccepted = function()
-		{
-			for (var i = 0; i < this.addresses.length; i++)
-			{
-				var addr = this.addresses[i];
-				if (addr.status() != "accepted")
-					return false;
-			}
-			return true;
-		};
-
-		this.addressesNotAccepted = function()
+		this.activeAddressesNotAccepted = function()
 		{
 			var addrs = [];
 			for (var i = 0; i < this.addresses.length; i++)
 			{
 				var addr = this.addresses[i];
-				if (addr.status() != "accepted")
+				if (addr.status() != "accepted" && addr.active)
 					addrs.push(addr);
 			}
 			return addrs;
 		};
+
+		this.allActiveAddressesAccepted = function()
+		{
+			return this.activeAddressesNotAccepted().length == 0;
+		};
 	}
-
-
 
 
 
@@ -1789,13 +1792,14 @@
 			// AND there's enough input in the address,
 			// AND it hasn't been verified automatically before -OR- it's a freeform address,
 			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
-			// AND it has a DOM element (it's not just a programmatic Address object)...
+			// AND it has a DOM element (it's not just a programmatic Address object)
+			// AND the address is "active" for verification...
 			// THEN verification has been invoked.
-
 			if (config.autoVerify && data.address.enoughInput()
 				&& (data.address.verifyCount == 0 || data.address.isFreeform())
 				&& !data.suppressAutoVerification
-				&& data.address.hasDomFields())
+				&& data.address.hasDomFields()
+				&& data.address.active)
 				trigger("VerificationInvoked", { address: data.address });
 		},
 
@@ -1814,7 +1818,7 @@
 		{
 			if (config.debug)
 				console.log("EVENT:", "RequestSubmitted", "(Request submitted)", event, data);
-
+			
 			ui.showLoader(data.address);
 		},
 
