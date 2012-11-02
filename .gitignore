@@ -1,5 +1,5 @@
 .DS_Store
-/_notes
+_gitignore
 *.pyc
 .idea
 working
