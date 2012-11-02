@@ -23,6 +23,8 @@ def main():
 def authenticate():
     if 'aws-secret-key' not in os.environ:
         os.environ['aws-secret-key'] = raw_input('Enter the aws-secret-key: ')
+    if 'branch' not in os.environ:
+        os.environ['branch'] = raw_input('Enter the major.minor version: ')
 
 
 def publish(bucket):
@@ -34,7 +36,7 @@ def publish(bucket):
 
 def upload_to_s3(resource, bucket):
     entry = Key(bucket)
-    entry.key = path.join(DESTINATION, path.basename(resource))
+    entry.key = path.join(DESTINATION.format(os.environ['branch']), path.basename(resource))
     entry.set_metadata('Content-Encoding', 'gzip')
     entry.set_metadata('Content-Type', get_mime_type(resource))
 
@@ -43,7 +45,7 @@ def upload_to_s3(resource, bucket):
 
 
 EXCLUDES = ['.DS_Store']
-DESTINATION = '/jquery.liveaddress/2.0/'
+DESTINATION = '/jquery.liveaddress/{0}'
 WORKING_DIRECTORY = './working/'
 S3_BUCKET = 'static.smartystreets.com'
 AWS_ACCESS_ID = 'AKIAIEPRJ7EJNOIBIJBA' # tatooine

@@ -14,9 +14,9 @@ def main():
     print 'Current branch: \'{0}\''.format(branch)
     tags = call('git tag').split('\n')
     tags = [t for t in tags if t.startswith(branch)]
-    next_tag = max(int(x.split('.')[-1]) for x in tags) + 1
-    print 'Tagging repository at: \'{0}.{1}\''.format(branch, next_tag)
-    call('git tag {0}.{1}'.format(branch, next_tag))
+    next_revision = 0 if not tags else max(int(x.split('.')[-1]) for x in tags) + 1
+    print 'Tagging repository at: \'{0}.{1}\''.format(branch, next_revision)
+    call('git tag {0}.{1}'.format(branch, next_revision))
 
 
 def call(command):
