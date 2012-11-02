@@ -1247,6 +1247,7 @@
 					var elem = $(domMap[prop]);
 					var isData = elem.toArray().length == 0;
 					var val;
+					var tagName = domMap[prop].tagName || domMap[prop][0].tagName;
 					if (elem.toArray().length == 0) // No matches; treat it as a string of address data ("street1") instead
 						val = domMap[prop];
 					else
@@ -1255,7 +1256,7 @@
 					fields[prop] = {};
 					fields[prop].value = val;
 					fields[prop].undo = val;
-					isEmpty = isEmpty ? val.length == 0 || domMap[prop][0].tagName.toUpperCase() == "SELECT" : false;
+					isEmpty = isEmpty ? val.length == 0 || tagName.toUpperCase() == "SELECT" : false;
 
 					if (!isData)
 					{
@@ -1423,8 +1424,9 @@
 						(fields.city && fields.city.value)
 						&& (fields.state && fields.state.value)
 					)
-					|| (fields.zipcode && fields.zipcode.value)
-					|| (!fields.street2 && !fields.city && !fields.state && !fields.zipcode) // Enables SLAP addresses (only a street field)
+					|| (fields.zipcode && fields.zipcode.value)	// The two lines below allow freeform addresses (only a value in the street field, or only a street field mapped)
+					|| !((fields.city && fields.city.value && fields.state && !fields.state.value) || (fields.city && !fields.city.value && fields.state && fields.state.value))
+					|| (!fields.street2 && !fields.city && !fields.state && !fields.zipcode)
 				   );
 		};
 
