@@ -1424,9 +1424,8 @@
 						(fields.city && fields.city.value)
 						&& (fields.state && fields.state.value)
 					)
-					|| (fields.zipcode && fields.zipcode.value)	// The two lines below allow freeform addresses (only a value in the street field, or only a street field mapped)
-					|| !((fields.city && fields.city.value && fields.state && !fields.state.value) || (fields.city && !fields.city.value && fields.state && fields.state.value))
-					|| (!fields.street2 && !fields.city && !fields.state && !fields.zipcode)
+					|| (fields.zipcode && fields.zipcode.value)
+					|| (!fields.street2 && !fields.city && !fields.state && !fields.zipcode) // Allow freeform addresses (only a street field)
 				   );
 		};
 
