@@ -35,7 +35,7 @@
 		ambiguousMessage: "Please choose the most correct address.",			// Message when address is ambiguous
 		invalidMessage: "Address could not be verified.",						// Message when address is invalid
 		fieldSelector: "input[type=text], input:not([type]), textarea, select",	// Selector for possible address-related form elements
-		submitSelector: "[type=submit], [type=image], [type=button]:last"		// Selector to find a likely submit button or submit image (in a form)
+		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last"	// Selector to find a likely submit button or submit image (in a form)
 	};
 	var config = {};		// Configuration settings, either from use or defaults
 	var forms = [];			// List of forms which hold lists of addresses
