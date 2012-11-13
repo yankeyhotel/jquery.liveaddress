@@ -645,7 +645,6 @@
 				// Unbind our form submit handlers
 				$(config.submitSelector, forms[i].dom).each(function(idx)
 				{
-					var oldHandlers, eventsRef = $._data(this, 'events');
 					$(this).unbind('click', submitHandler);
 				});
 			}

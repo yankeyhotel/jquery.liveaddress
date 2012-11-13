@@ -16,7 +16,7 @@ Quick Start
 2. Bring the LiveAddress API jQuery Plugin onto your page:
 ```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.1/jquery.liveaddress.min.js"></script>```
 3. Initialize the plugin with an HTML key from your account:
-```<script type="text/javascript">$.LiveAddress("YOUR-HTML-KEY");</script>```
+```<script type="text/javascript">jQuery.LiveAddress("YOUR-HTML-KEY");</script>```
 
 That's it! Ensure it works before using it on a live site. SmartyStreets
 assumes no responsibility if something goes wrong on your web page. Enable debug mode
