@@ -227,16 +227,26 @@
 						'address_1',
 						'address_2',
 						'line',
-						'suite',
-						'apartment',
-						'primary',
-						'secondary'
+						'primary'
 					],
 					labels: [
 						'street',
 						'address',		// hazardous (e.g. "Email address") -- but we deal with that later
 						'line ',
 						' line',
+						'primary'
+					]
+				},
+				secondary: {
+					names: [
+						'suite',
+						'apartment',
+						'primary',
+						'box',
+						'pmb',
+						'secondary'
+					],
+					labels: [
 						'suite',
 						'apartment',
 						'apt:',
@@ -246,7 +256,8 @@
 						'unit:',
 						'unit.',
 						'unit ',
-						'primary',
+						'pmb',
+						'box',
 						'secondary'
 					]
 				},
@@ -342,19 +353,12 @@
 					'line2',
 					'str2',
 					'second',
-					'two',
-					'box',
-					'suite',
-					'apartment'
+					'two'
 				],
 				labels: [
 					' 2',
 					'second',
-					'two',
-					'ste',
-					'apt',
-					'unit',
-					'box'
+					'two'
 				]
 			},
 			exclude: {			// Terms we look for to exclude an element from the mapped set to prevent false positives
@@ -370,7 +374,7 @@
 					'last_name',
 					'fname',
 					'lname',
-					'name',			// Potentially problematic ("state_name" ...) -- also see same label value below
+					'name',			// Sometimes problematic ("state_name" ...) -- also see same label value below
 					'eml',
 					'type',
 					'township',
@@ -388,6 +392,7 @@
 					'org',
 					'group',
 					'gate',
+					'fax',
 					'cvc',
 					'cvv',
 					'file',
@@ -415,6 +420,7 @@
 					'cvv',
 					'file',
 					' list',
+					'fax',
 					'book'
 				]
 			}
@@ -718,7 +724,7 @@
 							{
 								// Looking for "address" is a very liberal search, so we need to see if it contains another
 								// field name, too... this helps us find freeform addresses (SLAP).
-								var otherFields = ["city", "state", "zipcode", "country"];
+								var otherFields = ["secondary", "city", "state", "zipcode", "country"];
 								for (var i = 0; i < otherFields.length; i ++)
 								{
 									// If any of these filters turns up true, then it's
@@ -1254,12 +1260,12 @@
 
 					var elem = $(domMap[prop]), val, elemArray = elem.toArray();
 					var isData = elemArray ? elemArray.length == 0 : false;
-					var tagName = domMap[prop].tagName || domMap[prop][0].tagName;
+					var tagName = domMap[prop].tagName || domMap[prop][0].tagName || "";
 
-					if (isData) // No element matches; treat it as a string of address data ("street1") instead
-						val = domMap[prop];
+					if (isData) // Didn't match an HTML element, so treat it as an address string ("street1" data) instead
+						val = domMap[prop] || "";
 					else
-						val = elem.val();
+						val = elem.val() || "";
 
 					fields[prop] = {};
 					fields[prop].value = val;
@@ -1271,7 +1277,7 @@
 						if (config.debug)
 						{
 							elem.css('background', '#FFFFCC');
-							elem.attr('placeholder', prop);
+							elem.attr('placeholder', prop + ":" + id);
 						}
 						fields[prop].dom = domMap[prop];
 					}
@@ -1534,7 +1540,7 @@
 				}
 				else if (fields[prop].dom && typeof fields[prop].value !== 'undefined')
 				{
-					var domValue = $(fields[prop].dom).val();
+					var domValue = $(fields[prop].dom).val() || "";
 					if (fields[prop].value != domValue)
 					{
 						self.unaccept();
@@ -1568,11 +1574,10 @@
 		{
 			if (!fields.country)
 				return true;
-
 			var countryValue = fields.country.value.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
 			var usa = ["", "0", "1", "COUNTRY", "NONE", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
 						"UNITEDSTATES", "UNITEDSTATESAMERICA",	"UNITEDSTATESOFAMERICA", "AMERICA",
-						"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"];	// 840 is ISO: 3166, and 223 is Zen Cart
+						"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"];	// 840 is ISO: 3166; and 223 is Zen Cart
 			return arrayContains(usa, countryValue) || fields.country.value == "-1";
 		}
 
