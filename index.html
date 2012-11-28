@@ -4,15 +4,24 @@
 	<title>LiveAddress API jQuery Plugin &mdash; TEST RUNNER</title>
 	<meta charset="utf-8">
 	<link href="//fonts.googleapis.com/css?family=Signika+Negative:300|Open+Sans:400,700,600,300,800" rel="stylesheet" type="text/css">
-	<script src="/lib/jquery-1_8_2.js"></script>
-	<script src="/src/jquery.liveaddress.js"></script>
+	<script src="lib/jquery-1_8_2.js"></script>
+	<script src="src/jquery.liveaddress.js"></script>
 	<script>
+	
+		/** CONFIGURE **/
+
 		var testRunnerVersion = "1.0.2";	// The version of this test runner page
 		var debug = true;					// Toggle debug mode
+
+
+
+		/** INITIALIZE **/
+
 		var liveaddress = $.LiveAddress({
 			key: "YOUR-HTML-KEY",			// Put your HTML key here
 			debug: debug					// Show debug stuff
 		});
+
 	</script>
 	<style>
 	body {
@@ -313,6 +322,10 @@
 			<tr>
 				<td>Street address:</td>
 				<td><input type="text" name="street"></td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td><input type="text" name="state"></td>
 			</tr>
 			<tr>
 				<td>ZIP Code:</td>

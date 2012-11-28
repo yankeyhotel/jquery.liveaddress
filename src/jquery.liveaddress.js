@@ -18,14 +18,13 @@
 (function($, window, document) {
 	"use strict";		//  http://ejohn.org/blog/ecmascript-5-strict-mode-json-and-more/
 
-
 	/*
 	  *	PRIVATE MEMBERS
 	*/
 
-	var instance;			// Public-facing functions and variables
+	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.1.1";	// The version of this copy of the script
+	var version = "2.1.2";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -37,10 +36,9 @@
 		fieldSelector: "input[type=text], input:not([type]), textarea, select",	// Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last"	// Selector to find a likely submit button or submit image (in a form)
 	};
-	var config = {};		// Configuration settings, either from use or defaults
-	var forms = [];			// List of forms which hold lists of addresses
-
-
+	var config = {};				// Configuration settings as set by the user or just the defaults
+	var forms = [];					// List of forms (which hold lists of addresses)
+	var defaultSelector = 'body';	// Default selector which should be over the whole page (must be compatible with the .find() function)
 
 	/*
 	  *	ENTRY POINT
@@ -48,7 +46,7 @@
 	
 	$.LiveAddress = function(arg)
 	{
-		return $('body').LiveAddress(arg);	// 'body' is needed to find ancestors in traversal (document won't work)
+		return $(defaultSelector).LiveAddress(arg);
 	};
 
 	$.fn.LiveAddress = function(arg)
@@ -56,7 +54,7 @@
 		if (instance)
 			return instance;
 
-		var selector = this.selector;
+		var matched = this, wasChained = matched.prevObject ? !!matched.prevObject.prevObject : false;
 
 		// Make sure the jQuery version is compatible
 		var vers = $.fn.jquery.split(".");
@@ -68,6 +66,8 @@
 				return false;
 			}
 		}
+		else
+			return false;
 
 		if (arg.debug)
 			console.log("LiveAddress API jQuery Plugin version "+version+" (Debug mode)");
@@ -119,25 +119,29 @@
 				var doMap = function(map)
 				{
 					if (map === "auto")
-						return ui.automap(selector);
+						return ui.automap(matched);
 					else if (typeof map === 'object')
-						return ui.mapFields(map, selector);
+						return ui.mapFields(map, matched);
 					else if (!map && typeof config.addresses === 'object')
-						return ui.mapFields(config.addresses, selector)
+						return ui.mapFields(config.addresses, matched)
 					else if (config.autoMap)
-						return ui.automap(selector);
+						return ui.automap(matched);
 					else
 						return false;
 				};
 				if ($.isReady)
 					doMap(map);
 				else
-					$(function() { doMap(map); });
+					$(function() {
+						if (!wasChained)
+							matched = $(matched.selector);
+						doMap(map);
+					});
 			},
 		 	makeAddress: function(addressData)
 		 	{
 		 		if (typeof addressData === "string")
-		 			return instance.getMappedAddressByID(addressData) || new Address({ street: addressData })
+		 			return instance.getMappedAddressByID(addressData) || new Address({ street: addressData });
 		 		else if (typeof addressData === "object")
 		 			return new Address(addressData);
 		 	},
@@ -339,7 +343,9 @@
 					'str2',
 					'second',
 					'two',
-					'box'
+					'box',
+					'suite',
+					'apartment'
 				],
 				labels: [
 					' 2',
@@ -364,9 +370,10 @@
 					'last_name',
 					'fname',
 					'lname',
-					'name',
+					'name',			// Potentially problematic ("state_name" ...) -- also see same label value below
 					'eml',
 					'type',
+					'township',
 					'method',
 					'location',
 					'store',
@@ -383,6 +390,7 @@
 					'gate',
 					'cvc',
 					'cvv',
+					'file',
 					'list'			// AmeriCommerce cart uses this as an "Address Book" dropdown to choose an entire address...
 				],
 				labels: [
@@ -392,18 +400,20 @@
 					' type',
 					'save ',
 					'keep',
-					'name',
+					'name',	
 					'method',
 					'phone',
 					'organization',
 					'company',
 					'addressee',
+					'township',
 					'firm',
 					'group',
 					'gate',
 					'cardholder',
 					'cvc',
 					'cvv',
+					'file',
 					' list',
 					'book'
 				]
@@ -660,7 +670,7 @@
 
 
 		// ** AUTOMAPPING ** //
-		this.automap = function(contextSelector)
+		this.automap = function(context)
 		{
 			if (config.debug)
 				console.log("Automapping fields...");
@@ -683,10 +693,10 @@
 					potential[fieldName] = $(config.fieldSelector, this)
 						.filter(function()
 						{
-							// Must be somewhere in the user's root node selector
-							return $(this).closest(contextSelector).length > 0;
+							// This potential address input element must be within the user's set of selected elements
+							return $(context).find(this).length > 0;
 						})
-						.filter(':visible')
+						.filter(':visible')		// No "hidden" input fields, etc...
 						.filter(function()
 						{
 							var name = lowercase(this.name), id = lowercase(this.id);
@@ -786,7 +796,7 @@
 				{
 					var addrObj = {};
 					for (var field in potential)
-					{	
+					{
 						var current = potential[field][i];
 						if (current)
 							addrObj[field] = current;
@@ -823,11 +833,12 @@
 
 
 		// ** MANUAL MAPPING ** //
-		this.mapFields = function(map, selector)
+		this.mapFields = function(map, context)
 		{
 			// "map" should be an array of objects mapping field types
 			// to a field by selector, all supplied by the user.
-			// "selector" should be a selector in which fields will be mapped.
+			// "context" should be the set of elements in which fields will be mapped
+			// Context can be acquired like: $('#something').not('#something-else').LiveAddress( ... ); ...
 
 			if (config.debug)
 				console.log("Manually mapping fields given this data:", map);
@@ -846,7 +857,7 @@
 				// Convert ID names into actual DOM references
 				for (var fieldType in address)
 					if (fieldType != "id")
-						address[fieldType] = $(address[fieldType], selector);
+						address[fieldType] = $(address[fieldType], context);
 
 				// Acquire the form based on the street address field (the required field)
 				var formDom = $(address.street).parents('form')[0];
@@ -1166,9 +1177,7 @@
 		var fields;									// Data values and references to DOM elements
 		var id;										// An ID by which to classify this address on the DOM
 		var state = "accepted"; 					// Can be: "accepted" or "changed"
-		var acceptableFields = ["street", "street2", "secondary",
-								"city", "state", "zipcode", "lastline",
-								"addressee", "urbanization", "country"];
+		var acceptableFields = ["street", "street2", "secondary", "city", "state", "zipcode", "lastline", "addressee", "urbanization", "country"];
 		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai"}
 		// Some of the above fields will only be mapped manually, not automatically.
 		
@@ -1243,11 +1252,11 @@
 					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
 						continue;
 
-					var elem = $(domMap[prop]);
-					var isData = elem.toArray().length == 0;
-					var val;
+					var elem = $(domMap[prop]), val, elemArray = elem.toArray();
+					var isData = elemArray ? elemArray.length == 0 : false;
 					var tagName = domMap[prop].tagName || domMap[prop][0].tagName;
-					if (elem.toArray().length == 0) // No matches; treat it as a string of address data ("street1") instead
+
+					if (isData) // No element matches; treat it as a string of address data ("street1") instead
 						val = domMap[prop];
 					else
 						val = elem.val();
@@ -1255,7 +1264,7 @@
 					fields[prop] = {};
 					fields[prop].value = val;
 					fields[prop].undo = val;
-					isEmpty = isEmpty ? val.length == 0 || tagName.toUpperCase() == "SELECT" : false;
+					isEmpty = isEmpty ? val.length == 0 || tagName.toUpperCase() == "SELECT" : false;  // dropdowns could have an initial value, yet the address may be "empty" (<option value="None" selected>(Select state)</option>) ...
 
 					if (!isData)
 					{
@@ -1452,7 +1461,7 @@
 
 		this.abort = function(event, keepAccept)
 		{
-			keepAccept = typeof keepAccet === 'undefined' ? false : keepAccept;
+			keepAccept = typeof keepAccept === 'undefined' ? false : keepAccept;
 			if (!keepAccept)
 				self.unaccept();
 			delete self.form.processing;
