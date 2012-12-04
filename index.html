@@ -10,16 +10,26 @@
 	
 		/** CONFIGURE **/
 
-		var testRunnerVersion = "1.0.2";	// The version of this test runner page
+		var htmlKey = "HTML-KEY";			// Put your HTML key here
 		var debug = true;					// Toggle debug mode
 
+		var testRunnerVersion = "1.1.0";	// The version of this test runner page
+
+
+		/** PREPARE FORM(S) **/
+		$(function()
+		{
+			$('form#submitEvent').submit(function() {
+				alert("Form submit; Verification should happen first if necessary, then this should occur.");
+			});
+		});
 
 
 		/** INITIALIZE **/
 
 		var liveaddress = $.LiveAddress({
-			key: "YOUR-HTML-KEY",			// Put your HTML key here
-			debug: debug					// Show debug stuff
+			key: htmlKey,		// An HTML key from your account
+			debug: debug		// Show debug stuff
 		});
 
 	</script>
@@ -565,6 +575,184 @@
 
 
 	<hr class="clear">
+	
+	
+	
+	<form id="submitEvent">
+		<header>
+			<h3>Submit event handler</h3>
+			<p>No submit button; form submit() invoked with jQuery should fire verification, if necessary, THEN a handler bound to submit, THEN submit the form.</p>
+		</header>
+		<table>
+			<tr>
+				<td>Street address:</td>
+				<td><input type="text" name="street"></td>
+			</tr>
+			<tr>
+				<td>ZIP Code:</td>
+				<td><input type="text" name="zip"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><a href="javascript:$('form#submitEvent').submit();">Submit Form</a></td>
+			</tr>
+		</table>
+	</form>
+	
+	
+	
+	
+	<form id="lastline-address">
+		<header>
+			<h3>First line / Last line</h3>
+			<p>Address formatted by only a street and lastline field.</p>
+		</header>
+		<table>
+			<tr>
+				<td>Street address:</td>
+				<td><input type="text" name="street"></td>
+			</tr>
+			<tr>
+				<td>City/State/ZIP:</td>
+				<td><input type="text" name="lastline"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><input type="submit" value="Submit Form"></td>
+			</tr>
+		</table>
+	</form>
+	
+	
+	
+	<form id="secondaryAndStreet2Field">
+		<header>
+			<h3>Secondary/Street2 fields</h3>
+			<p>Form has both secondary and street2 fields, which ought not get confused. (No form should ever need both...)</p>
+		</header>
+		<table>
+			<tr>
+				<td>Street address:</td>
+				<td><input type="text" name="street"></td>
+			</tr>
+			<tr>
+				<td>Address 2:</td>
+				<td><input type="text" name="secondLine"></td>
+			</tr>
+			<tr>
+				<td>Unit:</td>
+				<td><input type="text" name="secondary"></td>
+			</tr>
+			<tr>
+				<td>City:</td>
+				<td><input type="text" name="city"></td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td><input type="text" name="state"></td>
+			</tr>
+			<tr>
+				<td>ZIP Code:</td>
+				<td><input type="text" name="zip"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><input type="submit" value="Submit Form"></td>
+			</tr>
+		</table>
+	</form>
+
+	
+	
+	
+	
+	<form id="stateDropdown">
+		<header>
+			<h3>State dropdown menu</h3>
+			<p>Option values should be uppercase state abbreviations when at all possible, but this example uses lower-case abbreviations for failover testing. (No dropdown should ever default to a non-blank value, but this one does.)</p>
+		</header>
+		<table>
+			<tr>
+				<td>Street address:</td>
+				<td><input type="text" name="street"></td>
+			</tr>
+			<tr>
+				<td>ZIP Code:</td>
+				<td><input type="text" name="zip"></td>
+			</tr>
+			<tr>
+				<td>City:</td>
+				<td><input type="text" name="city"></td>
+			</tr>
+			<tr>
+				<td>State:</td>
+				<td>
+					<select name="state">
+						<option value="al">AL</option>
+						<option value="al">AL</option>
+						<option value="ak">AK</option>
+						<option value="az">AZ</option>
+						<option value="ar">AR</option>
+						<option value="ca">CA</option>
+						<option value="co">CO</option>
+						<option value="ct">CT</option>
+						<option value="dc">DC</option>
+						<option value="de">DE</option>
+						<option value="fl">FL</option>
+						<option value="ga">GA</option>
+						<option value="hi">HI</option>
+						<option value="id">ID</option>
+						<option value="il">IL</option>
+						<option value="in">IN</option>
+						<option value="ia">IA</option>
+						<option value="ks">KS</option>
+						<option value="ky">KY</option>
+						<option value="la">LA</option>
+						<option value="me">ME</option>
+						<option value="md">MD</option>
+						<option value="ma">MA</option>
+						<option value="mi">MI</option>
+						<option value="mn">MN</option>
+						<option value="ms">MS</option>
+						<option value="mo">MO</option>
+						<option value="mt">MT</option>
+						<option value="ne">NE</option>
+						<option value="nv">NV</option>
+						<option value="nh">NH</option>
+						<option value="nj">NJ</option>
+						<option value="nm">NM</option>
+						<option value="ny">NY</option>
+						<option value="nc">NC</option>
+						<option value="nd">ND</option>
+						<option value="oh">OH</option>
+						<option value="ok">OK</option>
+						<option value="or">OR</option>
+						<option value="pa">PA</option>
+						<option value="ri">RI</option>
+						<option value="sc">SC</option>
+						<option value="sd">SD</option>
+						<option value="tn">TN</option>
+						<option value="tx">TX</option>
+						<option value="ut">UT</option>
+						<option value="vt">VT</option>
+						<option value="va">VA</option>
+						<option value="wa">WA</option>
+						<option value="wv">WV</option>
+						<option value="wi">WI</option>
+						<option value="wy">WY</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td><input type="submit" value="Submit Form"></td>
+			</tr>
+		</table>
+	</form>
+	
+	
+	<hr class="clear">
+	
 
 
 

@@ -24,7 +24,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.1.2";	// The version of this copy of the script
+	var version = "2.2.0";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -38,7 +38,7 @@
 	};
 	var config = {};				// Configuration settings as set by the user or just the defaults
 	var forms = [];					// List of forms (which hold lists of addresses)
-	var defaultSelector = 'body';	// Default selector which should be over the whole page (must be compatible with the .find() function)
+	var defaultSelector = 'body';	// Default selector which should be over the whole page (must be compatible with the .find() function; not document)
 
 	/*
 	  *	ENTRY POINT
@@ -138,18 +138,18 @@
 						doMap(map);
 					});
 			},
-		 	makeAddress: function(addressData)
-		 	{
-		 		if (typeof addressData === "string")
-		 			return instance.getMappedAddressByID(addressData) || new Address({ street: addressData });
-		 		else if (typeof addressData === "object")
-		 			return new Address(addressData);
-		 	},
-		 	verify: function(input, callback)
-		 	{
-		 		var addr = instance.makeAddress(input);
-		 		addr.verify(callback);
-		 	},
+			makeAddress: function(addressData)
+			{
+				if (typeof addressData === "string")
+					return instance.getMappedAddressByID(addressData) || new Address({ street: addressData });
+				else if (typeof addressData === "object")
+					return new Address(addressData);
+			},
+			verify: function(input, callback)
+			{
+				var addr = instance.makeAddress(input);
+				addr.verify(callback);
+			},
 			getMappedAddresses: function()
 			{
 				var addr = [];
@@ -244,6 +244,7 @@
 						'primary',
 						'box',
 						'pmb',
+						//'unit',		// I hesitate to allow this, since "Units" (as in quantity) might be common...
 						'secondary'
 					],
 					labels: [
@@ -257,8 +258,7 @@
 						'unit.',
 						'unit ',
 						'pmb',
-						'box',
-						'secondary'
+						'box'
 					]
 				},
 				city: {
@@ -315,6 +315,23 @@
 						'locality'
 					]
 				},
+				lastline: {
+					names: [
+						'lastline',
+						'last-line',
+						'citystatezip',
+						'city-state-zip',
+						'city_state_zip'
+					],
+					labels: [
+						'last line',
+						'city/state/zip',
+						'city / state / zip',
+						'city - state - zip',
+						'city-state-zip',
+						'city, state, zip'
+					]
+				},
 				country: {				// We only use country to see if we should submit to the API
 					names: [
 						'country',
@@ -357,7 +374,7 @@
 				],
 				labels: [
 					' 2',
-					'second',
+					'second ',
 					'two'
 				]
 			},
@@ -498,61 +515,68 @@
 				{
 					if (e.data.form && e.data.form.processing)
 						return suppress(e);
-					
+
 					// In case programmatic changes were made to input fields, we need to sync
 					// those with internally-stored values (since the .change() event isn't fired
 					// by jQuery's val() function).
 					for (var j = 0; j < e.data.form.addresses.length; j++)
-						e.data.form.addresses[j].syncWithDom();
+						e.data.form.addresses[j].syncWithDom(true);
 
 					if (!e.data.form.allActiveAddressesAccepted())
 					{
-						// We could verify all the addresses at once, but that can
-						// be overwhelming for the user. An API request is usually quick,
-						// so let's do one at a time: it's much cleaner.
+						// We could verify all the addresses at once, but that can overwhelm the user.
+						// An API request is usually quick, so let's do one at a time: it's much cleaner.
 						var unaccepted = e.data.form.activeAddressesNotAccepted();
 						if (unaccepted.length > 0)
-							trigger("VerificationInvoked", { address: unaccepted[0], invoke: e.data.invoke });
+							trigger("VerificationInvoked", { address: unaccepted[0], invoke: e.data.invoke, invokeFn: e.data.invokeFn });
 						return suppress(e);
 					}
+				};
+
+				// Performs the tricky operation of uprooting existing event handlers that we have references to
+				// (either by jQuery's data cache or HTML attributes) planting ours, then laying theirs on top
+				var bindSubmitHandler = function(domElement, eventName)
+				{
+					var oldHandlers = [], eventsRef = $._data(domElement, 'events');
+
+					// If there are previously-bound-event-handlers (from jQuery), get those.
+					if (eventsRef && eventsRef[eventName] && eventsRef[eventName].length > 0)
+					{
+						// Get a reference to the old handlers previously bound by jQuery
+						oldHandlers = $.extend(true, [], eventsRef[eventName]);
+					}
+
+					// Unbind them...
+					$(domElement).unbind(eventName);
+
+					// ... then bind ours first ...
+					$(domElement)[eventName]({ form: f, invoke: domElement, invokeFn: eventName }, submitHandler);
+
+					// ... then bind theirs last:
+					// First bind their onclick="..." or onsubmit="..." handles...
+					if (typeof domElement['on'+eventName] === 'function')
+					{
+						var temp = domElement['on'+eventName];
+						domElement['on'+eventName] = null;
+						$(domElement)[eventName](temp);
+					}
+
+					// ... then finish up with their old jQuery handles.
+					for (var j = 0; j < oldHandlers.length; j++)
+						$(domElement)[eventName](oldHandlers[j].data, oldHandlers[j].handler);
 				};
 
 				// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
 				var formSubmitElements = $(config.submitSelector, f.dom);
 
-
-				// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core)
-				formSubmitElements.each(function(idx)
-				{
-					var oldHandlers, eventsRef = $._data(this, 'events');
-
-					// If there are previously-bound-event-handlers (from jQuery), get those.
-					if (eventsRef && eventsRef.click && eventsRef.click.length > 0)
-					{
-						// Get a reference to the old handlers previously bound by jQuery
-						oldHandlers = $.extend(true, [], eventsRef.click);
-					}
-
-					// Unbind them...
-					$(this).unbind('click');
-
-					// ... then bind ours first ...
-					$(this).click({ form: f, invoke: this }, submitHandler);
-
-					// ... then bind theirs last:
-					// First bind their onclick="..." handles...
-					if (typeof this.onclick === 'function')
-					{
-						var temp = this.onclick;
-						this.onclick = null;
-						$(this).click(temp);
-					}
-
-					// ... then finish up with their old jQuery handles.
-					if (oldHandlers)
-						for (var j = 0; j < oldHandlers.length; j++)
-							$(this).click(oldHandlers[j].data, oldHandlers[j].handler);
+				// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core for binding)
+				// (but jQuery, when raising a form submit event with .submit() will NOT necessarily click the submit button)
+				formSubmitElements.each(function(idx) {
+					bindSubmitHandler(this, 'click');	// These get fired first
 				});
+
+				// These fire after button clicks, so these need to be bound AFTER binding to the submit button click events
+				bindSubmitHandler(f.dom, 'submit');
 			}
 		}
 
@@ -658,11 +682,9 @@
 					}
 				}
 
-				// Unbind our form submit handlers
-				$(config.submitSelector, forms[i].dom).each(function(idx)
-				{
-					$(this).unbind('click', submitHandler);
-				});
+				// Unbind our form submit and submit-button click handlers
+				$.each(forms, function(idx) { $(this.dom).unbind('submit', submitHandler); });
+				$(config.submitSelector, forms[i].dom).each(function(idx) { $(this).unbind('click', submitHandler); });
 			}
 
 			$('.smarty-dots, .smarty-address-verified').remove();
@@ -724,7 +746,7 @@
 							{
 								// Looking for "address" is a very liberal search, so we need to see if it contains another
 								// field name, too... this helps us find freeform addresses (SLAP).
-								var otherFields = ["secondary", "city", "state", "zipcode", "country"];
+								var otherFields = ["secondary", "city", "state", "zipcode", "country", "lastline"];
 								for (var i = 0; i < otherFields.length; i ++)
 								{
 									// If any of these filters turns up true, then it's
@@ -745,7 +767,6 @@
 							var name = lowercase(this.name), id = lowercase(this.id);
 							if (name == "name" || id == "name")	// Exclude fields like "First Name", et al.
 								return true;
-
 							return filterDomElement(this, mapMeta.exclude.names, mapMeta.exclude.labels);
 						})
 						.toArray();
@@ -815,7 +836,7 @@
 					if ((!addrObj.street && hasCityAndStateOrZip) || (addrObj.street && !hasCityAndStateOrZip && hasCityOrStateOrZip))
 					{
 						if (config.debug)
-							console.log("Form " + idx + " contains some address input elements, but not enough for a complete address.");
+							console.log("Form " + idx + " contains some address input elements that could not be resolved to a complete address.");
 						continue;
 					}
 
@@ -860,10 +881,23 @@
 				if (!address.street)
 					continue;
 
-				// Convert ID names into actual DOM references
+				// Convert selectors into actual DOM references
 				for (var fieldType in address)
+				{
 					if (fieldType != "id")
-						address[fieldType] = $(address[fieldType], context);
+					{
+						var matched = $(address[fieldType], context);
+						if (matched.length == 0)
+						{
+							if (config.debug)
+								console.log("NOTICE: No matches found for selector " + address[fieldType] + ". Skipping...");
+							delete address[fieldType];
+							continue;
+						}
+						else
+							address[fieldType] = matched;
+					}
+				}
 
 				// Acquire the form based on the street address field (the required field)
 				var formDom = $(address.street).parents('form')[0];
@@ -1042,6 +1076,7 @@
 					address: e.data.address,
 					response: e.data.response,
 					invoke: e.data.invoke,
+					invokeFn: e.data.invokeFn,
 					chosenCandidate: response.raw[$(this).data('index')]
 				});
 			});
@@ -1346,6 +1381,8 @@
 					self.set("addressee", resp.addressee, updateDomElement, true, e, false);
 				if (resp.delivery_line_1)
 					self.set("street", resp.delivery_line_1, updateDomElement, true, e, false);
+				if (resp.last_line && fields["lastline"])
+					self.set("lastline", resp.last_line, updateDomElement, true, e, false);
 				self.set("street2", resp.delivery_line_2 || "", updateDomElement, true, e, false);	// Rarely used; must otherwise be blank.
 				self.set("secondary", "", updateDomElement, true, e, false);	// Not used in standardized addresses
 				if (resp.components.urbanization)
@@ -1395,14 +1432,14 @@
 			return corners;
 		};
 
-		this.verify = function(invoke)
+		this.verify = function(invoke, invokeFn)
 		{
 			// Invoke contains the element to "click" on once we're all done, or is a user-defined callback function (may also be undefined)
 			if (!invoke && !self.enoughInput())
 				return null;
 
 			if (!self.enoughInput())
-				return trigger("AddressWasInvalid", { address: self, response: [], invoke: invoke });
+				return trigger("AddressWasInvalid", { address: self, response: [], invoke: invoke, invokeFn: invokeFn });
 
 			ui.disableFields(self);
 			self.verifyCount ++;
@@ -1417,12 +1454,12 @@
 			})
 			.done(function(response, statusText, xhr)
 			{
-				trigger("ResponseReceived", { address: self, response: new Response(response), invoke: invoke });
+				trigger("ResponseReceived", { address: self, response: new Response(response), invoke: invoke, invokeFn: invokeFn });
 			})
 			.fail(function(xhr, statusText)
 			{
-				trigger("RequestTimedOut", { address: self, status: statusText, invoke: invoke });
-				self.verifyCount --; 			// Address verification didn't actually work
+				trigger("RequestTimedOut", { address: self, status: statusText, invoke: invoke, invokeFn: invokeFn });
+				self.verifyCount --; 			// Address verification didn't actually work, so don't count it
 			});
 
 			// Remember, the above callbacks happen later and this function is
@@ -1439,7 +1476,8 @@
 						&& (fields.state && fields.state.value)
 					)
 					|| (fields.zipcode && fields.zipcode.value)
-					|| (!fields.street2 && !fields.city && !fields.state && !fields.zipcode) // Allow freeform addresses (only a street field)
+					|| (fields.lastline && fields.lastline.value)
+					|| (!fields.street2 && !fields.city && !fields.state && !fields.zipcode && !fields.lastline) // Allow freeform addresses (only a street field)
 				   );
 		};
 
@@ -1530,7 +1568,7 @@
 			// Set "internalPriority" to true if a field value exists internally but
 			// does not exist on the DOM, and yet you want to keep the internal value.
 			// This can cause problems for an address that is ambiguous more than once
-			// (for example, addressee may be populated by the response but is not in the DOM.
+			// (for example, addressee may be populated by the response but is not in the DOM).
 			for (var prop in fields)
 			{
 				if (!fields[prop].dom && fields[prop].value && !internalPriority)
@@ -1541,7 +1579,7 @@
 				else if (fields[prop].dom && typeof fields[prop].value !== 'undefined')
 				{
 					var domValue = $(fields[prop].dom).val() || "";
-					if (fields[prop].value != domValue)
+					if (fields[prop].value != domValue && (internalPriority && (fields[prop].dom.tagName || "").toUpperCase() != "SELECT"))
 					{
 						self.unaccept();
 						fields[prop].value = domValue;
@@ -1639,7 +1677,7 @@
 					throw new Error("Candidate index is out of bounds (" + json.length + " candidates; indicies 0 through " + (json.length - 1) + " available; requested " + idx + ")");
 			}
 		};
-
+		
 		var maybeDefault = function(idx)
 		{
 			// Assigns index to 0, the default value, if no value is passed in
@@ -1766,9 +1804,7 @@
 			return this.raw[idx].analysis.lacslink_code == "A";
 		}
 	}
-
-
-
+	
 
 	/*
 	 *	EVENT HANDLER SHTUFF
@@ -1789,6 +1825,15 @@
 			handler(event, data);
 	}
 
+	// Submits a form by calling `click` on a button element or `submit` on a form element
+	var submitForm = function(invokeOn, invokeFunction)
+	{
+		if (invokeOn && typeof invokeOn !== 'function' && invokeFunction)
+			if (invokeFunction == "click")
+				$(invokeOn)[0].click();		// Very particular: we MUST call the native click() function, NOT jQuery's!
+			else if (invokeFunction == "submit")
+				$(invokeOn).submit();		// For submit(), we have to use jQuery's, so that all its submit handlers fire.
+	};
 
 	var EventHandlers = {
 		FieldsMapped: function(event, data)
@@ -1825,7 +1870,7 @@
 			if (data.address.form)
 				data.address.form.processing = true;
 
-			data.address.verify(data.invoke);
+			data.address.verify(data.invoke, data.invokeFn);
 		},
 
 		RequestSubmitted: function(event, data)
@@ -1844,7 +1889,7 @@
 			ui.hideLoader(data.address);
 			
 			if (typeof data.invoke === "function")
-				data.invoke(data.response);	// User-defined callback function
+				data.invoke(data.response);	// User-defined callback function; we're all done here.
 			else
 			{
 				if (data.response.isInvalid())
@@ -1864,15 +1909,9 @@
 			if (data.address.form)
 				delete data.address.form.processing;	// Tell the potentially duplicate event handlers that we're done.
 
-			// If this was a form submit, don't let a network failure hold back the user. Invoke the submit event.
+			// If this was a form submit, don't let a network failure hold them back; just accept it and move on
 			if (data.invoke)
-			{
 				data.address.accept(data, false);
-				if (typeof data.invoke !== 'function')
-					$(data.invoke).click();
-				else
-					data.invoke(data);
-			}
 
 			ui.enableFields(data.address);
 			ui.hideLoader(data.address);
@@ -1942,9 +1981,9 @@
 			if (data.address.form)
 				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 			
-			// If this was the result of a form submit, re-submit the form
-			if (data.invoke && typeof data.invoke !== 'function')
-				$(data.invoke)[0].click();	// Very particular! MUST call the native click(), NOT jQuery's!
+			// If this was the result of a form submit, re-submit the form (whether by clicking the button or raising form submit event)
+			if (data.invoke && data.invokeFn)
+				submitForm(data.invoke, data.invokeFn);
 
 			trigger("Completed", data);
 		},
@@ -1960,7 +1999,7 @@
 				if (data.address.form)
 					delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 			}
-		},
+		}
 	};
 
 
