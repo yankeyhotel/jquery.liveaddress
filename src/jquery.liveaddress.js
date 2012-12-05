@@ -407,6 +407,7 @@
 					'comp',
 					'firm',
 					'org',
+					'addressee',
 					'group',
 					'gate',
 					'fax',
