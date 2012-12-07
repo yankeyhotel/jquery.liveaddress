@@ -24,7 +24,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.2.1";	// The version of this copy of the script
+	var version = "2.2.2";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -617,7 +617,7 @@
 			{
 				// This inner loop compares each label value with what we're looking for
 				for (var j = 0; j < labels.length; j++)
-					if (domElement.labels[i].innerText.toLowerCase().indexOf(labels[j]) > -1)
+					if ($(domElement.labels[i]).text().toLowerCase().indexOf(labels[j]) > -1)
 						return true;
 			}
 
