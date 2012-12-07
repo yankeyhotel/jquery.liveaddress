@@ -24,7 +24,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.2.0";	// The version of this copy of the script
+	var version = "2.2.1";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -39,6 +39,7 @@
 	var config = {};				// Configuration settings as set by the user or just the defaults
 	var forms = [];					// List of forms (which hold lists of addresses)
 	var defaultSelector = 'body';	// Default selector which should be over the whole page (must be compatible with the .find() function; not document)
+	var mappedAddressCount = 0;		// The number of currently-mapped addresses
 
 	/*
 	  *	ENTRY POINT
@@ -692,6 +693,7 @@
 			$('body').undelegate('.smarty-undo', 'click');
 
 			forms = [];
+			mappedAddressCount = 0;
 
 			if (config.debug)
 				console.log("Done cleaning up form map data; ready for new mapping.");
@@ -841,7 +843,7 @@
 						continue;
 					}
 
-					form.addresses.push(new Address(addrObj, form));
+					form.addresses.push(new Address(addrObj, form, "auto" + (++mappedAddressCount)));
 				}
 
 				// Save the form we just finished mapping
@@ -896,7 +898,7 @@
 							continue;
 						}
 						else
-							address[fieldType] = matched;
+							address[fieldType] = matched[0];
 					}
 				}
 
@@ -925,6 +927,7 @@
 				}
 
 				// Add this address to the form
+				mappedAddressCount ++;
 				form.addresses.push(new Address(address, form, address.id));
 
 				if (config.debug)
@@ -1198,6 +1201,11 @@
 				userAborted($(this).parents('.smarty-address-invalid')[0], e);
 			});
 		};
+
+		this.isDropdown = function(dom)
+		{
+ 			return dom && ((dom.tagName || dom.nodeName || "").toUpperCase() == "SELECT");
+		};
 	}
 
 
@@ -1240,7 +1248,7 @@
 			fields[key].undo = fields[key].value || "";
 			fields[key].value = value;
 
-			if (updateDomElement && fields[key].dom)
+			if (updateDomElement && fields[key].dom && !ui.isDropdown(fields[key].dom))	// Don't bother with dropdowns, because their enumerated values may not match what we put in
 				$(fields[key].dom).val(value);
 			
 			var eventMeta = {
@@ -1296,7 +1304,6 @@
 
 					var elem = $(domMap[prop]), val, elemArray = elem.toArray();
 					var isData = elemArray ? elemArray.length == 0 : false;
-					var tagName = domMap[prop].tagName || domMap[prop][0].tagName || "";
 
 					if (isData) // Didn't match an HTML element, so treat it as an address string ("street1" data) instead
 						val = domMap[prop] || "";
@@ -1306,7 +1313,7 @@
 					fields[prop] = {};
 					fields[prop].value = val;
 					fields[prop].undo = val;
-					isEmpty = isEmpty ? val.length == 0 || tagName.toUpperCase() == "SELECT" : false;  // dropdowns could have an initial value, yet the address may be "empty" (<option value="None" selected>(Select state)</option>) ...
+					isEmpty = isEmpty ? val.length == 0 || ui.isDropdown(domMap[prop]) : false;  // dropdowns could have an initial value, yet the address may be "empty" (<option value="None" selected>(Select state)</option>) ...
 
 					if (!isData)
 					{
@@ -1580,7 +1587,7 @@
 				else if (fields[prop].dom && typeof fields[prop].value !== 'undefined')
 				{
 					var domValue = $(fields[prop].dom).val() || "";
-					if (fields[prop].value != domValue && (internalPriority && (fields[prop].dom.tagName || "").toUpperCase() != "SELECT"))
+					if (fields[prop].value != domValue && internalPriority && !ui.isDropdown(fields[prop].dom))
 					{
 						self.unaccept();
 						fields[prop].value = domValue;
