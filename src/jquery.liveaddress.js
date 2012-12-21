@@ -40,6 +40,7 @@
 	var forms = [];					// List of forms (which hold lists of addresses)
 	var defaultSelector = 'body';	// Default selector which should be over the whole page (must be compatible with the .find() function; not document)
 	var mappedAddressCount = 0;		// The number of currently-mapped addresses
+	var acceptableFields = ["street", "street2", "secondary", "city", "state", "zipcode", "lastline", "addressee", "urbanization", "country"];
 
 	/*
 	  *	ENTRY POINT
@@ -424,7 +425,7 @@
 					' type',
 					'save ',
 					'keep',
-					'name',	
+					'name',
 					'method',
 					'phone',
 					'organization',
@@ -872,10 +873,10 @@
 
 			if (config.debug)
 				console.log("Manually mapping fields given this data:", map);
-
+			
 			this.clean();
-
 			var formsFound = [];
+			map = map instanceof Array ? map : [map];
 
 			for (var addrIdx in map)
 			{
@@ -889,9 +890,16 @@
 				{
 					if (fieldType != "id")
 					{
+						if (!arrayContains(acceptableFields, fieldType))
+						{	// Make sure the field name is allowed
+							if (config.debug)
+								console.log("NOTICE: Field named " + fieldType + " is not allowed. Skipping...");
+							delete address[fieldType];
+							continue;
+						}
 						var matched = $(address[fieldType], context);
 						if (matched.length == 0)
-						{
+						{	// Don't try to map an element that couldn't be matched or found at all
 							if (config.debug)
 								console.log("NOTICE: No matches found for selector " + address[fieldType] + ". Skipping...");
 							delete address[fieldType];
@@ -954,7 +962,8 @@
 			}
 
 			// Disable submit buttons
-			$(config.submitSelector, address.form.dom).attr('disabled', 'disabled');
+			if (address.form && address.form.dom)
+				$(config.submitSelector, address.form.dom).attr('disabled', 'disabled');
 		};
 
 		this.enableFields = function(address)
@@ -1227,7 +1236,6 @@
 		var fields;									// Data values and references to DOM elements
 		var id;										// An ID by which to classify this address on the DOM
 		var state = "accepted"; 					// Can be: "accepted" or "changed"
-		var acceptableFields = ["street", "street2", "secondary", "city", "state", "zipcode", "lastline", "addressee", "urbanization", "country"];
 		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai"}
 		// Some of the above fields will only be mapped manually, not automatically.
 		
