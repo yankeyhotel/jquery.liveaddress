@@ -28,7 +28,7 @@
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
-		requestUrl: "https://api.smartystreets.com/street-address",			// API endpoint
+		requestUrl: "https://api.smartystreets.com/street-address",				// API endpoint
 		timeout: 5000,															// How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium",														// Animation speed
 		ambiguousMessage: "Please choose the most correct address.",			// Message when address is ambiguous
@@ -40,7 +40,7 @@
 	var forms = [];					// List of forms (which hold lists of addresses)
 	var defaultSelector = 'body';	// Default selector which should be over the whole page (must be compatible with the .find() function; not document)
 	var mappedAddressCount = 0;		// The number of currently-mapped addresses
-	var acceptableFields = ["street", "street2", "secondary", "city", "state", "zipcode", "lastline", "addressee", "urbanization", "country"];
+	var acceptableFields = ["street", "street2", "secondary", "city", "state", "zipcode", "lastline", "addressee", "urbanization", "country"]; // API input field names
 
 	/*
 	  *	ENTRY POINT
@@ -596,6 +596,7 @@
 
 			var name = lowercase(domElement.name);
 			var id = lowercase(domElement.id);
+			var selectorSafeID = id.replace(/[\[|\]|\(|\)|\:|\'|\"|\=|\||\#|\.|\!|\||\@|\^|\&|\*]/g, '\\\\$&');
 			var placeholder = lowercase(domElement.placeholder);
 			var title = lowercase(domElement.title);
 
@@ -609,7 +610,7 @@
 			// browsers, we have to find them manually, which this next block does.
 			if (!('labels' in domElement))
 			{
-				var lbl = $('label[for=' + id + ']')[0] || $(domElement).parents('label')[0];
+				var lbl = $('label[for=' + selectorSafeID + ']')[0] || $(domElement).parents('label')[0];
 				domElement.labels = !lbl ? [] : [lbl];
 			}
 
