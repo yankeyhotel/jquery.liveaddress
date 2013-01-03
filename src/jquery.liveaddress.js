@@ -610,7 +610,7 @@
 			// browsers, we have to find them manually, which this next block does.
 			if (!('labels' in domElement))
 			{
-				var lbl = $('label[for=' + selectorSafeID + ']')[0] || $(domElement).parents('label')[0];
+				var lbl = $('label[for="' + selectorSafeID + '"]')[0] || $(domElement).parents('label')[0];
 				domElement.labels = !lbl ? [] : [lbl];
 			}
 
