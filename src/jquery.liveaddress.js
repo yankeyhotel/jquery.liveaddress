@@ -24,7 +24,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.2.2";	// The version of this copy of the script
+	var version = "2.2.3";	// The version of this copy of the script
 
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -95,6 +95,7 @@
 		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
+		config.requestUrl = config.requestUrl || defaults.requestUrl;
 
 		if (config.candidates < 1)
 			config.candidates = 1;
@@ -217,7 +218,7 @@
 			formDataProperty: "smarty-form",	// Indicates whether we've stored the form already
 			identifiers: {
 				streets: {				// both street1 and street2, separated later.
-					names: [
+					names: [			// Names are hidden from the user; "name" and "id" attributes
 						'street',
 						'address',		// This ("address") is a dangerous inclusion; but we have a strong set of exclusions below to prevent false positives.
 						'address1',		// If there are automapping issues (specifically if it is too greedy when mapping fields) it will be because
@@ -231,7 +232,7 @@
 						'line',
 						'primary'
 					],
-					labels: [
+					labels: [			// Labels are visible to the user (labels and placeholder texts)
 						'street',
 						'address',		// hazardous (e.g. "Email address") -- but we deal with that later
 						'line ',
@@ -244,7 +245,7 @@
 						'suite',
 						'apartment',
 						'primary',
-						'box',
+						//'box',		// This false-positives fields like "searchBox" ...
 						'pmb',
 						//'unit',		// I hesitate to allow this, since "Units" (as in quantity) might be common...
 						'secondary'
@@ -259,8 +260,8 @@
 						'unit:',
 						'unit.',
 						'unit ',
-						'pmb',
-						'box'
+						'box',
+						'pmb'
 					]
 				},
 				city: {
@@ -367,8 +368,11 @@
 			street2: {			// Terms which would identify a "street2" field
 				names: [
 					'address2',
+					'address_2',
+					'address-2',
 					'street2',
 					'addr2',
+					'addr_2',
 					'line2',
 					'str2',
 					'second',
@@ -416,6 +420,7 @@
 					'cvc',
 					'cvv',
 					'file',
+					'search',
 					'list'			// AmeriCommerce cart uses this as an "Address Book" dropdown to choose an entire address...
 				],
 				labels: [
@@ -438,6 +443,7 @@
 					'cardholder',
 					'cvc',
 					'cvv',
+					'search',
 					'file',
 					' list',
 					'fax',
@@ -727,9 +733,9 @@
 						.filter(function()
 						{
 							// This potential address input element must be within the user's set of selected elements
-							return $(context).find(this).length > 0;
+							return $(context).has(this).length > 0; // (Using has() is compatible with as low as jQuery 1.4)
 						})
-						.filter(':visible')		// No "hidden" input fields, etc...
+						.filter(':visible')		// No "hidden" input fields allowed
 						.filter(function()
 						{
 							var name = lowercase(this.name), id = lowercase(this.id);
@@ -1461,7 +1467,7 @@
 			ui.disableFields(self);
 			self.verifyCount ++;
 			var addrData = self.toRequest();
-
+			
 			$.ajax(
 			{
 				url: defaults.requestUrl+"?auth-token="+config.key+"&callback=?",
@@ -1490,7 +1496,7 @@
 				&& (
 					(
 						(fields.city && fields.city.value)
-						&& (fields.state && fields.state.value)
+						&& (fields.state && fields.state.value && fields.state.value.length > 1)	// The last is for dropdowns that default to "0" (like osCommerce)
 					)
 					|| (fields.zipcode && fields.zipcode.value)
 					|| (fields.lastline && fields.lastline.value)
@@ -1632,7 +1638,7 @@
 			var countryValue = fields.country.value.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
 			var usa = ["", "0", "1", "COUNTRY", "NONE", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
 						"UNITEDSTATES", "UNITEDSTATESAMERICA",	"UNITEDSTATESOFAMERICA", "AMERICA",
-						"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"];	// 840 is ISO: 3166; and 223 is Zen Cart
+						"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"];	// 840 is ISO: 3166; and 223 is some shopping carts
 			return arrayContains(usa, countryValue) || fields.country.value == "-1";
 		}
 
