@@ -3,17 +3,17 @@
 <head>
 	<title>LiveAddress API jQuery Plugin &mdash; TEST RUNNER</title>
 	<meta charset="utf-8">
-	<link href="//fonts.googleapis.com/css?family=Signika+Negative:300|Open+Sans:400,700,600,300,800" rel="stylesheet" type="text/css">
-	<script src="lib/jquery-1_8_2.js"></script>
+	<link href="//fonts.googleapis.com/css?family=Open+Sans:400,700,600,300,800" rel="stylesheet" type="text/css">
+	<script src="lib/jquery-1_9.js"></script>
 	<script src="src/jquery.liveaddress.js"></script>
 	<script>
 	
 		/** CONFIGURE **/
 
-		var htmlKey = "HTML-KEY";			// Put your HTML key here
+		var htmlKey = "HTML_KEY";			// Put your HTML key here
 		var debug = true;					// Toggle debug mode
 
-		var testRunnerVersion = "1.1.0";	// The version of this test runner page
+		var testRunnerVersion = "1.1.2";	// The version of this test runner page
 
 
 		/** PREPARE FORM(S) **/
@@ -35,7 +35,7 @@
 	</script>
 	<style>
 	body {
-		font: 400 16px/1.5em 'Open Sans', 'Signika Negative', sans-serif;
+		font: 400 16px/1.5em 'Open Sans', sans-serif;
 		padding: 15px 50px;
 		background: #F3F3F3;
 		text-shadow: 0 1px 0 #FFF;
@@ -44,10 +44,10 @@
 
 	p a, form a, hgroup a {
 		color: #0077BB;
-		transition: color .25s linear;
-		-moz-transition: color .25s linear;
-		-webkit-transition: color .25s linear;
-		-o-transition: color .25s linear;
+		transition: all .15s linear;
+		-moz-transition: all .15s linear;
+		-webkit-transition: all .15s linear;
+		-o-transition: all .15s linear;
 	}
 
 	p a:hover, form a:hover, hgroup a:hover {
@@ -89,7 +89,9 @@
 	}
 
 	h2 {
-		font: 300 25px/1em 'Signika Negative';
+		font-weight: normal;
+		font-size: 25px;
+		line-height: 1em;
 	}
 
 	h2 a {
@@ -136,8 +138,8 @@
 	form input[type=text],
 	form textarea {
 		padding: 5px 5px 3px;
-		font: 14px/1em 'Signika Negative', 'Helvetica Neue', sans-serif;
-		min-width: 165px;
+		font: 12px/1em sans-serif;
+		width: 160px;
 		outline: none;
 	}
 

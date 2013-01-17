@@ -4,14 +4,16 @@
 
 	(c) 2012-2013 SmartyStreets
 
-	License: MIT (attribution appreciated)
-	Documentation: http://smartystreets.com/kb/liveaddress-api/website-forms
-	Version: [See variable below for version]
+	LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE VERSION 3
+	(http://opensource.org/licenses/gpl-3.0.html)
 
-	Hosted on GitHub. Checkout the jquery.liveaddress repository
-	for latest version and to initiate pull requests.
+	Documentation: 			http://smartystreets.com/kb/liveaddress-api/website-forms
+	Version: 				(See variable below for version)
+	Latest stable version: 	(See documentation for link)
+	Bleeding-edge release: 	https://github.com/smartystreets/jquery.liveaddress
 
-	THIS UN-MINIFIED COPY IS INTENDED FOR DEBUG AND DEVELOPMENT ONLY.
+	Feel free to contribute to this project on GitHub by
+	submitting pull requests and reporting issues.
 **/
 
 
@@ -414,6 +416,7 @@
 					'firm',
 					'org',
 					'addressee',
+					'addresses',
 					'group',
 					'gate',
 					'fax',
@@ -957,34 +960,35 @@
 
 		this.disableFields = function(address)
 		{
+			// Given an address, disables the input fields for the address, also the submit button
 			if (!config.ui)
 				return;
 
-			// Given an address, disables the input fields for the address, also the submit button
 			var fields = address.getDomFields();
-			for (var prop in fields)
-			{
-				// TODO: If we drop support for jQuery 1.5 and bump it up, we could be using .prop() here. (and just below)
-				$(fields[prop]).attr('disabled', 'disabled');
-			}
+			for (var field in fields)
+				$(fields[field]).prop ? $(fields[field]).prop('disabled', true) :  $(fields[field]).attr('disabled', 'disabled');
 
 			// Disable submit buttons
 			if (address.form && address.form.dom)
-				$(config.submitSelector, address.form.dom).attr('disabled', 'disabled');
+			{
+				var buttons = $(config.submitSelector, address.form.dom);
+				buttons.prop ? buttons.prop('disabled', true) :  buttons.attr('disabled', 'disabled');
+			}
 		};
 
 		this.enableFields = function(address)
 		{
+			// Given an address, re-enables the input fields for the address
 			if (!config.ui)
 				return;
 
-			// Given an address, re-enables the input fields for the address
 			var fields = address.getDomFields();
-			for (var prop in fields)
-				$(fields[prop]).removeAttr('disabled');	// Again, could be using .prop() if jQuery 1.6+
+			for (var field in fields)
+				$(fields[field]).prop ? $(fields[field]).prop('disabled', false) : $(fields[field]).removeAttr('disabled');
 
 			// Enable submit buttons
-			$(config.submitSelector, address.form.dom).removeAttr('disabled');
+			var buttons = $(config.submitSelector, address.form.dom);
+			buttons.prop ? buttons.prop('disabled', false) : buttons.removeAttr('disabled');
 		};
 
 		this.showLoader = function(addr)

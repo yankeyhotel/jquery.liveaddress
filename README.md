@@ -1,6 +1,10 @@
 LiveAddress API jQuery Plugin
 ==================================
 
+Add real-time, plug-and-play, free address verification to your website. Powered by
+[SmartyStreets](http://smartystreets.com). Drop a couple lines of code into your webpage
+and... voilà! Instant address validation.
+
 
 Full documentation
 -----------------------
@@ -34,14 +38,30 @@ in testing than in production, right?
 
 
 
-
-License (MIT)
+Updates
 -----------------------
 
-Copyright (c) 2012 SmartyStreets.
+If you use the `<script>` tags we recommend here or in the documentation, you'll automatically get all updates on the minor
+release indicated by the URL. For example, a URL to the script with "2.2" in it means you'll always get the latest stable
+2.2 version automatically.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+This GitHub repository is where the plugin is being actively developed. It will have the latest "bleeding-edge" features
+and fixes, but also bugs. So while you can link to the raw file here on GitHub instead, it is more prone to bugs and
+breaking changes. It also may jump to a new minor or major version without warning, potentially breaking your implementation.
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Contributing & Bug Reports
+-----------------------
+
+Feel free to submit a pull request to this repository, open an issue, or contact us if your question is more localized.
+We'll help when we can, but SmartyStreets has no control over the source code of other web sites. If you can isolate
+an issue and display it on [jsFiddle](http://jsfiddle.net) for us, it will help us diagnose any problems more quickly.
+
+
+
+License (GPLv3)
+-----------------------
+
+All source code, resources, and other contents herein are copyright (c) 2012-2013 SmartyStreets and are distributed
+under [Version 3 of the GNU General Public License](http://opensource.org/licenses/GPL-3.0).

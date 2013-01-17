@@ -1,0 +1,45 @@
+{
+  "name": "liveaddress",
+  "version": "2.2.3",
+  "title": "LiveAddress - Address validation for forms",
+  "description": "Free and commercial plug-and-play US address verification and geocoding for website forms, powered by SmartyStreets.",
+  "keywords": [
+    "address",
+    "validation",
+    "verification",
+    "verify",
+    "validate",
+    "street-address",
+    "geocoding",
+    "addresses",
+    "form",
+    "forms",
+    "zipcode"
+  ],
+  "author": {
+    "name": "SmartyStreets",
+    "email": "support@smartystreets.com",
+    "url": "http://smartystreets.com"
+  },
+  "maintainers": [
+    {
+      "name": "SmartyStreets",
+      "email": "support@smartystreets.com",
+      "url": "http://smartystreets.com"
+    }
+  ],
+  "licenses": [
+    {
+      "type": "GPLv3",
+      "url": "http://opensource.org/licenses/gpl-3.0.html"
+    }
+  ],
+  "bugs": "https://github.com/smartystreets/jquery.liveaddress/issues",
+  "homepage": "http://smartystreets.com/kb/liveaddress-api/website-forms",
+  "docs": "http://smartystreets.com/kb/liveaddress-api/website-forms",
+  "demo": "http://smartystreets.com/kb/liveaddress-api/website-forms",
+  //"download": "d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.2/jquery.liveaddress.min.js",
+  "dependencies": {
+    "jquery": ">=1.5"
+  }
+}
