@@ -36,8 +36,8 @@
   ],
   "bugs": "https://github.com/smartystreets/jquery.liveaddress/issues",
   "homepage": "http://smartystreets.com/kb/liveaddress-api/website-forms",
-  "docs": "http://smartystreets.com/kb/liveaddress-api/website-forms",
-  "demo": "http://smartystreets.com/kb/liveaddress-api/website-forms",
+  "docs": "http://smartystreets.com/kb/liveaddress-api/website-forms#install",
+  "demo": "http://smartystreets.com/kb/liveaddress-api/website-forms#example",
   "dependencies": {
     "jquery": ">=1.5"
   }
