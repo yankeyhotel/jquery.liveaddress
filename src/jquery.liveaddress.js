@@ -455,28 +455,34 @@
 			}
 		};
 
-		var loaderWidth = 24, loaderHeight = 8;		// TODO Update this if the image changes
+		var loaderWidth = 24, loaderHeight = 8;		// TODO: Update this if the image changes
 		var uiCss = "<style>"
 			+ ".smarty-dots { display: none; position: absolute; z-index: 999; width: "+loaderWidth+"px; height: "+loaderHeight+"px; background-image: url('data:image/gif;base64,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'); }"
-			+ ".smarty-address-verified { display: none; position: absolute; z-index: 999; width: 55px; border: 1px solid #80AA00; padding: 1px; font-size: 12px; font-family: sans-serif; color: #2D8D0D; line-height: 1.25em; background: #E2FFBE; border-radius: 10px 3px 3px 10px; padding-left: 3px; }"
-			+ ".smarty-undo { font-size: 11px; padding: 4px; color: #537700; vertical-align: top; text-decoration: none; } .smarty-undo:hover { color: #CC0000; }"
-			+ ".smarty-address-ambiguous, .smarty-address-invalid { font-size: 14px; font-family: sans-serif; text-align: left; line-height: 1em !important; color: black; background: #EEE; padding: 10px; border-radius: 5px; z-index: 999; box-shadow: 0px 10px 35px rgba(0, 0, 0, .7); }"
-			+ ".smarty-address-ambiguous a, .smarty-address-invalid a { color: #0055D4; font-weight: normal; } .smarty-address-ambiguous a:hover, .smarty-address-invalid a:hover { color: #119FF2 }"
-			+ ".smarty-ambiguous-message, .smarty-invalid-message { font-family: 'Helvetica Neue', sans-serif; font-weight: 300; padding: 10px 0 25px; font-size: 18px; border-bottom: 1px solid #888; text-align: center; }"
-			+ ".smarty-address-ambiguous { border: 1px solid #AAA; border-top: 10px solid #AAA; }"
-			+ ".smarty-ambiguous-message { color: #000; }"
-			+ ".smarty-address-invalid { border: 1px solid #CC0000; border-top: 10px solid #CC0000; }"
-			+ ".smarty-invalid-message { color: #000; }"
-			+ "a.smarty-choice { font-size: 14px !important; padding: 17px !important; text-decoration: none !important; display: block !important; background: #F5F5F5; color: #222; border-bottom: 1px solid #CCC; }"
-			+ ".smarty-address-ambiguous .smarty-choice:hover, .smarty-address-ambiguous .smarty-choice:hover * { background: #444; color: #FFF; }"
-			+ ".smarty-address-invalid .smarty-choice { background: #F5F5F5; color: #60AD08; }"
-			+ ".smarty-address-invalid .smarty-choice:hover { background: #A3C952; color: #FFF; }"
-			+ ".smarty-address-invalid a:hover { color: #CC0000; }"
-			+ ".smarty-address-ambiguous a.smarty-use-original { font-size: 12px !important; padding: 7px 17px !important; }"
-			+ ".smarty-address-invalid a.smarty-use-original { color: #CC0000 !important; }"
-			+ "a.smarty-use-original:hover { color: #FFF !important; background: #CC0000 !important; }"
-			+ "a.smarty-abort { position: absolute !important; top: 5px !important; right: 5px; background: #DDD; color: #999; border-radius: 10px; padding: 2px 6px; font-size: 10px !important; text-decoration: none !important; }"
-			+ "a.smarty-choice-abort { padding: 7px 17px !important; } a.smarty-choice-abort:hover { background: #A3C952 !important; color #FFF !important; }"
+			+ ".smarty-ui { position: absolute; }"
+			+ ".smarty-popup { border: 3px solid #4C4C4C; background: #FFF; box-shadow: 0px 10px 25px rgba(0, 0, 0, .4); }"
+			+ ".smarty-popup-header { background: #DDD; text-transform: uppercase; font: bold 12px/1em 'Arial Black', sans-serif; padding: 12px; }"
+			+ ".smarty-popup-ambiguous-header { color: #333; }"
+			+ ".smarty-popup-invalid-header { color: #CC0000; }"
+			+ ".smarty-popup-close { color: #CC0000; text-decoration: none; position: absolute; right: 15px; top: 10px; display: block; padding: 4px 6px; text-transform: uppercase; }"
+			+ ".smarty-popup-close:hover { color: #FFF; background: #CC0000; }"
+			+ ".smarty-choice-list .smarty-choice { padding: 10px 15px; color: #1A1A1A; }"
+			+ ".smarty-choice { display: block; font: 300 14px/1.5em sans-serif; text-decoration: none; border-top: 1px solid #CCC; }"
+			+ ".smarty-choice-list .smarty-choice:hover { color: #EEE; background: #333; }"
+			+ ".smarty-choice-alt { border-top: 1px solid #4C4C4C; background: #F6F6F6; box-shadow: inset 0 4px 15px -5px rgba(0, 0, 0, .45); }"
+			+ ".smarty-choice-alt .smarty-choice-abort, .smarty-choice-override { padding: 6px 15px; color: #B3B3B3; font-size: 12px; }"
+			+ ".smarty-choice-alt .smarty-choice:first-child { border-top: 0; }"
+			+ ".smarty-choice-abort:hover { color: #333 }"
+			+ ".smarty-choice-override:hover { color: #CC0000; }"
+			+ ".smarty-tag { position: absolute; display: block; overflow: hidden; font: 15px/1.2em sans-serif; text-decoration: none; width: 20px; height: 18px; border-radius: 25px; transition: all .25s; -moz-transition: all .25s; -webkit-transition: all .25s; -o-transition: all .25s; }"
+			+ ".smarty-tag-grayed { border: 1px solid #B4B4B4; color: #999; background: #DDD; box-shadow: inset 0 9px 15px #FFF; }"
+			+ ".smarty-tag-green { border: 1px solid #407513; color: #407513; background: #A6D187; box-shadow: inset 0 9px 15px #E3F6D5; }"
+			+ ".smarty-tag:hover { width: 65px; }"
+			+ ".smarty-tag-grayed:hover { border-color: #333; }"
+			+ ".smarty-tag:hover .smarty-tag-text { color: #000; }"
+			+ ".smarty-tag-check { padding-left: 4px; }"
+			+ ".smarty-tag-text { font-size: 12px; position: relative; top: -1px; left: 3px; }"
+			+ "</style>";
+
 
 		function postMappingOperations()
 		{
@@ -492,7 +498,7 @@
 				for (var i = 0; i < addresses.length; i++)
 				{
 					var id = addresses[i].id();
-					$('body').append('<div title="Loading..." class="smarty-dots smarty-addr-'+id+'"></div>');
+					$('body').append('<div class="smarty-ui"><div title="Loading..." class="smarty-dots smarty-addr-'+id+'"></div></div>');
 					$('body').append('<div class="smarty-container smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Your address was verified. Click to undo." data-addressid="'+id+'">Verified</a></div>');
 				}
 
