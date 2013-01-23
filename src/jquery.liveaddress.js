@@ -1307,7 +1307,7 @@
 		this.load = function(domMap, addressID)
 		{
 			fields = {};
-			id = addressID || randomInt(1, 99999);
+			id = addressID ? addressID.replace(/[^a-z0-9_\-]/ig, '') : randomInt(1, 99999);		// Strips non-selector-friendly characters
 
 			if (typeof domMap === 'object')
 			{
