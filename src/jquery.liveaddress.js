@@ -9,7 +9,8 @@
 
 	Documentation: 			http://smartystreets.com/kb/liveaddress-api/website-forms
 	Version: 				(See variable below for version)
-	Latest stable version: 	(See documentation for link)
+	Minified:				(See documentation or GitHub repository for minified script file)
+	Latest stable version: 	(See documentation)
 	Bleeding-edge release: 	https://github.com/smartystreets/jquery.liveaddress
 
 	Feel free to contribute to this project on GitHub by
@@ -1968,7 +1969,7 @@
 			if (!data.address || (data.address && data.address.form && data.address.form.processing))
 			{
 				if (config.debug)
-					console.log("NOTICE: VerificationInvoked event aborted. Address is missing or an address in the same form is already processing.");
+					console.log("NOTICE: VerificationInvoked event handling aborted. Address is missing or an address in the same form is already processing.");
 				return;
 			}
 			else if (data.address.status() == "accepted" && !data.verifyAccepted)
