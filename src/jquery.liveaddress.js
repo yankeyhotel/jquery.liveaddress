@@ -483,11 +483,11 @@
 			+ ".smarty-choice-abort:hover { color: #333 !important; }"
 			+ ".smarty-choice-override:hover { color: #CC0000 !important; }"
 			+ ".smarty-tag { position: absolute; display: block; overflow: hidden; font: 15px/1.2em sans-serif; text-decoration: none !important; width: 20px; height: 18px; border-radius: 25px; transition: all .25s; -moz-transition: all .25s; -webkit-transition: all .25s; -o-transition: all .25s; }"
+			+ ".smarty-tag:hover { width: 70px; text-decoration: none !important; color: #999 !important; }"
+			+ ".smarty-tag:hover .smarty-tag-text { color: #000 !important; }"
 			+ ".smarty-tag-grayed { border: 1px solid #B4B4B4 !important; color: #999 !important; background: #DDD !important; box-shadow: inset 0 9px 15px #FFF; }"
 			+ ".smarty-tag-green { border: 1px solid #407513 !important; color: #407513 !important; background: #A6D187 !important; box-shadow: inset 0 9px 15px #E3F6D5; }"
-			+ ".smarty-tag:hover { width: 70px; text-decoration: none !important; color: #999 !important; }"
 			+ ".smarty-tag-grayed:hover { border-color: #333 !important; }"
-			+ ".smarty-tag:hover .smarty-tag-text { color: #000 !important; }"
 			+ ".smarty-tag-check { padding-left: 4px; text-decoration: none !important; }"
 			+ ".smarty-tag-text { font-size: 12px !important; position: absolute; top: 0; left: 16px; width: 50px !important; text-align: center !important; }"
 			+ "</style>";
