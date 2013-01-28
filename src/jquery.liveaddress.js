@@ -26,15 +26,15 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.2.4";	// The version of this copy of the script
-
+	var version = "2.3.0";	// The version of this copy of the script
+	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
 		requestUrl: "https://api.smartystreets.com/street-address",				// API endpoint
 		timeout: 5000,															// How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium",														// Animation speed
-		ambiguousMessage: "Please choose the most correct address.",			// Message when address is ambiguous
-		invalidMessage: "Address could not be verified.",						// Message when address is invalid
+		ambiguousMessage: "Choose the correct address",							// Message when address is ambiguous
+		invalidMessage: "Address not verified",									// Message when address is invalid
 		fieldSelector: "input[type=text], input:not([type]), textarea, select",	// Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last"	// Selector to find a likely submit button or submit image (in a form)
 	};
@@ -76,6 +76,13 @@
 		if (arg.debug)
 			console.log("LiveAddress API jQuery Plugin version "+version+" (Debug mode)");
 
+		// Mapping fields requires that the document be fully loaded in order to attach UI elements
+		if (document.readyState === "complete")
+			window.loaded = true;
+		else
+			$(window).load(function() { window.loaded = true; });
+
+		// Determine if user passed in an API key or a settings/config object
 		if (typeof arg === 'string')
 		{
 			// Use the default configuration
@@ -92,6 +99,7 @@
 		config.ui = typeof config.ui === 'undefined' ? true : config.ui;
 		config.autoMap = typeof config.autoMap === 'undefined' ? true : config.autoMap;
 		config.autoVerify = typeof config.autoVerify === 'undefined' ? true : config.autoVerify;
+		config.submitVerify = typeof config.submitVerify === 'undefined' ? true : config.submitVerify;
 		config.timeout = config.timeout || defaults.timeout;
 		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
 		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
@@ -152,15 +160,15 @@
 			},
 			verify: function(input, callback)
 			{
-				var addr = instance.makeAddress(input);
-				addr.verify(callback);
+				var addr = instance.makeAddress(input);			// Below means, force re-verify even if accepted/unchanged.
+				trigger("VerificationInvoked", { address: addr, verifyAccepted: true });
 			},
 			getMappedAddresses: function()
 			{
 				var addr = [];
 				for (var i = 0; i < forms.length; i++)
 					for (var j = 0; j < forms[i].addresses.length; j++)
-						addr.push(forms[i].addresses[j])
+						addr.push(forms[i].addresses[j]);
 				return addr;
 			},
 			getMappedAddressByID: function(id)
@@ -193,7 +201,7 @@
 		// Bind each handler to an event
 		for (var prop in EventHandlers)
 			bind(prop);
-		
+
 		// Map the fields
 		instance.mapFields();
 
@@ -455,30 +463,36 @@
 			}
 		};
 
-		var loaderWidth = 24, loaderHeight = 8;		// TODO Update this if the image changes
+		var loaderWidth = 24, loaderHeight = 8;		// TODO: Update these if the image changes
 		var uiCss = "<style>"
 			+ ".smarty-dots { display: none; position: absolute; z-index: 999; width: "+loaderWidth+"px; height: "+loaderHeight+"px; background-image: url('data:image/gif;base64,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'); }"
-			+ ".smarty-address-verified { display: none; position: absolute; z-index: 999; width: 55px; border: 1px solid #80AA00; padding: 1px; font-size: 12px; font-family: sans-serif; color: #2D8D0D; line-height: 1.25em; background: #E2FFBE; border-radius: 10px 3px 3px 10px; padding-left: 3px; }"
-			+ ".smarty-undo { font-size: 11px; padding: 4px; color: #537700; vertical-align: top; text-decoration: none; } .smarty-undo:hover { color: #CC0000; }"
-			+ ".smarty-address-ambiguous, .smarty-address-invalid { font-size: 14px; font-family: sans-serif; text-align: left; line-height: 1em !important; color: black; background: #EEE; padding: 10px; border-radius: 5px; z-index: 999; box-shadow: 0px 10px 35px rgba(0, 0, 0, .7); }"
-			+ ".smarty-address-ambiguous a, .smarty-address-invalid a { color: #0055D4; font-weight: normal; } .smarty-address-ambiguous a:hover, .smarty-address-invalid a:hover { color: #119FF2 }"
-			+ ".smarty-ambiguous-message, .smarty-invalid-message { font-family: 'Helvetica Neue', sans-serif; font-weight: 300; padding: 10px 0 25px; font-size: 18px; border-bottom: 1px solid #888; text-align: center; }"
-			+ ".smarty-address-ambiguous { border: 1px solid #AAA; border-top: 10px solid #AAA; }"
-			+ ".smarty-ambiguous-message { color: #000; }"
-			+ ".smarty-address-invalid { border: 1px solid #CC0000; border-top: 10px solid #CC0000; }"
-			+ ".smarty-invalid-message { color: #000; }"
-			+ "a.smarty-choice { font-size: 14px !important; padding: 17px !important; text-decoration: none !important; display: block !important; background: #F5F5F5; color: #222; border-bottom: 1px solid #CCC; }"
-			+ ".smarty-address-ambiguous .smarty-choice:hover, .smarty-address-ambiguous .smarty-choice:hover * { background: #444; color: #FFF; }"
-			+ ".smarty-address-invalid .smarty-choice { background: #F5F5F5; color: #60AD08; }"
-			+ ".smarty-address-invalid .smarty-choice:hover { background: #A3C952; color: #FFF; }"
-			+ ".smarty-address-invalid a:hover { color: #CC0000; }"
-			+ ".smarty-address-ambiguous a.smarty-use-original { font-size: 12px !important; padding: 7px 17px !important; }"
-			+ ".smarty-address-invalid a.smarty-use-original { color: #CC0000 !important; }"
-			+ "a.smarty-use-original:hover { color: #FFF !important; background: #CC0000 !important; }"
-			+ "a.smarty-abort { position: absolute !important; top: 5px !important; right: 5px; background: #DDD; color: #999; border-radius: 10px; padding: 2px 6px; font-size: 10px !important; text-decoration: none !important; }"
-			+ "a.smarty-choice-abort { padding: 7px 17px !important; } a.smarty-choice-abort:hover { background: #A3C952 !important; color #FFF !important; }"
+			+ ".smarty-ui { position: absolute; text-shadow: none; text-align: left; text-decoration: none; }"
+			+ ".smarty-popup { border: 3px solid #4C4C4C; padding: 0; background: #F6F6F6; box-shadow: 0px 10px 35px rgba(0, 0, 0, .8); }"
+			+ ".smarty-popup-header { background: #DDD; height: 12px; text-transform: uppercase; font: bold 12px/1em 'Arial Black', sans-serif; padding: 12px; }"
+			+ ".smarty-popup-ambiguous-header { color: #333; }"
+			+ ".smarty-popup-invalid-header { color: #CC0000; }"
+			+ ".smarty-popup-close { color: #CC0000; text-decoration: none !important; position: absolute; right: 15px; top: 10px; display: block; padding: 4px 6px; text-transform: uppercase; }"
+			+ ".smarty-popup-close:hover { color: #FFF; background: #CC0000; }"
+			+ ".smarty-choice-list .smarty-choice { background: #FFF; padding: 10px 15px; color: #1A1A1A; }"
+			+ ".smarty-choice { display: block; font: 300 14px/1.5em sans-serif; text-decoration: none; border-top: 1px solid #CCC; }"
+			+ ".smarty-choice-list .smarty-choice:hover { color: #EEE; background: #333; text-decoration: none !important; }"
+			+ ".smarty-choice-alt { border-top: 1px solid #4C4C4C; background: #F6F6F6; box-shadow: inset 0 4px 15px -5px rgba(0, 0, 0, .45); }"
+			+ ".smarty-choice-alt .smarty-choice-abort, .smarty-choice-override { padding: 6px 15px; color: #B3B3B3; font-size: 12px; text-decoration: none; }"
+			+ ".smarty-choice-alt .smarty-choice:first-child { border-top: 0; }"
+			+ ".smarty-choice-abort:hover { color: #333 }"
+			+ ".smarty-choice-override:hover { color: #CC0000; }"
+			+ ".smarty-tag { position: absolute; display: block; overflow: hidden; font: 15px/1.2em sans-serif; text-decoration: none; width: 20px; height: 18px; border-radius: 25px; transition: all .25s; -moz-transition: all .25s; -webkit-transition: all .25s; -o-transition: all .25s; }"
+			+ ".smarty-tag-grayed { border: 1px solid #B4B4B4; color: #999; background: #DDD; box-shadow: inset 0 9px 15px #FFF; }"
+			+ ".smarty-tag-green { border: 1px solid #407513; color: #407513 !important; background: #A6D187; box-shadow: inset 0 9px 15px #E3F6D5; }"
+			+ ".smarty-tag:hover { width: 70px; text-decoration: none !important; color: #999; }"
+			+ ".smarty-tag-grayed:hover { border-color: #333; }"
+			+ ".smarty-tag:hover .smarty-tag-text { color: #000; }"
+			+ ".smarty-tag-check { padding-left: 4px; text-decoration: none !important; }"
+			+ ".smarty-tag-text { font-size: 12px; position: absolute; top: 0; left: 16px; width: 50px; text-align: center; }"
+			+ "</style>";
 
-		function postMappingOperations()
+
+		this.postMappingOperations = function()
 		{
 			// Injects materials into the DOM, binds to form submit events, etc... very important.
 
@@ -491,105 +505,136 @@
 				var addresses = instance.getMappedAddresses();
 				for (var i = 0; i < addresses.length; i++)
 				{
-					var id = addresses[i].id();
-					$('body').append('<div title="Loading..." class="smarty-dots smarty-addr-'+id+'"></div>');
-					$('body').append('<div class="smarty-container smarty-address-verified smarty-addr-'+id+'"><span title="Address verified!">&#10003;</span><a href="javascript:" class="smarty-undo" title="Your address was verified. Click to undo." data-addressid="'+id+'">Verified</a></div>');
+					var id = addresses[i].id();	// TODO: When removing the dots, remove its parent (.smarty-ui) also!
+					$('body').append('<div class="smarty-ui"><div title="Loading..." class="smarty-dots smarty-addr-'+id+'"></div></div>');
+					var offset = uiTagOffset(addresses[i].corners(true));
+					$('body').append('<div class="smarty-ui" style="top: '+offset.top+'px; left: '+offset.left+'px;"><a href="javascript:" class="smarty-tag smarty-tag-grayed smarty-addr-'+id+'" title="Address not verified. Click to verify." data-addressid="'+id+'"><span class="smarty-tag-check">&#10003;</span><span class="smarty-tag-text">Verify</span></a></div>');
+					
+					// Move the UI elements around when browser window is resized
+					$(window).resize({ addr: addresses[i] }, function(e)
+					{
+						var offset = uiTagOffset(e.data.addr.corners(true));   // Position of lil' tag
+						$('.smarty-tag.smarty-addr-'+e.data.addr.id())
+							.parent('.smarty-ui')
+							.css('top', offset.top+'px')
+							.css('left', offset.left+'px');
+
+						var addrOffset = e.data.addr.corners();		// Position of any popup windows
+						$('.smarty-popup.smarty-addr-'+e.data.addr.id())
+							.parent('.smarty-ui')
+							.css('top', addrOffset.top+'px')
+							.css('left', addrOffset.left+'px');
+					});
 				}
+
+				$('body').delegate('.smarty-tag-grayed', 'click', function(e)
+				{
+					// "Verify" clicked -- manually invoke verification
+					var addrId = $(this).data('addressid');
+					instance.verify(addrId);
+				});
 
 				$('body').delegate('.smarty-undo', 'click', function(e)
 				{
-					// Undo button clicked
-					var addrId = $(this).data('addressid');
+					// "Undo" clicked -- replace field values with previous input
+					var addrId = $(this).parent().data('addressid');
 					var addr = instance.getMappedAddressByID(addrId);
 					addr.undo(true);
 					// If fields are re-mapped after an address was verified, it loses its "accepted" status even if no values were changed.
 					// Thus, in some rare occasions, the undo link and the "verified!" text may not disappear when the user clicks "Undo",
 					// The undo functionality still works in those cases, but with no visible changes, the address doesn't fire "AddressChanged"...
 				});
-
-				$('body').delegate('.smarty-address-verified', 'mouseover', function(e)
-				{
-					$('.smarty-undo', this).text('Undo?');
-				});
-
-				$('body').delegate('.smarty-address-verified', 'mouseout', function(e)
-				{
-					$('.smarty-undo', this).text('Verified');
-				});
 			}
-
-			// Bind to form submits through form submit or submit button click
-			for (var i = 0; i < forms.length; i++)
+			
+			if (config.submitVerify)
 			{
-				var f = forms[i];
-
-				submitHandler = function(e)
+				// Bind to form submits through form submit and submit button click events
+				for (var i = 0; i < forms.length; i++)
 				{
-					if (e.data.form && e.data.form.processing)
-						return suppress(e);
-
-					// In case programmatic changes were made to input fields, we need to sync
-					// those with internally-stored values (since the .change() event isn't fired
-					// by jQuery's val() function).
-					for (var j = 0; j < e.data.form.addresses.length; j++)
-						e.data.form.addresses[j].syncWithDom(true);
-
-					if (!e.data.form.allActiveAddressesAccepted())
+					var f = forms[i];
+	
+					submitHandler = function(e)
 					{
-						// We could verify all the addresses at once, but that can overwhelm the user.
-						// An API request is usually quick, so let's do one at a time: it's much cleaner.
-						var unaccepted = e.data.form.activeAddressesNotAccepted();
-						if (unaccepted.length > 0)
-							trigger("VerificationInvoked", { address: unaccepted[0], invoke: e.data.invoke, invokeFn: e.data.invokeFn });
-						return suppress(e);
-					}
-				};
-
-				// Performs the tricky operation of uprooting existing event handlers that we have references to
-				// (either by jQuery's data cache or HTML attributes) planting ours, then laying theirs on top
-				var bindSubmitHandler = function(domElement, eventName)
-				{
-					var oldHandlers = [], eventsRef = $._data(domElement, 'events');
-
-					// If there are previously-bound-event-handlers (from jQuery), get those.
-					if (eventsRef && eventsRef[eventName] && eventsRef[eventName].length > 0)
+						if (e.data.form && e.data.form.processing)
+							return suppress(e);
+	
+						// In case programmatic changes were made to input fields, we need to sync
+						// those with internally-stored values (since the .change() event isn't fired
+						// by jQuery's val() function).
+						for (var j = 0; j < e.data.form.addresses.length; j++)
+							e.data.form.addresses[j].syncWithDom(true);
+	
+						if (!e.data.form.allActiveAddressesAccepted())
+						{
+							// We could verify all the addresses at once, but that can overwhelm the user.
+							// An API request is usually quick, so let's do one at a time: it's much cleaner.
+							var unaccepted = e.data.form.activeAddressesNotAccepted();
+							if (unaccepted.length > 0)
+								trigger("VerificationInvoked", { address: unaccepted[0], invoke: e.data.invoke, invokeFn: e.data.invokeFn });
+							return suppress(e);
+						}
+					};
+	
+					// Performs the tricky operation of uprooting existing event handlers that we have references to
+					// (either by jQuery's data cache or HTML attributes) planting ours, then laying theirs on top
+					var bindSubmitHandler = function(domElement, eventName)
 					{
-						// Get a reference to the old handlers previously bound by jQuery
-						oldHandlers = $.extend(true, [], eventsRef[eventName]);
-					}
-
-					// Unbind them...
-					$(domElement).unbind(eventName);
-
-					// ... then bind ours first ...
-					$(domElement)[eventName]({ form: f, invoke: domElement, invokeFn: eventName }, submitHandler);
-
-					// ... then bind theirs last:
-					// First bind their onclick="..." or onsubmit="..." handles...
-					if (typeof domElement['on'+eventName] === 'function')
-					{
-						var temp = domElement['on'+eventName];
-						domElement['on'+eventName] = null;
-						$(domElement)[eventName](temp);
-					}
-
-					// ... then finish up with their old jQuery handles.
-					for (var j = 0; j < oldHandlers.length; j++)
-						$(domElement)[eventName](oldHandlers[j].data, oldHandlers[j].handler);
-				};
-
-				// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
-				var formSubmitElements = $(config.submitSelector, f.dom);
-
-				// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core for binding)
-				// (but jQuery, when raising a form submit event with .submit() will NOT necessarily click the submit button)
-				formSubmitElements.each(function(idx) {
-					bindSubmitHandler(this, 'click');	// These get fired first
-				});
-
-				// These fire after button clicks, so these need to be bound AFTER binding to the submit button click events
-				bindSubmitHandler(f.dom, 'submit');
+						if (!domElement || !eventName)
+							return;
+	
+						var oldHandlers = [], eventsRef = $._data(domElement, 'events');
+	
+						// If there are previously-bound-event-handlers (from jQuery), get those.
+						if (eventsRef && eventsRef[eventName] && eventsRef[eventName].length > 0)
+						{
+							// Get a reference to the old handlers previously bound by jQuery
+							oldHandlers = $.extend(true, [], eventsRef[eventName]);
+						}
+	
+						// Unbind them...
+						$(domElement).unbind(eventName);
+	
+						// ... then bind ours first ...
+						$(domElement)[eventName]({ form: f, invoke: domElement, invokeFn: eventName }, submitHandler);
+	
+						// ... then bind theirs last:
+						// First bind their onclick="..." or onsubmit="..." handles...
+						if (typeof domElement['on'+eventName] === 'function')
+						{
+							var temp = domElement['on'+eventName];
+							domElement['on'+eventName] = null;
+							$(domElement)[eventName](temp);
+						}
+	
+						// ... then finish up with their old jQuery handles.
+						for (var j = 0; j < oldHandlers.length; j++)
+							$(domElement)[eventName](oldHandlers[j].data, oldHandlers[j].handler);
+					};
+	
+					// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
+					var formSubmitElements = $(config.submitSelector, f.dom);
+	
+					// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core for binding)
+					// (but jQuery, when raising a form submit event with .submit() will NOT necessarily click the submit button)
+					formSubmitElements.each(function(idx) {
+						bindSubmitHandler(this, 'click');	// These get fired first
+					});
+	
+					// These fire after button clicks, so these need to be bound AFTER binding to the submit button click events
+					bindSubmitHandler(f.dom, 'submit');
+				}
 			}
+
+			trigger("MapInitialized");
+		}
+
+		// Computes where the little checkmark tag of the UI goes, relative to the boundaries of the last field
+		function uiTagOffset(corners)
+		{
+			return {
+				top: corners.top + corners.height / 2 - 10,
+				left: corners.right - 6
+			};
 		}
 
 		// This function is used to find and properly map elements to their field type
@@ -642,19 +687,13 @@
 		};
 
 		// User aborted the verification process (X click or esc keyup)
-		function userAborted(selector, e)
+		function userAborted(uiPopup, e)
 		{
 			// Even though there may be more than one bound, and this disables the others,
 			// this is for simplicity: and I figure, it won't happen too often.
 			// (Otherwise "Completed" events are raised by pressing Esc even if nothing is happening)
 			$(document).unbind('keyup');
-
-			$(selector).slideUp(defaults.speed, function()
-			{
-				$(this).remove();
-				$(this).unbind('click');
-			});
-
+			$(uiPopup).slideUp(defaults.speed, function() { $(this).parent('.smarty-ui').remove(); });
 			trigger("Completed", e.data);
 		}
 
@@ -675,7 +714,7 @@
 				return;
 
 			if (config.debug)
-				console.log("Cleaning up old form map data...");
+				console.log("Cleaning up old form map data and bindings...");
 
 			// Spare none alive!
 
@@ -700,14 +739,16 @@
 				$(config.submitSelector, forms[i].dom).each(function(idx) { $(this).unbind('click', submitHandler); });
 			}
 
-			$('.smarty-dots, .smarty-address-verified').remove();
+			$('.smarty-ui').remove();
 			$('body').undelegate('.smarty-undo', 'click');
+			$('body').undelegate('.smarty-tag-grayed', 'click');
+			$(window).unbind('resize');
 
 			forms = [];
 			mappedAddressCount = 0;
 
 			if (config.debug)
-				console.log("Done cleaning up form map data; ready for new mapping.");
+				console.log("Done cleaning up; ready for new mapping.");
 		};
 
 
@@ -843,7 +884,6 @@
 							addrObj[field] = current;
 					}
 
-
 					// Don't map the address if there's not enough fields for a complete address
 					var hasCityAndStateOrZip = addrObj.zipcode || (addrObj.state && addrObj.city);
 					var hasCityOrStateOrZip = addrObj.city || addrObj.state || addrObj.zipcode;
@@ -863,8 +903,6 @@
 				if (config.debug)
 					console.log("Form " + idx + " is finished:", form);
 			});
-		
-			postMappingOperations();
 
 			if (config.debug)
 				console.log("Automapping complete.");
@@ -915,9 +953,24 @@
 							delete address[fieldType];
 							continue;
 						}
+						else if (matched.parents('form').length == 0)
+						{	// We should only map elements inside a <form> tag; otherwise we can't bind to submit handlers later
+							if (config.debug)
+								console.log("NOTICE: Element with selector \"" + address[fieldType] + "\" is not inside a <form> tag. Skipping...");
+							delete address[fieldType];
+							continue;
+						}
 						else
 							address[fieldType] = matched[0];
 					}
+				}
+
+				if (!((address.street) && (((address.city) && (address.state)) || (address.zipcode) || (address.lastline)
+					 || (!address.street2 && !address.city && !address.state && !address.zipcode && !address.lastline))))
+				{
+					if (config.debug)
+						console.log("NOTICE: Address map (index "+addrIdx+") was not mapped to a complete street address. Skipping...");
+					continue;
 				}
 
 				// Acquire the form based on the street address field (the required field)
@@ -953,7 +1006,6 @@
 			}
 
 			forms = formsFound;
-			postMappingOperations();
 			trigger("FieldsMapped");
 		};
 
@@ -998,12 +1050,11 @@
 
 			// Get position information now instead of earlier in case elements shifted since page load
 			var lastFieldCorners = addr.corners(true);
-			var loaderElement = $('.smarty-dots.smarty-addr-'+addr.id());
+			var loaderUI = $('.smarty-dots.smarty-addr-'+addr.id()).parent();
 
-			loaderElement.css("top", (lastFieldCorners.top + lastFieldCorners.height / 2 - loaderHeight / 2) + "px")
-					   .css("left", (lastFieldCorners.right - loaderWidth - 3) + "px");
-
-			$('.smarty-dots.smarty-addr-'+addr.id()).show();
+			loaderUI.css("top", (lastFieldCorners.top + lastFieldCorners.height / 2 - loaderHeight / 2) + "px")
+						.css("left", (lastFieldCorners.right - loaderWidth - 10) + "px");
+			$('.smarty-dots', loaderUI).show();
 		};
 
 		this.hideLoader = function(addr)
@@ -1012,34 +1063,30 @@
 				$('.smarty-dots.smarty-addr-'+addr.id()).hide();
 		};
 
-		this.showValid = function(addr)
+		this.markAsValid = function(addr)
 		{
-			if (!config.ui)
+			if (!config.ui || !addr)
 				return;
 			
-			var validDom = $('.smarty-address-verified.smarty-addr-'+addr.id());
-			var lastFieldCorners = addr.corners(true);
-			
-			// Position the valid box in the right spot
-			validDom.css("top", (lastFieldCorners.top + lastFieldCorners.height / 2 - 12) + "px").css("left", (lastFieldCorners.right - 3) + "px");
-
-			if (validDom.length > 0 && !validDom.is(':visible'))
-				validDom.show(defaults.speed);
+			var domTag = $('.smarty-tag.smarty-tag-grayed.smarty-addr-'+addr.id());
+			domTag.removeClass('smarty-tag-grayed').addClass('smarty-tag-green').attr("title", "Address verified! Click to undo.");
+			$('.smarty-tag-text', domTag).text('Verified').hover(function () {
+				$(this).text('Undo');
+			}, function() {
+				$(this).text('Verified');
+			}).addClass('smarty-undo');
 		};
 
-		this.hideValid = function(addr)
+		this.unmarkAsValid = function(addr)
 		{
-			var validSelector = '.smarty-address-verified.smarty-addr-'+addr.id();
-			if (!addr || !config.ui || !$(validSelector).is(':visible'))
+			var validSelector = '.smarty-tag.smarty-addr-'+addr.id();
+			if (!config.ui || !addr || $(validSelector).length == 0)
 				return;
-
-			// Hide the "verified" message then re-show undo button for possible later use
-			$(validSelector).hide(defaults.speed, function()
-			{
-				$('.smarty-undo', this).show();
-			});
+			
+			var domTag = $('.smarty-tag.smarty-tag-green.smarty-addr-'+addr.id());
+			domTag.removeClass('smarty-tag-green').addClass('smarty-tag-grayed').attr("title", "Address not verified. Click to verify.");
+			$('.smarty-tag-text', domTag).text('Verify').unbind('mouseenter mouseleave').removeClass('smarty-undo');
 		};
-
 
 		this.showAmbiguous = function(data)
 		{
@@ -1049,47 +1096,49 @@
 			var addr = data.address;
 			var response = data.response;
 			var corners = addr.corners();
-			corners.width = Math.max(corners.width, 380); 	// minimum width
-			corners.height = Math.max(corners.height, response.length * 48 + 145);	// minimum height
+			corners.width = Math.max(corners.width, 300); 	// minimum width
+			corners.height = Math.max(corners.height, response.length * 63 + 119);	// minimum height
 
-			var html = '<div class="smarty-container smarty-address-ambiguous smarty-addr-'+addr.id()+'" style="position: absolute; '
-				+ 'top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
-				+ '<a href="javascript:" class="smarty-abort">x</a>'
-				+ '<div class="smarty-ambiguous-message">'+config.ambiguousMessage+'</div>';
+			var html = '<div class="smarty-ui" style="top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
+				+ '<div class="smarty-popup smarty-addr-'+addr.id()+'" style="width: '+(corners.width - 6)+'px; height: '+(corners.height - 3)+'px;">'
+				+ '<div class="smarty-popup-header smarty-popup-ambiguous-header">'+config.ambiguousMessage+'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>'
+				+ '<div class="smarty-choice-list">';
 
 			for (var i = 0; i < response.raw.length; i++)
 			{
 				var line1 = response.raw[i].delivery_line_1, city = response.raw[i].components.city_name,
 					st = response.raw[i].components.state_abbreviation,
 					zip = response.raw[i].components.zipcode + "-" + response.raw[i].components.plus4_code;
-
-				html += '<a href="javascript:" class="smarty-choice smarty-good-addr" data-index="'+i+'"><b>'+line1+'</b> &nbsp;'+city+', '+st+' '+zip+'</a>';
+				html += '<a href="javascript:" class="smarty-choice" data-index="'+i+'">'+line1+'<br>'+city+', '+st+' '+zip+'</a>';
 			}
-			
-			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort">None of these; I\'ll type another address</a>';
-			html += '<a href="javascript:" class="smarty-choice smarty-use-original">I certify what I typed is correct<br>('+addr.toString()+')</a></div>';
+
+			html += '</div><div class="smarty-choice-alt">';
+			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">I\'ll type a different address.</a>';
+			html += '<a href="javascript:" class="smarty-choice smarty-choice-override">I certify what I typed is correct.<br>('+addr.toString()+')</a>';
+			html += '</div></div></div>';
 			$(html).hide().appendTo('body').show(defaults.speed);
-			
+
 			// Scroll to it if needed
 			if ($(document).scrollTop() > corners.top - 100
 				|| $(document).scrollTop() < corners.top - $(window).height() + 100)
 			{
 				$('html, body').stop().animate({
-					scrollTop: $('.smarty-address-ambiguous').offset().top - 100
+					scrollTop: $('.smarty-popup.smarty-addr-'+addr.id()).offset().top - 100
 				}, 500);
 			}
 
 			data.selectors = {
-				goodAddr: '.smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-good-addr',
-				useOriginal: '.smarty-address-ambiguous .smarty-use-original',
-				abort: '.smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-abort, .smarty-address-ambiguous.smarty-addr-'+addr.id()+' .smarty-choice-abort'
+				goodAddr: '.smarty-popup.smarty-addr-'+addr.id()+' .smarty-choice-list .smarty-choice',
+				useOriginal: '.smarty-popup.smarty-addr-'+addr.id()+' .smarty-choice-override',
+				abort: '.smarty-popup.smarty-addr-'+addr.id()+' .smarty-abort'
 			};
 
+			// User chose a candidate address
 			$('body').delegate(data.selectors.goodAddr, 'click', data, function(e)
 			{
-				// User chose a candidate address
-				$('.smarty-addr-'+addr.id()+'.smarty-address-ambiguous').slideUp(defaults.speed, function()
+				$('.smarty-popup.smarty-addr-'+addr.id()).slideUp(defaults.speed, function()
 				{
+					$(this).parent('.smarty-ui').remove();
 					$(this).remove();
 				});
 
@@ -1105,11 +1154,12 @@
 				});
 			});
 
+			// User wants to revert to what they typed (forced accept)
 			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e)
 			{
-				// User wants to revert to what they typed
-				$('.smarty-addr-'+e.data.address.id()+'.smarty-address-ambiguous').slideUp(defaults.speed, function()
+				$(this).parents('.smarty-popup').slideUp(defaults.speed, function()
 				{
+					$(this).parent('.smarty-ui').remove();
 					$(this).remove();
 				});
 
@@ -1118,23 +1168,24 @@
 				trigger("OriginalInputSelected", e.data);
 			});
 
-			// User presses esc key
+			// User presses Esc key
 			$(document).keyup(data, function(e)
 			{
 				if (e.keyCode == 27) //Esc
 				{
 					undelegateAllClicks(e.data.selectors);
 					delete e.data.selectors;
-					userAborted('.smarty-addr-'+e.data.address.id()+'.smarty-address-ambiguous', e);
+					userAborted($('.smarty-popup.smarty-addr-'+e.data.address.id()), e);
+					suppress(e);
 				}
 			});
 
-			// User clicks "x" in corner (same effect as Esc key)
-			$(data.selectors.abort).click(data, function(e)
+			// User clicks "x" in corner or chooses to try a different address (same effect as Esc key)
+			$('body').delegate(data.selectors.abort, 'click', data, function(e)
 			{
 				undelegateAllClicks(e.data.selectors);
 				delete e.data.selectors;
-				userAborted($(this).parents('.smarty-address-ambiguous')[0], e);
+				userAborted($(this).parents('.smarty-popup'), e);
 			});
 		};
 
@@ -1147,58 +1198,63 @@
 			var addr = data.address;
 			var response = data.response;
 			var corners = addr.corners();
-			corners.width = Math.max(corners.width, 350); 	// minimum width
-			corners.height = Math.max(corners.height, 175);	// minimum height
+			corners.width = Math.max(corners.width, 300); 	// minimum width
+			corners.height = 180;//130	// use minimum height
 
-			var html = '<div class="smarty-container smarty-address-invalid smarty-addr-'+addr.id()+'" style="position: absolute; '
-				+ 'top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
-				+ '<a href="javascript:" class="smarty-abort">x</a>'
-				+ '<div class="smarty-invalid-message">'+config.invalidMessage+'</div>'
-				+ '<a href="javascript:" class="smarty-choice smarty-invalid-rejectoriginal">&rsaquo; I will double-check the address</a>'
-				+ '<a href="javascript:" class="smarty-choice smarty-use-original">&rsaquo; I certify what I typed is correct<br> &nbsp; ('+addr.toString()+')</a></div>';
+			var html = '<div class="smarty-ui" style="top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
+				+ '<div class="smarty-popup smarty-addr-'+addr.id()+'" style="width: '+(corners.width - 6)+'px; height: '+(corners.height - 3)+'px;">'
+				+ '<div class="smarty-popup-header smarty-popup-invalid-header">'+config.invalidMessage+'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>'
+				+ '<div class="smarty-choice-list"><a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">I\'ll type a different address.</a></div>'
+				+ '<div class="smarty-choice-alt"><a href="javascript:" class="smarty-choice smarty-choice-override">I certify what I typed is correct.<br>('+addr.toString()+')</a></div>'
+				+ '</div></div>';
 
 			$(html).hide().appendTo('body').show(defaults.speed);
 
 			data.selectors = {
-				rejectOriginal: '.smarty-address-invalid .smarty-invalid-rejectoriginal',
-				useOriginal: '.smarty-address-invalid .smarty-use-original',
-				abort: '.smarty-address-invalid.smarty-addr-'+addr.id()+' .smarty-abort'
-			};
+				useOriginal: '.smarty-popup.smarty-addr-'+addr.id()+' .smarty-choice-override ',
+				abort: '.smarty-popup.smarty-addr-'+addr.id()+' .smarty-abort'
+			}
 
 			// Scroll to it if necessary
 			if ($(document).scrollTop() > corners.top - 100
 				|| $(document).scrollTop() < corners.top - $(window).height() + 100)
 			{
 				$('html, body').stop().animate({
-					scrollTop: $('.smarty-address-invalid').offset().top - 100
+					scrollTop: $('.smarty-popup.smarty-addr-'+addr.id()).offset().top - 100
 				}, 500);
 			}
 
-			$('body').delegate(data.selectors.rejectOriginal, 'click', data, function(e)
+			// User rejects original input and agrees to double-check it
+			$('body').delegate(data.selectors.abort, 'click', data, function(e)
 			{
-				// User rejects original input and agrees to double-check it
-				$('.smarty-addr-'+e.data.address.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
+				userAborted('.smarty-popup.smarty-addr-'+e.data.address.id(), e);
+				/*
+				$('.smarty-popup.smarty-addr-'+e.data.address.id()).slideUp(defaults.speed, function()
 				{
-					$(this).remove();	// See "userAborted()" for the reason why we unbind here
+					// TODO Unbind or remove anything else?
+					//$(this).remove();	// See "userAborted()" for the reason why we unbind here
 				});
 
 				$(document).unbind('keyup');
-				undelegateAllClicks(e.data.selectors);
+				undelegateAllClicks(e.data.selectors);*/
 				delete e.data.selectors;
 
 				trigger("InvalidAddressRejected", e.data);
 			});
 
+			// User certifies that what they typed is correct
 			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e)
 			{
-				// User certifies that what they typed is correct
-				$('.smarty-addr-'+addr.id()+'.smarty-address-invalid').slideUp(defaults.speed, function()
+
+				/*
+				$('.smarty-popup.smarty-addr-'+addr.id()).slideUp(defaults.speed, function()
 				{
-					$(this).remove();
+					$(this).remove(); // TODO Any other unbindings/removings here?
 				});
 
 				$(document).unbind('keyup');
-				undelegateAllClicks(e.data.selectors);
+				undelegateAllClicks(e.data.selectors);*/
+				userAborted('.smarty-popup.smarty-addr-'+e.data.address.id(), e);
 				delete e.data.selectors;
 
 				trigger("OriginalInputSelected", e.data);
@@ -1209,17 +1265,19 @@
 			{
 				if (e.keyCode == 27) //Esc
 				{
+					$(data.selectors.abort).click();
+					return;
 					undelegateAllClicks(e.data.selectors);
-					userAborted('.smarty-addr-'+e.data.address.id()+'.smarty-address-invalid', e);
+					userAborted('.smarty-popup.smarty-addr-'+e.data.address.id(), e);
 				}
 			});
-
+/*
 			// User clicks "x" in corner (same effect as Esc key)
-			$(data.selectors.abort).click(data, function(e)
+			$('body').delegate(data.selectors.abort, 'click', data, function(e)
 			{
 				undelegateAllClicks(e.data.selectors);
-				userAborted($(this).parents('.smarty-address-invalid')[0], e);
-			});
+				userAborted($(this).parents('.smarty-popup'), e);
+			});*/
 		};
 
 		this.isDropdown = function(dom)
@@ -1280,14 +1338,21 @@
 			
 			if (differentVal && !keepState)
 			{
-				ui.hideValid(self);
+				ui.unmarkAsValid(self);
+				var uiTag = config.ui ? $('.smarty-ui .smarty-tag.smarty-addr-'+id) : undefined;
 				if (self.isDomestic())
 				{
+					if (uiTag && !uiTag.is(':visible'))
+						uiTag.fadeIn(config.speed);	// Show checkmark tag if address is in US
 					self.unaccept().syncWithDom();
 					trigger("AddressChanged", eventMeta);
 				}
 				else
+				{
+					if (uiTag && uiTag.is(':visible'))
+						uiTag.fadeOut(config.speed);	// Hide checkmark tag if address is non-US
 					self.accept({ address: self }, false);
+				}
 			}
 
 			return true;
@@ -1386,8 +1451,6 @@
 			// Given the response from an API request associated with this address,
 			// replace the values in the address... and if updateDomElement is true,
 			// then change the values in the fields on the page accordingly.
-			// NOTE: "resp" should contain just the candidate to replace with, not all
-			// of them! If an array is passed in, the 0th element is chosen.
 			
 			if (typeof resp === 'array' && resp.length > 0)
 				resp = resp[0];
@@ -1463,10 +1526,14 @@
 		{
 			// Invoke contains the element to "click" on once we're all done, or is a user-defined callback function (may also be undefined)
 			if (!invoke && !self.enoughInput())
-				return null;
+			{
+				if (config.debug)
+					console.log("NOTICE: The address does not have enough input to verify. Since no callback is specified, there is nothing to do.");
+				return trigger("Completed", { address: self, invoke: invoke, invokeFn: invokeFn, response: new Response([]) });
+			}
 
 			if (!self.enoughInput())
-				return trigger("AddressWasInvalid", { address: self, response: [], invoke: invoke, invokeFn: invokeFn });
+				return trigger("AddressWasInvalid", { address: self, response: new Response([]), invoke: invoke, invokeFn: invokeFn });
 
 			ui.disableFields(self);
 			self.verifyCount ++;
@@ -1474,7 +1541,7 @@
 			
 			$.ajax(
 			{
-				url: defaults.requestUrl+"?auth-token="+config.key+"&callback=?",
+				url: defaults.requestUrl+"?auth-token="+encodeURIComponent(config.key)+"&plugin="+encodeURIComponent(instance.version)+(config.debug ? "_debug" : "")+"&callback=?",
 				dataType: "jsonp",
 				data: addrData,
 				timeout: config.timeout
@@ -1565,14 +1632,14 @@
 			state = "accepted";
 			ui.enableFields(self);
 			if (showValid)	// If user chooses original input or the request timed out, the address wasn't "verified"
-				ui.showValid(self);
+				ui.markAsValid(self);
 			trigger("AddressAccepted", data);
 		};
 
 		this.unaccept = function()
 		{
 			state = "changed";
-			ui.hideValid(self);
+			ui.unmarkAsValid(self);
 			return self;
 		};
 
@@ -1653,9 +1720,6 @@
 	}
 
 
-
-
-
 	/*
 		Represents a <form> tag which contains mapped fields.
 	*/
@@ -1683,8 +1747,6 @@
 	}
 
 
-
-
 	/*
 		Wraps output from the API in an easier-to-handle way
 	*/
@@ -1707,18 +1769,17 @@
 		
 		var maybeDefault = function(idx)
 		{
+			// TODO: WHY NOT JUST FORCE THE INDEX TO BE WITHIN BOUNDS?
 			// Assigns index to 0, the default value, if no value is passed in
 			return typeof idx === 'undefined' ? 0 : idx;
 		};
-
-
 
 
 		// PUBLIC-FACING MEMBERS //
 
 		this.raw = json;
 		this.length = json.length;
-		this.numCandidates = function() { return json.length; };
+		//this.numCandidates = function() { return json.length; }; // TODO: CAN WE JUST NUKE THIS?
 
 		this.isValid = function()
 		{
@@ -1739,96 +1800,95 @@
 
 		this.isMissingSecondary = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1
 					|| (this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("H#") > -1);
 		};
 
 		this.isBadSecondary = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("S#") > -1;
 		}
 
 		this.componentChanged = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("L#") > -1;
 		}
 
 		this.betterAddressExists = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("P#") > -1;
 		}
 
 		this.isExactMatch = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.dpv_footnotes == "AABB";
 		}
 
 		this.isUniqueZipCode = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("U1") > -1
 					|| (this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("Q#") > -1);
 		}
 
 		this.fixedAbbreviations = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("N#") > -1;
 		}
 
 		this.fixedZipCode = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("A#") > -1;
 		}
 
 		this.fixedSpelling = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.footnotes.indexOf("B#") > -1
 				|| (this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("M#") > -1);
 		}
 
 		this.isBuildingDefault = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].metadata.building_default_indicator;
 		}
 
 		this.isMilitary = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("F1") > -1;
 		}
 
 		this.hasExtraSecondary = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("CC") > -1;
 		}
 
 		this.isLacsLink = function(idx)
 		{
-			idx = maybeDefault(idx);
-			checkBounds(idx);
+			idx = maybeDefault(idx); checkBounds(idx);
 			return this.raw[idx].analysis.lacslink_code == "A";
+		}
+
+		this.isCommercial = function(idx)
+		{
+			idx = maybeDefault(idx); checkBounds(idx);
+			return this.raw[idx].metadata.rdi == "Commercial";
+		}
+
+		this.isResidential = function(idx)
+		{
+			idx = maybeDefault(idx); checkBounds(idx);
+			return this.raw[idx].metadata.rdi == "Residential";
 		}
 	}
 	
@@ -1866,7 +1926,16 @@
 		FieldsMapped: function(event, data)
 		{
 			if (config.debug)
-				console.log("EVENT:", "FieldsMapped", "(Field mapping completed)", event, data);
+				console.log("EVENT:", "FieldsMapped", "(Fields mapped to their respective addresses)", event, data);
+
+			// We wait until the window is all loaded in case some elements are still loading
+			window.loaded ? ui.postMappingOperations() : $(window).load(ui.postMappingOperations);
+		},
+
+		MapInitialized: function(event, data)
+		{
+			if (config.debug)
+				console.log("EVENT:", "MapInitialized", "(Mapped fields have been wired up to the window"+(config.ui ? ", document, and UI" : " and document")+")", event, data);
 		},
 
 		AddressChanged: function(event, data)
@@ -1874,27 +1943,41 @@
 			if (config.debug)
 				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
 			
-			// If autoVerify is on,
-			// AND there's enough input in the address,
+			// If autoVerify is on, AND there's enough input in the address,
 			// AND it hasn't been verified automatically before -OR- it's a freeform address,
 			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
 			// AND it has a DOM element (it's not just a programmatic Address object)
-			// AND the address is "active" for verification...
+			// AND the address is "active" for verification
+			// AND the form, if any, isn't already chewing on an address...
 			// THEN verification has been invoked.
 			if (config.autoVerify && data.address.enoughInput()
 				&& (data.address.verifyCount == 0 || data.address.isFreeform())
 				&& !data.suppressAutoVerification
 				&& data.address.hasDomFields()
-				&& data.address.active)
+				&& data.address.active
+				&& (data.address.form && !data.address.form.processing))
 				trigger("VerificationInvoked", { address: data.address });
 		},
 
 		VerificationInvoked: function(event, data)
 		{
 			if (config.debug)
-				console.log("EVENT:", "VerificationInvoked", "(Verification invoked)", event, data);
-
-			if (data.address.form)
+				console.log("EVENT:", "VerificationInvoked", "(Address verification invoked)", event, data);
+			
+			// Abort now if an address in the same form is already being processed
+			if (!data.address || (data.address && data.address.form && data.address.form.processing))
+			{
+				if (config.debug)
+					console.log("NOTICE: VerificationInvoked event aborted. Address is missing or an address in the same form is already processing.");
+				return;
+			}
+			else if (data.address.status() == "accepted" && !data.verifyAccepted)
+			{
+				if (config.debug)
+					console.log("NOTICE: VerificationInvoked raised on an accepted or un-changed address. Nothing to do.");
+				return trigger("Completed", data);
+			}
+			else if (data.address.form)
 				data.address.form.processing = true;
 
 			data.address.verify(data.invoke, data.invokeFn);
@@ -1903,7 +1986,7 @@
 		RequestSubmitted: function(event, data)
 		{
 			if (config.debug)
-				console.log("EVENT:", "RequestSubmitted", "(Request submitted)", event, data);
+				console.log("EVENT:", "RequestSubmitted", "(Request submitted to server)", event, data);
 			
 			ui.showLoader(data.address);
 		},
@@ -1911,7 +1994,7 @@
 		ResponseReceived: function(event, data)
 		{
 			if (config.debug)
-				console.log("EVENT:", "ResponseReceived", "(Response received)", event, data);
+				console.log("EVENT:", "ResponseReceived", "(Response received from server, but has not been inspected)", event, data);
 
 			ui.hideLoader(data.address);
 			
