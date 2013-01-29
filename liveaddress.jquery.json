@@ -1,6 +1,6 @@
 {
   "name": "liveaddress",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "title": "LiveAddress - Address validation for forms",
   "description": "Free and commercial plug-and-play US address verification and geocoding for website forms, powered by SmartyStreets.",
   "keywords": [
@@ -38,7 +38,7 @@
   "homepage": "http://smartystreets.com/kb/liveaddress-api/website-forms",
   "docs": "http://smartystreets.com/kb/liveaddress-api/website-forms#install",
   "demo": "http://smartystreets.com/kb/liveaddress-api/website-forms#example",
-  "download": "https://d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.3/jquery.liveaddress.min.js"
+  "download": "https://d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.3/jquery.liveaddress.min.js",
   "dependencies": {
     "jquery": ">=1.5"
   }

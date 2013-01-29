@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.3.0";	// The version of this copy of the script
+	var version = "2.3.1";	// The version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -476,7 +476,7 @@
 			+ ".smarty-popup-close:hover { color: #FFF !important; background: #CC0000; }"
 			+ ".smarty-choice-list .smarty-choice { background: #FFF; padding: 10px 15px; color: #1A1A1A; }"
 			+ ".smarty-choice { display: block; font: 300 14px/1.5em sans-serif; text-decoration: none !important; border-top: 1px solid #CCC; }"
-			+ ".smarty-choice-list .smarty-choice:hover { color: #EEE; background: #333; text-decoration: none !important; }"
+			+ ".smarty-choice-list .smarty-choice:hover { color: #EEE !important; background: #333; text-decoration: none !important; }"
 			+ ".smarty-choice-alt { border-top: 1px solid #4C4C4C; background: #F6F6F6 !important; box-shadow: inset 0 4px 15px -5px rgba(0, 0, 0, .45); }"
 			+ ".smarty-choice-alt .smarty-choice-abort, .smarty-choice-override { padding: 6px 15px; color: #B3B3B3 !important; font-size: 12px; text-decoration: none !important; }"
 			+ ".smarty-choice-alt .smarty-choice:first-child { border-top: 0; }"
@@ -506,7 +506,7 @@
 				var addresses = instance.getMappedAddresses();
 				for (var i = 0; i < addresses.length; i++)
 				{
-					var id = addresses[i].id();	// TODO: When removing the dots, remove its parent (.smarty-ui) also!
+					var id = addresses[i].id();
 					$('body').append('<div class="smarty-ui"><div title="Loading..." class="smarty-dots smarty-addr-'+id+'"></div></div>');
 					var offset = uiTagOffset(addresses[i].corners(true));
 					$('body').append('<div class="smarty-ui" style="top: '+offset.top+'px; left: '+offset.left+'px;"><a href="javascript:" class="smarty-tag smarty-tag-grayed smarty-addr-'+id+'" title="Address not verified. Click to verify." data-addressid="'+id+'"><span class="smarty-tag-check">&#10003;</span><span class="smarty-tag-text">Verify</span></a></div>');
@@ -1229,35 +1229,15 @@
 			$('body').delegate(data.selectors.abort, 'click', data, function(e)
 			{
 				userAborted('.smarty-popup.smarty-addr-'+e.data.address.id(), e);
-				/*
-				$('.smarty-popup.smarty-addr-'+e.data.address.id()).slideUp(defaults.speed, function()
-				{
-					// TODO Unbind or remove anything else?
-					//$(this).remove();	// See "userAborted()" for the reason why we unbind here
-				});
-
-				$(document).unbind('keyup');
-				undelegateAllClicks(e.data.selectors);*/
 				delete e.data.selectors;
-
 				trigger("InvalidAddressRejected", e.data);
 			});
 
 			// User certifies that what they typed is correct
 			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e)
 			{
-
-				/*
-				$('.smarty-popup.smarty-addr-'+addr.id()).slideUp(defaults.speed, function()
-				{
-					$(this).remove(); // TODO Any other unbindings/removings here?
-				});
-
-				$(document).unbind('keyup');
-				undelegateAllClicks(e.data.selectors);*/
 				userAborted('.smarty-popup.smarty-addr-'+e.data.address.id(), e);
 				delete e.data.selectors;
-
 				trigger("OriginalInputSelected", e.data);
 			});
 
@@ -1272,13 +1252,6 @@
 					userAborted('.smarty-popup.smarty-addr-'+e.data.address.id(), e);
 				}
 			});
-/*
-			// User clicks "x" in corner (same effect as Esc key)
-			$('body').delegate(data.selectors.abort, 'click', data, function(e)
-			{
-				undelegateAllClicks(e.data.selectors);
-				userAborted($(this).parents('.smarty-popup'), e);
-			});*/
 		};
 
 		this.isDropdown = function(dom)
@@ -1309,7 +1282,7 @@
 		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai"}
 		// Some of the above fields will only be mapped manually, not automatically.
 		
-		// Internal method that actually changes the address. The keepState parameter is
+		// Private method that actually changes the address. The keepState parameter is
 		// used by the results of verification after an address is chosen; (or an "undo"
 		// on a freeform address), otherwise an infinite loop of requests is executed
 		// because the address keeps changing! (Set "fromUndo" to true when coming from the "Undo" link)	
@@ -1326,7 +1299,7 @@
 			fields[key].undo = fields[key].value || "";
 			fields[key].value = value;
 
-			if (updateDomElement && fields[key].dom && !ui.isDropdown(fields[key].dom))	// Don't bother with dropdowns, because their enumerated values may not match what we put in
+			if (updateDomElement && fields[key].dom)
 				$(fields[key].dom).val(value);
 			
 			var eventMeta = {
@@ -1674,7 +1647,7 @@
 				else if (fields[prop].dom && typeof fields[prop].value !== 'undefined')
 				{
 					var domValue = $(fields[prop].dom).val() || "";
-					if (fields[prop].value != domValue && internalPriority && !ui.isDropdown(fields[prop].dom))
+					if (fields[prop].value != domValue && internalPriority && !ui.isDropdown(fields[prop].dom))	// Don't unaccept on dropdowns; this causes infinite loops on form submit in some cases
 					{
 						self.unaccept();
 						fields[prop].value = domValue;
@@ -1770,7 +1743,6 @@
 		
 		var maybeDefault = function(idx)
 		{
-			// TODO: WHY NOT JUST FORCE THE INDEX TO BE WITHIN BOUNDS?
 			// Assigns index to 0, the default value, if no value is passed in
 			return typeof idx === 'undefined' ? 0 : idx;
 		};
@@ -1780,7 +1752,6 @@
 
 		this.raw = json;
 		this.length = json.length;
-		//this.numCandidates = function() { return json.length; }; // TODO: CAN WE JUST NUKE THIS?
 
 		this.isValid = function()
 		{
@@ -1895,7 +1866,7 @@
 	
 
 	/*
-	 *	EVENT HANDLER SHTUFF
+	 *	EVENT HANDLER "SHTUFF"
 	 */
 
 
