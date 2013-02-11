@@ -1500,6 +1500,8 @@
 
 		this.verify = function(invoke, invokeFn)
 		{
+			self.syncWithDom(true);
+
 			// Invoke contains the element to "click" on once we're all done, or is a user-defined callback function (may also be undefined)
 			if (!invoke && !self.enoughInput())
 			{
@@ -1632,13 +1634,17 @@
 		this.syncWithDom = function(internalPriority)
 		{
 			// Since programmatic changes to form field values (e.g. jQuery's .val() function)
-			// don't necessarily raise the "change" event, at form submit time we should
+			// don't necessarily raise the "change" event, at verify time we should
 			// sync internally-stored values with those on the DOM.
 
 			// Set "internalPriority" to true if a field value exists internally but
 			// does not exist on the DOM, and yet you want to keep the internal value.
 			// This can cause problems for an address that is ambiguous more than once
 			// (for example, addressee may be populated by the response but is not in the DOM).
+
+			if (!config.ui)
+				return;
+
 			for (var prop in fields)
 			{
 				if (!fields[prop].dom && fields[prop].value && !internalPriority)
@@ -1649,10 +1655,11 @@
 				else if (fields[prop].dom && typeof fields[prop].value !== 'undefined')
 				{
 					var domValue = $(fields[prop].dom).val() || "";
-					if (fields[prop].value != domValue && internalPriority && !ui.isDropdown(fields[prop].dom))	// Don't unaccept on dropdowns; this causes infinite loops on form submit in some cases
+					if (fields[prop].value != domValue && internalPriority)
 					{
-						self.unaccept();
 						fields[prop].value = domValue;
+						if (!ui.isDropdown(fields[prop].dom)) 	// Don't unaccept on dropdowns; this causes infinite loops on form submits if the dropdown has bad value attributes
+							self.unaccept();
 					}
 				}
 			}
