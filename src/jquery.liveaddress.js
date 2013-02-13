@@ -1042,8 +1042,11 @@
 				$(fields[field]).prop ? $(fields[field]).prop('disabled', false) : $(fields[field]).removeAttr('disabled');
 
 			// Enable submit buttons
-			var buttons = $(config.submitSelector, address.form.dom);
-			buttons.prop ? buttons.prop('disabled', false) : buttons.removeAttr('disabled');
+			if (address.form && address.form.dom)
+			{
+				var buttons = $(config.submitSelector, address.form.dom);
+				buttons.prop ? buttons.prop('disabled', false) : buttons.removeAttr('disabled');
+			}
 		};
 
 		this.showLoader = function(addr)
