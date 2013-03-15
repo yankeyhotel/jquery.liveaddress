@@ -1522,7 +1522,7 @@
 			
 			$.ajax(
 			{
-				url: defaults.requestUrl+"?auth-token="+encodeURIComponent(config.key)+"&plugin="+encodeURIComponent(instance.version)+(config.debug ? "_debug" : "")+"&callback=?",
+				url: config.requestUrl+"?auth-token="+encodeURIComponent(config.key)+"&plugin="+encodeURIComponent(instance.version)+(config.debug ? "_debug" : "")+"&callback=?",
 				dataType: "jsonp",
 				data: addrData,
 				timeout: config.timeout
