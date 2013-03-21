@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.3.4";	// Version of this copy of the script
+	var version = "2.3.5";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -2019,6 +2019,7 @@
 			var addr = data.address;
 			var resp = data.response;
 
+			data.response.chosen = resp.raw[0];
 			addr.replaceWith(resp.raw[0], true, event);
 			addr.accept(data);
 		},
@@ -2052,6 +2053,7 @@
 			if (config.debug)
 				console.log("EVENT:", "UsedSuggestedAddress", "(User chose to a suggested address)", event, data);
 
+			data.response.chosen = data.chosenCandidate;
 			data.address.replaceWith(data.chosenCandidate, true, event);
 			data.address.accept(data);
 		},
@@ -2063,7 +2065,7 @@
 			
 			if (data.address.form)
 				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
-			
+
 			trigger("Completed", data);
 		},
 
