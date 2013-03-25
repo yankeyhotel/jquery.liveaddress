@@ -3,3 +3,4 @@ _gitignore
 *.pyc
 .idea
 working
+resources/instructions.txt
