@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.3.5";	// Version of this copy of the script
+	var version = "2.3.6";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -1051,7 +1051,7 @@
 
 		this.showLoader = function(addr)
 		{
-			if (!config.ui)
+			if (!config.ui || !addr.hasDomFields())
 				return;
 
 			// Get position information now instead of earlier in case elements shifted since page load
@@ -1096,7 +1096,7 @@
 
 		this.showAmbiguous = function(data)
 		{
-			if (!config.ui)
+			if (!config.ui || !data.address.hasDomFields())
 				return;
 
 			var addr = data.address;
@@ -1198,7 +1198,7 @@
 
 		this.showInvalid = function(data)
 		{
-			if (!config.ui)
+			if (!config.ui || !data.address.hasDomFields())
 				return;
 
 			var addr = data.address;
