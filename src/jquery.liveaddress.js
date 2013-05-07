@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.3.6";	// Version of this copy of the script
+	var version = "2.3.7";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -162,7 +162,7 @@
 			verify: function(input, callback)
 			{
 				var addr = instance.makeAddress(input);			// Below means, force re-verify even if accepted/unchanged.
-				trigger("VerificationInvoked", { address: addr, verifyAccepted: true });
+				trigger("VerificationInvoked", { address: addr, verifyAccepted: true, invoke: callback });
 			},
 			getMappedAddresses: function()
 			{
