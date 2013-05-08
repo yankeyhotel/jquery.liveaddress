@@ -2074,7 +2074,10 @@
 			if (config.debug)
 				console.log("EVENT:", "AddressAccepted", "(Address marked accepted)", event, data);
 
-			if (data.address.form)
+			if (!data)
+				data = {};
+
+			if (data.address && data.address.form)
 				delete data.address.form.processing;	// We're done with this address and ready for the next, potentially
 			
 			// If this was the result of a form submit, re-submit the form (whether by clicking the button or raising form submit event)
