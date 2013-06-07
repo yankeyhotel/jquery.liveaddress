@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.3.7";	// Version of this copy of the script
+	var version = "2.3.8";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -528,6 +528,15 @@
 							.css('top', addrOffset.top+'px')
 							.css('left', addrOffset.left+'px');
 					});
+
+					// Disable for addresses defaulting to a foreign/non-US value
+					if (!addresses[i].isDomestic())
+					{
+						var uiTag = $('.smarty-ui .smarty-tag.smarty-addr-'+id)
+						if (uiTag.is(':visible'))
+							uiTag.hide();
+						addresses[i].accept({ address: addresses[i] }, false);
+					}
 				}
 
 				$('body').delegate('.smarty-tag-grayed', 'click', function(e)
@@ -1322,14 +1331,14 @@
 				if (self.isDomestic())
 				{
 					if (uiTag && !uiTag.is(':visible'))
-						uiTag.fadeIn(config.speed);	// Show checkmark tag if address is in US
+						uiTag.show();	// Show checkmark tag if address is in US
 					self.unaccept().syncWithDom();
 					trigger("AddressChanged", eventMeta);
 				}
 				else
 				{
 					if (uiTag && uiTag.is(':visible'))
-						uiTag.fadeOut(config.speed);	// Hide checkmark tag if address is non-US
+						uiTag.hide();	// Hide checkmark tag if address is non-US
 					self.accept({ address: self }, false);
 				}
 			}
