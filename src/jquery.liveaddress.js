@@ -27,10 +27,11 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.3.8";	// Version of this copy of the script
+	var version = "2.4.0";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
+		autocomplete: 10,														// Number of autocomplete suggestions; set to 0 or false to disable
 		requestUrl: "https://api.smartystreets.com/street-address",				// API endpoint
 		timeout: 5000,															// How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium",														// Animation speed
@@ -107,11 +108,12 @@
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrl = config.requestUrl || defaults.requestUrl;
+		config.autocomplete = typeof config.autocomplete === 'undefined' ? defaults.autocomplete : config.autocomplete;
 
-		if (config.candidates < 1)
-			config.candidates = 1;
-		else if (config.candidates > 10)
-			config.candidates = 10;
+		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
+
+		if (typeof config.autocomplete === 'number')
+			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
 
 		/*
 		  *	EXPOSED (PUBLIC) FUNCTIONS
@@ -466,6 +468,7 @@
 			}
 		};
 
+		var autocompleteResponse;		// The latest response from the autocomplete server
 		var loaderWidth = 24, loaderHeight = 8;		// TODO: Update these if the image changes
 		var uiCss = "<style>"
 			+ ".smarty-dots { display: none; position: absolute; z-index: 999; width: "+loaderWidth+"px; height: "+loaderHeight+"px; background-image: url('data:image/gif;base64,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'); }"
@@ -492,6 +495,10 @@
 			+ ".smarty-tag-grayed:hover { border-color: #333 !important; }"
 			+ ".smarty-tag-check { padding-left: 4px; text-decoration: none !important; }"
 			+ ".smarty-tag-text { font-size: 12px !important; position: absolute; top: 0; left: 16px; width: 50px !important; text-align: center !important; }"
+			+ ".smarty-autocomplete { border: 1px solid #777; background: white; overflow: hidden; white-space: nowrap; box-shadow: 1px 1px 3px #555; }"
+			+ ".smarty-suggestion { display: block; color: #444; text-decoration: none !important; font-size: 12px; padding: 1px 5px; }"
+			+ ".smarty-active-suggestion { background: #EEE; color: #000; border: none; outline: none; }"
+			+ ".smarty-no-suggestions { padding: 1px 5px; font-size: 12px; color: #AAA; font-style: italic; }"
 			+ "</style>";
 
 
@@ -556,6 +563,68 @@
 					// Thus, in some rare occasions, the undo link and the "verified!" text may not disappear when the user clicks "Undo",
 					// The undo functionality still works in those cases, but with no visible changes, the address doesn't fire "AddressChanged"...
 				});
+
+
+
+				// Prepare autocomplete UI
+				if (config.autocomplete)
+				{
+					// For every mapped address, wire up autocomplete
+					for (var i = 0; i < forms.length; i++)
+					{
+						var f = forms[i];
+
+						for (var j = 0; j < f.addresses.length; j++)
+						{
+							var addr = f.addresses[j];
+							var domFields = addr.getDomFields();
+
+							if (domFields['street'])
+							{
+								var strField = $(domFields['street']);
+								var containerUi = $('<div class="smarty-ui"></div>');
+								var autoUi = $('<div class="smarty-autocomplete"></div>');
+
+								autoUi.addClass('smarty-addr-' + addr.id());
+								containerUi.append(autoUi);
+								
+								containerUi.css({
+									"position": "absolute",
+									"left": strField.offset().left + "px",
+									"top": (strField.offset().top + strField.outerHeight()) + "px"
+								});
+
+								autoUi.css({
+									"width": Math.max(strField.outerWidth(), 250) + "px"
+								});
+
+								containerUi.hide().appendTo("body");
+
+								containerUi.on('click', ".smarty-suggestion", { addr: addr, containerUi: containerUi }, function(event) {
+									var sugg = autocompleteResponse.suggestions[$(this).data('suggIndex')];
+									useAutocompleteSuggestion(event.data.addr, sugg, event.data.containerUi);
+								});
+
+								containerUi.on("mouseover", ".smarty-suggestion", function() {
+									$('.smarty-active-suggestion').removeClass('smarty-active-suggestion');
+									$(this).addClass('smarty-active-suggestion');
+								});
+
+								strField.blur({ containerUi: containerUi }, function(event) {
+									setTimeout(function() { event.data.containerUi.hide(); }, 300);
+								});
+
+								// Flip the on switch!
+								strField.keyup({ form: f, addr: addr, streetField: strField, containerUi: containerUi }, doAutocomplete);
+							}
+						}
+
+						$(document).keyup(function(event) {
+							if (event.keyCode == 27 || event.keyCode == 9)	// Esc, or Tab
+								$('.smarty-autocomplete').closest('.smarty-ui').hide();
+						});
+					}
+				}
 			}
 			
 			if (config.submitVerify)
@@ -567,7 +636,8 @@
 	
 					submitHandler = function(e)
 					{
-						if (e.data.form && e.data.form.processing)
+						// Don't invoke verification if it's already processing or autocomplete is open and the user was pressing Enter to use a suggestion
+						if ((e.data.form && e.data.form.processing) || $('.smarty-active-suggestion:visible').length > 0)
 							return suppress(e);
 	
 						// In case programmatic changes were made to input fields, we need to sync
@@ -638,6 +708,97 @@
 			}
 
 			trigger("MapInitialized");
+		};
+
+		function doAutocomplete(event)
+		{
+			var addr = event.data.addr;
+			var streetField = event.data.streetField;
+			var input = $.trim(event.data.streetField.val());
+			var containerUi = event.data.containerUi;
+			var suggContainer = $('.smarty-autocomplete', containerUi);
+
+			if (!input)
+			{
+				addr.lastStreetInput = input;
+				containerUi.hide();
+			}
+
+			if (event.keyCode == 13 && $('.smarty-active-suggestion:visible').length > 0)	// Enter/return
+			{
+				useAutocompleteSuggestion(addr, autocompleteResponse.suggestions[$('.smarty-active-suggestion').first().data('suggIndex')], containerUi);
+				return suppress(event);
+			}
+
+			if (event.keyCode == 40)	// Down arrow
+			{
+				var currentChoice = $('.smarty-active-suggestion', suggContainer).first();
+				if (!currentChoice.hasClass('smarty-suggestion'))
+					currentChoice = $('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
+				if (currentChoice.next('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0)
+					currentChoice.removeClass('smarty-active-suggestion').next('.smarty-suggestion').addClass('smarty-active-suggestion');
+				moveCursorToEnd(streetField[0]);
+				return;
+			}
+
+			if (event.keyCode == 38)	// Up arrow
+			{
+				var currentChoice = $('.smarty-active-suggestion').first();
+				if (!currentChoice.hasClass('smarty-suggestion'))
+					currentChoice = $('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
+				if (currentChoice.prev('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0)
+					currentChoice.removeClass('smarty-active-suggestion').prev('.smarty-suggestion').addClass('smarty-active-suggestion');
+				moveCursorToEnd(streetField[0]);
+				return;
+			}
+
+			if (input && addr.isDomestic())
+				containerUi.show();
+
+			if (input == addr.lastStreetInput || !input || !addr.isDomestic())
+				return;
+
+			addr.lastStreetInput = input;
+
+			$.getJSON("http://auto.liveaddress.dev/app/autocomplete?callback=?", { prefix: input }, function(json)
+			{
+				autocompleteResponse = json;
+				suggContainer.empty();
+
+				if (!json.suggestions || json.suggestions.length == 0)
+				{
+					suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
+					return;
+				}
+
+				for (var j in json.suggestions)
+				{
+					var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text + '</a>');
+					link.data("suggIndex", j);
+					suggContainer.append(link);
+				}
+				$('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
+				containerUi.show();
+			});
+		}
+
+		function useAutocompleteSuggestion(addr, suggestion, containerUi)
+		{
+			var domfields = addr.getDomFields();
+
+			if (addr.isFreeform())
+				$(domfields['street']).val(suggestion.text).change();
+			else
+			{
+				if (domfields['street'])
+					$(domfields['street']).val(suggestion.street_line).change();
+				if (domfields['city'])
+					$(domfields['city']).val(suggestion.city).change();
+				if (domfields['state'])
+					$(domfields['state']).val(suggestion.state).change();
+			}
+
+			containerUi.hide();
 		}
 
 		// Computes where the little checkmark tag of the UI goes, relative to the boundaries of the last field
@@ -716,6 +877,20 @@
 		{
 			for (var selector in selectors)
 				$('body').undelegate(selectors[selector], 'click');
+		}
+
+		// Utility function
+		function moveCursorToEnd(el)	// Courtesy of http://css-tricks.com/snippets/javascript/move-cursor-to-end-of-input/
+		{
+			if (typeof el.selectionStart == "number")
+				el.selectionStart = el.selectionEnd = el.value.length;
+			else if (typeof el.createTextRange != "undefined")
+			{
+				el.focus();
+				var range = el.createTextRange();
+				range.collapse(false);
+				range.select();
+			}
 		}
 
 
@@ -1261,7 +1436,6 @@
 				if (e.keyCode == 27) //Esc
 				{
 					$(data.selectors.abort).click();
-					return;
 					undelegateAllClicks(e.data.selectors);
 					userAborted('.smarty-popup.smarty-addr-'+e.data.address.id(), e);
 				}
@@ -1299,8 +1473,8 @@
 		// Private method that actually changes the address. The keepState parameter is
 		// used by the results of verification after an address is chosen; (or an "undo"
 		// on a freeform address), otherwise an infinite loop of requests is executed
-		// because the address keeps changing! (Set "fromUndo" to true when coming from the "Undo" link)	
-		var doSet = function(key, value, updateDomElement, keepState, sourceEvent, fromUndo)
+		// because the address keeps changing! (Set "suppressAutoVerify" to true when coming from the "Undo" link)	
+		var doSet = function(key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify)
 		{
 			if (!arrayContains(acceptableFields, key))	// Skip "id" and other unacceptable fields
 				return false;
@@ -1321,7 +1495,7 @@
 				field: key,
 				address: self,
 				value: value,
-				suppressAutoVerification: fromUndo || false
+				suppressAutoVerification: suppressAutoVerify || false
 			};
 			
 			if (differentVal && !keepState)
@@ -1355,6 +1529,7 @@
 		this.verifyCount = 0;	// Number of times this address was submitted for verification
 		this.lastField;			// The last field found (last to appear in the DOM) during mapping, or the order given
 		this.active = true;		// If true, verify the address. If false, pass-thru entirely.
+		this.lastStreetInput = "";	// Used by autocomplete to detect changes
 
 		// Constructor-esque functionality (save the fields in this address object)
 		this.load = function(domMap, addressID)
@@ -1421,15 +1596,15 @@
 		this.load(domMap, addressID);
 
 
-		this.set = function(key, value, updateDomElement, keepState, sourceEvent, fromUndo)
+		this.set = function(key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify)
 		{
 			if (typeof key === 'string' && arguments.length >= 2)
-				return doSet(key, value, updateDomElement, keepState, sourceEvent, fromUndo);
+				return doSet(key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify);
 			else if (typeof key === 'object')
 			{
 				var successful = true;
 				for (var prop in key)
-					successful = doSet(prop, key[prop], updateDomElement, keepState, sourceEvent, fromUndo) ? successful : false;
+					successful = doSet(prop, key[prop], updateDomElement, keepState, sourceEvent, suppressAutoVerify) ? successful : false;
 				return successful;
 			}
 		};
