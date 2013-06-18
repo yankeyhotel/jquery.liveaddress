@@ -760,7 +760,7 @@
 
 			addr.lastStreetInput = input;
 
-			$.getJSON("http://auto.liveaddress.dev/app/autocomplete?callback=?", { prefix: input }, function(json)
+			$.getJSON("http://auto.liveaddress.dev/app/autocomplete?callback=?", { prefix: input, suggestions: config.autocomplete }, function(json)
 			{
 				autocompleteResponse = json;
 				suggContainer.empty();
@@ -919,6 +919,8 @@
 							$(doms[prop]).css('background', 'none').attr('placeholder', '');
 						$(doms[prop]).unbind('change');
 					}
+					if (doms['street'])
+						$(doms['street']).unbind('keyup');
 				}
 
 				// Unbind our form submit and submit-button click handlers
@@ -930,6 +932,7 @@
 			$('body').undelegate('.smarty-undo', 'click');
 			$('body').undelegate('.smarty-tag-grayed', 'click');
 			$(window).unbind('resize');
+			$(document).unbind('keyup');
 
 			forms = [];
 			mappedAddressCount = 0;
@@ -1581,6 +1584,10 @@
 					};
 					
 					// Bind the DOM element to needed events, passing in the data above
+					// NOTE: When the user types a street, city, and state, then hits Enter without leaving
+					// the state field, this change() event fires before the form is submitted, and if autoVerify is
+					// on, the verification will not invoke form submit, because it didn't come from a form submit.
+					// This is known behavior and is actually proper functioning in this uncommon edge case.
 					$(domMap[prop]).change(data, function(e)
 					{
 						e.data.address.set(e.data.field, e.target.value, false, false, e, false);
