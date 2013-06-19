@@ -1664,7 +1664,7 @@
 			{
 				for (var prop in fields)
 				{
-					if (!fields[prop].dom)
+					if (!fields[prop].dom || !$(fields[prop].dom).is(':visible'))
 						continue;
 
 					var dom = fields[prop].dom;
