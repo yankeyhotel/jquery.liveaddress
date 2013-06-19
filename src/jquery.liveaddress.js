@@ -717,6 +717,8 @@
 			var input = $.trim(event.data.streetField.val());
 			var containerUi = event.data.containerUi;
 			var suggContainer = $('.smarty-autocomplete', containerUi);
+			var currentChoice = $('.smarty-active-suggestion', suggContainer).first();
+			var choiceSelectionIsNew = false;
 
 			if (!input)
 			{
@@ -730,12 +732,18 @@
 				return suppress(event);
 			}
 
+			if (event.keyCode == 40 || event.keyCode == 38)	// Up or down arrows
+			{
+				if (!currentChoice.hasClass('smarty-suggestion'))
+				{
+					currentChoice = $('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
+					choiceSelectionIsNew = true;
+				}
+			}
+
 			if (event.keyCode == 40)	// Down arrow
 			{
-				var currentChoice = $('.smarty-active-suggestion', suggContainer).first();
-				if (!currentChoice.hasClass('smarty-suggestion'))
-					currentChoice = $('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
-				if (currentChoice.next('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0)
+				if (currentChoice.next('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0 && !choiceSelectionIsNew)
 					currentChoice.removeClass('smarty-active-suggestion').next('.smarty-suggestion').addClass('smarty-active-suggestion');
 				moveCursorToEnd(streetField[0]);
 				return;
@@ -743,10 +751,7 @@
 
 			if (event.keyCode == 38)	// Up arrow
 			{
-				var currentChoice = $('.smarty-active-suggestion').first();
-				if (!currentChoice.hasClass('smarty-suggestion'))
-					currentChoice = $('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
-				if (currentChoice.prev('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0)
+				if (currentChoice.prev('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0 && !choiceSelectionIsNew)
 					currentChoice.removeClass('smarty-active-suggestion').prev('.smarty-suggestion').addClass('smarty-active-suggestion');
 				moveCursorToEnd(streetField[0]);
 				return;
@@ -786,6 +791,8 @@
 		{
 			var domfields = addr.getDomFields();
 
+			containerUi.hide();		// It's important that the suggestions are hidden before AddressChanged event fires
+
 			if (addr.isFreeform())
 				$(domfields['street']).val(suggestion.text).change();
 			else
@@ -797,8 +804,6 @@
 				if (domfields['state'])
 					$(domfields['state']).val(suggestion.state).change();
 			}
-
-			containerUi.hide();
 		}
 
 		// Computes where the little checkmark tag of the UI goes, relative to the boundaries of the last field
@@ -1890,6 +1895,11 @@
 			return arrayContains(usa, countryValue) || fields.country.value == "-1";
 		}
 
+		this.autocompleteVisible = function()
+		{
+			return config.ui && config.autocomplete && $('.smarty-autocomplete.smarty-addr-'+self.id()).is(':visible');
+		}
+
 		this.id = function()
 		{
 			return id;
@@ -2123,6 +2133,7 @@
 			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
 			// AND it has a DOM element (it's not just a programmatic Address object)
 			// AND the address is "active" for verification
+			// AND the autocomplete suggestions aren't visible
 			// AND the form, if any, isn't already chewing on an address...
 			// THEN verification has been invoked.
 			if (config.autoVerify && data.address.enoughInput()
@@ -2130,6 +2141,7 @@
 				&& !data.suppressAutoVerification
 				&& data.address.hasDomFields()
 				&& data.address.active
+				&& !data.address.autocompleteVisible()
 				&& (data.address.form && !data.address.form.processing))
 				trigger("VerificationInvoked", { address: data.address });
 		},
