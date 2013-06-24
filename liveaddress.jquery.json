@@ -43,6 +43,6 @@
   "demo": "http://smartystreets.com/kb/liveaddress-api/website-forms#example",
   "download": "https://d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.4/jquery.liveaddress.min.js",
   "dependencies": {
-    "jquery": ">=1.5"
+    "jquery": ">=1.5.1"
   }
 }

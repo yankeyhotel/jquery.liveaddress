@@ -738,7 +738,7 @@
 			{
 				if (!currentChoice.hasClass('smarty-suggestion'))
 				{
-					currentChoice = $('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
+					currentChoice = $('.smarty-suggestion', suggContainer).first().mouseover();
 					choiceSelectionIsNew = true;
 				}
 			}
@@ -746,7 +746,7 @@
 			if (event.keyCode == 40)	// Down arrow
 			{
 				if (currentChoice.next('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0 && !choiceSelectionIsNew)
-					currentChoice.removeClass('smarty-active-suggestion').next('.smarty-suggestion').addClass('smarty-active-suggestion');
+					currentChoice.next('.smarty-suggestion').mouseover();
 				moveCursorToEnd(streetField[0]);
 				return;
 			}
@@ -754,7 +754,7 @@
 			if (event.keyCode == 38)	// Up arrow
 			{
 				if (currentChoice.prev('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0 && !choiceSelectionIsNew)
-					currentChoice.removeClass('smarty-active-suggestion').prev('.smarty-suggestion').addClass('smarty-active-suggestion');
+					currentChoice.prev('.smarty-suggestion').mouseover();
 				moveCursorToEnd(streetField[0]);
 				return;
 			}
