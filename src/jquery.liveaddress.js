@@ -469,6 +469,8 @@
 		};
 
 		var autocompleteResponse;		// The latest response from the autocomplete server
+		var autocplCounter = 0;			// A counter so that only the most recent JSONP request is used
+		var autocplRequests = [];		// The array that holds autocomplete requests in order
 		var loaderWidth = 24, loaderHeight = 8;		// TODO: Update these if the image changes
 		var uiCss = "<style>"
 			+ ".smarty-dots { display: none; position: absolute; z-index: 999; width: "+loaderWidth+"px; height: "+loaderHeight+"px; background-image: url('data:image/gif;base64,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'); }"
@@ -757,33 +759,48 @@
 				return;
 			}
 
-			if (input && addr.isDomestic())
+			if (input && addr.isDomestic() && autocompleteResponse)
 				containerUi.show();
 
 			if (input == addr.lastStreetInput || !input || !addr.isDomestic())
 				return;
 
-			addr.lastStreetInput = input;
+			addr.lastStreetInput = input;	// Used so that autocomplete only fires on real changes (i.e. not just whitespace)
 
-			$.getJSON("http://auto.liveaddress.dev/app/autocomplete?callback=?", { prefix: input, suggestions: config.autocomplete }, function(json)
+			var autocplrequest = {
+				callback: function(counter, json)
+				{
+					autocompleteResponse = json;
+					suggContainer.empty();
+
+					if (!json.suggestions || json.suggestions.length == 0)
+					{
+						suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
+						return;
+					}
+
+					for (var j in json.suggestions)
+					{
+						var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text + '</a>');
+						link.data("suggIndex", j);
+						suggContainer.append(link);
+					}
+
+					$('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
+					containerUi.show();
+
+					// Delete all older callbacks so they don't get executed later because of latency
+					autocplRequests.splice(0, counter);
+				},
+				number: autocplCounter++
+			};
+
+			autocplRequests[autocplrequest.number] = autocplrequest;
+
+			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", { prefix: input, suggestions: config.autocomplete }, function(json)
 			{
-				autocompleteResponse = json;
-				suggContainer.empty();
-
-				if (!json.suggestions || json.suggestions.length == 0)
-				{
-					suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
-					return;
-				}
-
-				for (var j in json.suggestions)
-				{
-					var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text + '</a>');
-					link.data("suggIndex", j);
-					suggContainer.append(link);
-				}
-				$('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
-				containerUi.show();
+				if (autocplRequests[autocplrequest.number])
+					autocplRequests[autocplrequest.number].callback(autocplrequest.number, json);
 			});
 		}
 
