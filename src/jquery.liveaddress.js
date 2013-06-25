@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.0";	// Version of this copy of the script
+	var version = "2.4.1";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -525,17 +525,31 @@
 					// Move the UI elements around when browser window is resized
 					$(window).resize({ addr: addresses[i] }, function(e)
 					{
-						var offset = uiTagOffset(e.data.addr.corners(true));   // Position of lil' tag
-						$('.smarty-tag.smarty-addr-'+e.data.addr.id())
+						var addr = e.data.addr;
+						var offset = uiTagOffset(addr.corners(true));	// Position of lil' tag
+						$('.smarty-tag.smarty-addr-'+addr.id())
 							.parent('.smarty-ui')
 							.css('top', offset.top+'px')
 							.css('left', offset.left+'px');
 
-						var addrOffset = e.data.addr.corners();		// Position of any popup windows
-						$('.smarty-popup.smarty-addr-'+e.data.addr.id())
+						var addrOffset = addr.corners();				// Position of any popup windows
+						$('.smarty-popup.smarty-addr-'+addr.id())
 							.parent('.smarty-ui')
 							.css('top', addrOffset.top+'px')
 							.css('left', addrOffset.left+'px');
+
+						if (config.autocomplete)						// Position of autocomplete boxes
+						{
+							var containerUi = $('.smarty-autocomplete.smarty-addr-'+addr.id()).closest('.smarty-ui');
+							var domFields = addr.getDomFields();
+							if (domFields['street'])
+							{
+								containerUi.css({
+									"left": $(domFields['street']).offset().left + "px",
+									"top": ($(domFields['street']).offset().top + $(domFields['street']).outerHeight()) + "px"
+								});
+							}
+						}
 					});
 
 					// Disable for addresses defaulting to a foreign/non-US value
@@ -612,6 +626,8 @@
 									$(this).addClass('smarty-active-suggestion');
 								});
 
+								strField.attr("autocomplete", "off");	// Tell Firefox to keep quiet
+
 								strField.blur({ containerUi: containerUi }, function(event) {
 									setTimeout(function() { event.data.containerUi.hide(); }, 300);
 								});
@@ -626,6 +642,10 @@
 								$('.smarty-autocomplete').closest('.smarty-ui').hide();
 						});
 					}
+
+					// Try .5 and 1 seconds after the DOM loads to re-position UI elements; hack for Firefox.
+					setTimeout(function() { $(window).resize(); }, 500);
+					setTimeout(function() { $(window).resize(); }, 1000);
 				}
 			}
 			
