@@ -187,6 +187,14 @@
 			{
 				config.key = htmlkey;
 			},
+			setCityFilter: function(cities)
+			{
+				config.cityFilter = cities;
+			},
+			setStateFilter: function(states)
+			{
+				config.stateFilter = states;
+			},
 			activate: function(addressID)
 			{
 				var addr = instance.getMappedAddressByID(addressID);
