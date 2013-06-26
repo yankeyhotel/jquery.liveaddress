@@ -824,8 +824,7 @@
 			{
 				if ($('.smarty-active-suggestion:visible').length > 0)
 					useAutocompleteSuggestion(addr, autocompleteResponse.suggestions[$('.smarty-active-suggestion:visible').first().data('suggIndex')], containerUi);
-				else
-					containerUi.hide();
+				containerUi.hide();
 				streetField.blur();
 				return suppress(event);
 			}
