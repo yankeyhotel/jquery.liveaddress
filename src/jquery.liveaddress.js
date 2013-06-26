@@ -657,10 +657,13 @@
 									{
 										if (currentChoice.length > 0)
 										{
-											useAutocompleteSuggestion(event.data.addr, autocompleteResponse.suggestions[currentChoice.data("suggIndex")], event.data.containerUi);
 											var domFields = event.data.addr.getDomFields();
 											if (domFields['zipcode'])
 												$(domFields['zipcode']).focus();
+											else
+												$(domFields['street']).blur();
+											useAutocompleteSuggestion(event.data.addr, autocompleteResponse.suggestions[currentChoice.data("suggIndex")], event.data.containerUi);
+											return addr.isFreeform() ? true : suppress(event);
 										}
 										else
 											event.data.containerUi.hide();
@@ -817,6 +820,7 @@
 			if (!input)
 			{
 				addr.lastStreetInput = input;
+				suggContainer.empty();
 				containerUi.hide();
 			}
 
@@ -905,6 +909,8 @@
 					$(domfields['city']).val(suggestion.city).change();
 				if (domfields['state'])
 					$(domfields['state']).val(suggestion.state).change();
+				if (domfields['lastline'])
+					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
 			}
 		}
 
