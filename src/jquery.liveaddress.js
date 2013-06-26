@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.1";	// Version of this copy of the script
+	var version = "2.4.2";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -109,6 +109,8 @@
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrl = config.requestUrl || defaults.requestUrl;
 		config.autocomplete = typeof config.autocomplete === 'undefined' ? defaults.autocomplete : config.autocomplete;
+		config.cityFilter = typeof config.cityFilter === 'undefined' ? "" : config.cityFilter;
+		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
@@ -602,6 +604,7 @@
 								var autoUi = $('<div class="smarty-autocomplete"></div>');
 
 								autoUi.addClass('smarty-addr-' + addr.id());
+								containerUi.data("addrID", addr.id())
 								containerUi.append(autoUi);
 								
 								containerUi.css({
@@ -626,10 +629,73 @@
 									$(this).addClass('smarty-active-suggestion');
 								});
 
+								containerUi.on("mouseleave", ".smarty-active-suggestion", function() {
+									$(this).removeClass('smarty-active-suggestion');
+								});
+
+
 								strField.attr("autocomplete", "off");	// Tell Firefox to keep quiet
 
 								strField.blur({ containerUi: containerUi }, function(event) {
 									setTimeout(function() { event.data.containerUi.hide(); }, 300);
+								});
+
+								strField.keydown({ containerUi: containerUi, addr: addr }, function(event) {
+									var suggContainer = $('.smarty-autocomplete', event.data.containerUi);
+									var currentChoice = $('.smarty-active-suggestion:visible', suggContainer).first();
+									var choiceSelectionIsNew = false;
+
+									if (event.keyCode == 9)			// Tab key
+									{
+										if (currentChoice.length > 0)
+										{
+											useAutocompleteSuggestion(event.data.addr, autocompleteResponse.suggestions[currentChoice.data("suggIndex")], event.data.containerUi);
+											var domFields = event.data.addr.getDomFields();
+											if (domFields['zipcode'])
+												$(domFields['zipcode']).focus();
+										}
+										else
+											event.data.containerUi.hide();
+										return;
+									}
+									else if (event.keyCode == 40)	// Down arrow
+									{
+										if (!currentChoice.hasClass('smarty-suggestion'))
+										{
+											currentChoice = $('.smarty-suggestion', suggContainer).first().mouseover();
+											choiceSelectionIsNew = true;
+										}
+
+										if (!choiceSelectionIsNew)
+										{
+											if (currentChoice.next('.smarty-addr-'+event.data.addr.id()+' .smarty-suggestion').length > 0)
+												currentChoice.next('.smarty-suggestion').mouseover();
+											else
+												currentChoice.removeClass('smarty-active-suggestion');
+										}
+
+										moveCursorToEnd(this);
+										return;
+									}
+									else if (event.keyCode == 38)	// Up arrow
+									{
+										if (!currentChoice.hasClass('smarty-suggestion'))
+										{
+											currentChoice = $('.smarty-suggestion', suggContainer).last().mouseover();
+											choiceSelectionIsNew = true;
+										}
+
+										if (!choiceSelectionIsNew)
+										{
+											if (currentChoice.prev('.smarty-addr-'+event.data.addr.id()+' .smarty-suggestion').length > 0)
+												currentChoice.prev('.smarty-suggestion').mouseover();
+											else
+												currentChoice.removeClass('smarty-active-suggestion');
+										}
+
+										moveCursorToEnd(this);
+										return;
+									}
 								});
 
 								// Flip the on switch!
@@ -638,14 +704,14 @@
 						}
 
 						$(document).keyup(function(event) {
-							if (event.keyCode == 27 || event.keyCode == 9)	// Esc, or Tab
+							if (event.keyCode == 27)	// Esc key
 								$('.smarty-autocomplete').closest('.smarty-ui').hide();
 						});
 					}
 
-					// Try .5 and 1 seconds after the DOM loads to re-position UI elements; hack for Firefox.
+					// Try .5 and 1.5 seconds after the DOM loads to re-position UI elements; hack for Firefox.
 					setTimeout(function() { $(window).resize(); }, 500);
-					setTimeout(function() { $(window).resize(); }, 1000);
+					setTimeout(function() { $(window).resize(); }, 1500);
 				}
 			}
 			
@@ -739,8 +805,6 @@
 			var input = $.trim(event.data.streetField.val());
 			var containerUi = event.data.containerUi;
 			var suggContainer = $('.smarty-autocomplete', containerUi);
-			var currentChoice = $('.smarty-active-suggestion', suggContainer).first();
-			var choiceSelectionIsNew = false;
 
 			if (!input)
 			{
@@ -748,33 +812,24 @@
 				containerUi.hide();
 			}
 
-			if (event.keyCode == 13 && $('.smarty-active-suggestion:visible').length > 0)	// Enter/return
+			if (event.keyCode == 13)	// Enter/return
 			{
-				useAutocompleteSuggestion(addr, autocompleteResponse.suggestions[$('.smarty-active-suggestion').first().data('suggIndex')], containerUi);
+				if ($('.smarty-active-suggestion:visible').length > 0)
+					useAutocompleteSuggestion(addr, autocompleteResponse.suggestions[$('.smarty-active-suggestion:visible').first().data('suggIndex')], containerUi);
+				else
+					containerUi.hide();
+				streetField.blur();
 				return suppress(event);
-			}
-
-			if (event.keyCode == 40 || event.keyCode == 38)	// Up or down arrows
-			{
-				if (!currentChoice.hasClass('smarty-suggestion'))
-				{
-					currentChoice = $('.smarty-suggestion', suggContainer).first().mouseover();
-					choiceSelectionIsNew = true;
-				}
 			}
 
 			if (event.keyCode == 40)	// Down arrow
 			{
-				if (currentChoice.next('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0 && !choiceSelectionIsNew)
-					currentChoice.next('.smarty-suggestion').mouseover();
 				moveCursorToEnd(streetField[0]);
 				return;
 			}
 
 			if (event.keyCode == 38)	// Up arrow
 			{
-				if (currentChoice.prev('.smarty-addr-'+addr.id()+' .smarty-suggestion').length > 0 && !choiceSelectionIsNew)
-					currentChoice.prev('.smarty-suggestion').mouseover();
 				moveCursorToEnd(streetField[0]);
 				return;
 			}
@@ -806,7 +861,6 @@
 						suggContainer.append(link);
 					}
 
-					$('.smarty-suggestion', suggContainer).first().addClass('smarty-active-suggestion');
 					containerUi.show();
 
 					// Delete all older callbacks so they don't get executed later because of latency
@@ -817,7 +871,12 @@
 
 			autocplRequests[autocplrequest.number] = autocplrequest;
 
-			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", { prefix: input, suggestions: config.autocomplete }, function(json)
+			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", {
+				prefix: input,
+				city_filter: config.cityFilter,
+				state_filter: config.stateFilter,
+				suggestions: config.autocomplete
+			}, function(json)
 			{
 				if (autocplRequests[autocplrequest.number])
 					autocplRequests[autocplrequest.number].callback(autocplrequest.number, json);
@@ -827,7 +886,6 @@
 		function useAutocompleteSuggestion(addr, suggestion, containerUi)
 		{
 			var domfields = addr.getDomFields();
-
 			containerUi.hide();		// It's important that the suggestions are hidden before AddressChanged event fires
 
 			if (addr.isFreeform())
