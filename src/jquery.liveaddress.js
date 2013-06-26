@@ -619,17 +619,17 @@
 
 								containerUi.hide().appendTo("body");
 
-								containerUi.on('click', ".smarty-suggestion", { addr: addr, containerUi: containerUi }, function(event) {
+								containerUi.delegate(".smarty-suggestion", "click", { addr: addr, containerUi: containerUi }, function(event) {
 									var sugg = autocompleteResponse.suggestions[$(this).data('suggIndex')];
 									useAutocompleteSuggestion(event.data.addr, sugg, event.data.containerUi);
 								});
 
-								containerUi.on("mouseover", ".smarty-suggestion", function() {
+								containerUi.delegate(".smarty-suggestion", "mouseover", function() {
 									$('.smarty-active-suggestion').removeClass('smarty-active-suggestion');
 									$(this).addClass('smarty-active-suggestion');
 								});
 
-								containerUi.on("mouseleave", ".smarty-active-suggestion", function() {
+								containerUi.delegate(".smarty-active-suggestion", "mouseleave", function() {
 									$(this).removeClass('smarty-active-suggestion');
 								});
 
@@ -1020,7 +1020,7 @@
 						$(doms[prop]).unbind('change');
 					}
 					if (doms['street'])
-						$(doms['street']).unbind('keyup');
+						$(doms['street']).unbind('keyup').unbind('keydown').unbind('blur');
 				}
 
 				// Unbind our form submit and submit-button click handlers
@@ -1028,7 +1028,7 @@
 				$(config.submitSelector, forms[i].dom).each(function(idx) { $(this).unbind('click', submitHandler); });
 			}
 
-			$('.smarty-ui').remove();
+			$('.smarty-ui').undelegate('.smarty-suggestion', 'click').undelegate('.smarty-suggestion', 'mouseover').undelegate('.smarty-suggestion', 'mouseleave').remove();
 			$('body').undelegate('.smarty-undo', 'click');
 			$('body').undelegate('.smarty-tag-grayed', 'click');
 			$(window).unbind('resize');
