@@ -865,7 +865,7 @@
 						return;
 					}
 
-					for (var j in json.suggestions)
+					for (var j = 0; j < json.suggestions.length; j++)
 					{
 						var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text + '</a>');
 						link.data("suggIndex", j);
