@@ -593,7 +593,7 @@
 
 
 				// Prepare autocomplete UI
-				if (config.autocomplete)
+				if (config.autocomplete && config.key)
 				{
 					// For every mapped address, wire up autocomplete
 					for (var i = 0; i < forms.length; i++)
