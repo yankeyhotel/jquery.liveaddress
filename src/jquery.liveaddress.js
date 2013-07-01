@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.2";	// Version of this copy of the script
+	var version = "2.4.3";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -208,6 +208,15 @@
 				var addr = instance.getMappedAddressByID(addressID);
 				if (addr)
 					addr.active = false;
+			},
+			autoVerify: function(setting)
+			{
+				if (typeof setting === 'undefined')
+					return config.autoVerify;
+				else if (setting === "disable" || setting === "off" || !setting)
+					config.autoVerify = false;
+				else
+					config.autoVerify = true;
 			},
 			version: version
 		};
@@ -1505,7 +1514,7 @@
 			var response = data.response;
 			var corners = addr.corners();
 			corners.width = Math.max(corners.width, 300); 	// minimum width
-			corners.height = 180;//130	// use minimum height
+			corners.height = Math.max(corners.height, 180);	// minimum height
 
 			var html = '<div class="smarty-ui" style="top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<div class="smarty-popup smarty-addr-'+addr.id()+'" style="width: '+(corners.width - 6)+'px; height: '+(corners.height - 3)+'px;">'
