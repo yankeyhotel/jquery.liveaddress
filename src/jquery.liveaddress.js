@@ -892,6 +892,7 @@
 			autocplRequests[autocplrequest.number] = autocplrequest;
 
 			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", {
+				"auth-id": config.key,
 				prefix: input,
 				city_filter: config.cityFilter,
 				state_filter: config.stateFilter,
