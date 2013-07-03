@@ -66,7 +66,7 @@
 		var vers = $.fn.jquery.split(".");
 		if (vers.length >= 2)
 		{
-			if (vers[0] < 1 || (vers[0] >= 1 && vers[1] < 5))
+			if (vers[0] < 1 || (vers[0] == 1 && vers[1] < 5))
 			{
 				console.log("jQuery version "+$.fn.jquery+" found, but LiveAddress requires jQuery version 1.5 or higher. Aborting.");
 				return false;

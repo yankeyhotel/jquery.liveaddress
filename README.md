@@ -33,7 +33,7 @@ Test Runner File
 -----------------------
 
 The [index.html](https://github.com/smartystreets/jquery.liveaddress/blob/master/index.html) file provided can be used
-as a convenient, mostly-isolated environment in which to test different scenarios. Knock yourself out! Better
+as a convenient, isolated environment in which to test different scenarios. Knock yourself out! Better
 in testing than in production, right?
 
 
