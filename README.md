@@ -1,7 +1,7 @@
 LiveAddress API jQuery Plugin
 ==================================
 
-Add real-time, plug-and-play, free address verification to your website. Powered by
+Add real-time, plug-and-play, free address verification and autocomplete to your website. Powered by
 [SmartyStreets](http://smartystreets.com). Drop a couple lines of code into your webpage
 and... voilà! Instant address validation.
 
@@ -20,7 +20,7 @@ Quick Start
 2. Bring the LiveAddress API jQuery Plugin onto your page:
 ```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.4/jquery.liveaddress.min.js"></script>```
 3. Initialize the plugin with an HTML key from your account:
-```<script type="text/javascript">jQuery.LiveAddress("YOUR_HTML_KEY");</script>```
+```<script type="text/javascript">jQuery.LiveAddress("HtmlKey");</script>```
 
 That's it! Ensure it works before using it on a live site. SmartyStreets
 assumes no responsibility if something goes wrong on your web page. Enable debug mode
