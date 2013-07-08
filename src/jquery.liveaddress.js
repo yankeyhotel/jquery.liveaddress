@@ -630,10 +630,6 @@
 									"top": (strField.offset().top + strField.outerHeight()) + "px"
 								});
 
-								autoUi.css({
-									"width": Math.max(strField.outerWidth(), 250) + "px"
-								});
-
 								containerUi.hide().appendTo("body");
 
 								containerUi.delegate(".smarty-suggestion", "click", { addr: addr, containerUi: containerUi }, function(event) {
@@ -880,6 +876,10 @@
 						link.data("suggIndex", j);
 						suggContainer.append(link);
 					}
+
+					suggContainer.css({
+						"width": Math.max(streetField.outerWidth(), 250) + "px"
+					});
 
 					containerUi.show();
 
