@@ -650,7 +650,7 @@
 								strField.attr("autocomplete", "off");	// Tell Firefox to keep quiet
 
 								strField.blur({ containerUi: containerUi }, function(event) {
-									setTimeout(function() { event.data.containerUi.hide(); }, 300);
+									setTimeout(function(event) { if (event.data) event.data.containerUi.hide(); }, 300, event);
 								});
 
 								strField.keydown({ containerUi: containerUi, addr: addr }, function(event) {
