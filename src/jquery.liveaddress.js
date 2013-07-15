@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.3";	// Version of this copy of the script
+	var version = "2.4.4";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -111,6 +111,7 @@
 		config.autocomplete = typeof config.autocomplete === 'undefined' ? defaults.autocomplete : config.autocomplete;
 		config.cityFilter = typeof config.cityFilter === 'undefined' ? "" : config.cityFilter;
 		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
+		config.cityStatePreference = typeof config.cityStatePreference === 'undefined' ? "" : config.cityStatePreference;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
@@ -194,6 +195,10 @@
 			setStateFilter: function(states)
 			{
 				config.stateFilter = states;
+			},
+			setCityStatePreference: function(pref)
+			{
+				config.cityStatePreference = pref;
 			},
 			activate: function(addressID)
 			{
@@ -896,6 +901,7 @@
 				prefix: input,
 				city_filter: config.cityFilter,
 				state_filter: config.stateFilter,
+				preferred: config.cityStatePreference,
 				suggestions: config.autocomplete
 			}, function(json)
 			{
