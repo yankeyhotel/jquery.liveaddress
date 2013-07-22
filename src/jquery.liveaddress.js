@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.4";	// Version of this copy of the script
+	var version = "2.4.5";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -112,6 +112,7 @@
 		config.cityFilter = typeof config.cityFilter === 'undefined' ? "" : config.cityFilter;
 		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
 		config.cityStatePreference = typeof config.cityStatePreference === 'undefined' ? "" : config.cityStatePreference;
+		config.geolocate = typeof config.geolocate === 'undefined' ? true : config.geolocate;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
@@ -901,8 +902,9 @@
 				prefix: input,
 				city_filter: config.cityFilter,
 				state_filter: config.stateFilter,
-				preferred: config.cityStatePreference,
-				suggestions: config.autocomplete
+				prefer: config.cityStatePreference,
+				suggestions: config.autocomplete,
+				geolocate: config.geolocate
 			}, function(json)
 			{
 				if (autocplRequests[autocplrequest.number])
@@ -1435,8 +1437,8 @@
 			}
 
 			html += '</div><div class="smarty-choice-alt">';
-			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">I\'ll type a different or more complete address.</a>';
-			html += '<a href="javascript:" class="smarty-choice smarty-choice-override">I certify what I typed is correct.<br>('+addr.toString()+')</a>';
+			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a>';
+			html += '<a href="javascript:" class="smarty-choice smarty-choice-override">Click here to certify the address is correct<br>('+addr.toString()+')</a>';
 			html += '</div></div></div>';
 			$(html).hide().appendTo('body').show(defaults.speed);
 
@@ -1526,8 +1528,8 @@
 			var html = '<div class="smarty-ui" style="top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<div class="smarty-popup smarty-addr-'+addr.id()+'" style="width: '+(corners.width - 6)+'px; height: '+(corners.height - 3)+'px;">'
 				+ '<div class="smarty-popup-header smarty-popup-invalid-header">'+config.invalidMessage+'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>'
-				+ '<div class="smarty-choice-list"><a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">I\'ll type a different or more complete address.</a></div>'
-				+ '<div class="smarty-choice-alt"><a href="javascript:" class="smarty-choice smarty-choice-override">I certify what I typed is correct.<br>('+addr.toString()+')</a></div>'
+				+ '<div class="smarty-choice-list"><a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>'
+				+ '<div class="smarty-choice-alt"><a href="javascript:" class="smarty-choice smarty-choice-override">Click here to certify the address is correct<br>('+addr.toString()+')</a></div>'
 				+ '</div></div>';
 
 			$(html).hide().appendTo('body').show(defaults.speed);
