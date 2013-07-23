@@ -441,6 +441,8 @@
 					'eml',
 					'type',
 					'township',
+					'zip4',
+					'plus4',
 					'method',
 					'location',
 					'store',
