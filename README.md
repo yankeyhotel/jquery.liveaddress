@@ -70,6 +70,7 @@ release indicated by the URL. For example, a URL to the script with "2.2" in it 
 This GitHub repository is where the plugin is being actively developed. It will have the latest "bleeding-edge" features
 and fixes, but also bugs. So while you can link to the raw file here on GitHub instead, it is more prone to bugs and
 breaking changes. It also may jump to a new minor or major version without warning, potentially breaking your implementation.
+Only the latest production version is actively maintained.
 
 
 
@@ -93,3 +94,19 @@ License (GPLv3)
 
 All source code, resources, and other contents herein are copyright (c) 2012-2013 SmartyStreets and are distributed
 under [Version 3 of the GNU General Public License](http://opensource.org/licenses/GPL-3.0).
+
+
+Disclaimer
+-----------------------
+
+While the plugin provides basic address verification functionality, custom behavior will require
+[custom Javascript code](https://github.com/smartystreets/jquery.liveaddress/tree/master/customizations).
+Because SmartyStreets is an address verification company, not a team of contract programmers, we must assume that each website
+owner has, is, or can get a developer who is familiar with Javascript.
+
+We encourage anyone to contribute to the project and improve upon it.
+
+We are happy to fix bugs, so follow the instructions contained in this file to troubleshoot, then
+submit a proper bug report. Only the latest production version is actively maintained. By using this plugin, you assume
+full responsibility for the behavior and functionality of your web page and agree to the other terms described in this repository
+and on [the SmartyStreets web site](http://smartystreets.com/kb/liveaddress-api/website-forms).
