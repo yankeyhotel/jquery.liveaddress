@@ -107,6 +107,6 @@ owner has, is, or can get a developer who is familiar with Javascript.
 We encourage anyone to contribute to the project and improve upon it.
 
 We are happy to fix bugs, so follow the instructions contained in this file to troubleshoot, then
-submit a proper bug report. Only the latest production version is actively maintained. By using this plugin, you assume
-full responsibility for the behavior and functionality of your web page and agree to the other terms described in this repository
-and on [the SmartyStreets web site](http://smartystreets.com/kb/liveaddress-api/website-forms).
+submit a proper bug report. Only the latest production version is actively maintained. Only modern browsers are supported.
+By using this plugin, you assume full responsibility for the behavior and functionality of your web page and agree to the
+other terms described in this repository and on [the SmartyStreets web site](http://smartystreets.com/kb/liveaddress-api/website-forms).
