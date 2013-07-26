@@ -7,6 +7,6 @@
 
 liveaddress.on("AddressAccepted", function(event, data, previousHandler) {
 	var zipField = data.address.getDomFields()['zipcode'];
-	zipField.value = data.response.chosen.components.zipcode;
+	zipField.value = data.response.chosen ? data.response.chosen.components.zipcode : zipField.value;
 	previousHandler(event, data);
 });

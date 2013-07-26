@@ -22,5 +22,5 @@ and is unable to help with implementing these samples into your own site or proj
 other words, SmartyStreets is not responsible for the content of these files nor will be
 liable for consequences as a result of using the code in these files on any site or in any
 project. There is no guarantee that these samples are compatible with the version of jQuery
-or the version of the plugin with your project. By using any code from this repository you
-understand and agree to these terms.
+or the version of the plugin with your project or the browser you're using.
+By using any code from this repository you understand and agree to these terms.
