@@ -84,7 +84,7 @@ can fix it. If you contact us, be sure to include details such as browser, jQuer
 clearly reproduces the behavior you're experiencing. Strip the page of all other Javascript except for what is absolutely
 necessary (usually just jQuery and the plugin's source code). Using a resource such as [jsFiddle](http://jsfiddle.net) can be useful for
 reproducing bugs in their true character. You can also use the test driver file, index.html, (described above) to reproduce
-errors and report those to us. Or, submit a pull request with the fix and we'll review it!
+errors and report those to us. Or, submit a pull request with the fix and we'll review it.
 
 
 
