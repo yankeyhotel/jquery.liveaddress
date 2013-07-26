@@ -5,18 +5,23 @@ Add real-time, plug-and-play, free address verification and autocomplete to your
 [SmartyStreets](http://smartystreets.com). Drop a couple lines of code into your webpage
 and... voilà! Instant address validation.
 
+This plugin should be thought of as merely a framework. It is designed for only basic functionality. Just like
+jQuery is a framework, if you want to do something custom, you'll have to code it yourself. Fortunately,
+it's pretty easy (see the documentation, link below) and we have
+[a small repository of some customizations](https://github.com/smartystreets/jquery.liveaddress/tree/master/customizations)
+our customers have used before that you can copy+paste into your page, then tweak for your situation.
+
 
 Full documentation
 -----------------------
 http://smartystreets.com/kb/liveaddress-api/website-forms
 
 
-
 Quick Start
 -----------------------
 
 1. Be sure jQuery is brought into your page early on. If you don't already have it, something like this should do the trick:
-```<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>```
+```<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>```
 2. Bring the LiveAddress API jQuery Plugin onto your page:
 ```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.4/jquery.liveaddress.min.js"></script>```
 3. Initialize the plugin with an HTML key from your account:
@@ -28,6 +33,11 @@ to help you find problems, and if necessary, map the fields manually. See the
 [full documentation](http://smartystreets.com/kb/liveaddress-api/website-forms) for details.
 
 
+Troubleshooting
+-----------------------
+http://smartystreets.com/kb/liveaddress-api/plugin/troubleshooting
+
+
 
 Test Runner File
 -----------------------
@@ -35,6 +45,18 @@ Test Runner File
 The [index.html](https://github.com/smartystreets/jquery.liveaddress/blob/master/index.html) file provided can be used
 as a convenient, isolated environment in which to test different scenarios. Knock yourself out! Better
 in testing than in production, right?
+
+
+Support
+-----------------------
+
+Other than maintaining production versions of this plugin and its documentation, we do not offer any further support on
+this script. We welcome your feedback and will consider it to improve the plugin, but this project is open source
+and we strongly encourage you to contribute to it. As SmartyStreets specializes in address verification and is not a
+programming firm, we cannot offer programming or specific implementation help.
+
+We are happy to see customers fork the project and improve upon it, and we will gladly review any pull requests that
+come our way.
 
 
 
@@ -51,12 +73,18 @@ breaking changes. It also may jump to a new minor or major version without warni
 
 
 
-Contributing & Bug Reports
+Bug Reports
 -----------------------
 
-Feel free to submit a pull request to this repository, open an issue, or contact us if your question is more localized.
-We'll help when we can, but SmartyStreets has no control over the source code of other web sites. If you can isolate
-an issue and display it on [jsFiddle](http://jsfiddle.net) for us, it will help us diagnose any problems more quickly.
+Preferably, contribute to the project by forking or submitting a pull request, along with a description of the problem
+you were experiencing. This is the fastest and surest way to have a bug fixed.
+
+The slower way to get help would be to contact us, since we'll have to be able to reproduce the error before we
+can fix it. If you contact us, be sure to include details such as browser, jQuery version, and a bare-bones page that
+clearly reproduces the behavior you're experiencing. Strip the page of all other Javascript except for what is absolutely
+necessary (usually just jQuery and the plugin's source code). Using a resource such as [jsFiddle](http://jsfiddle.net) can be useful for
+reproducing bugs in their true character. You can also use the test driver file, index.html, (described above) to reproduce
+errors and report those to us. Or, submit a pull request with the fix and we'll review it!
 
 
 
