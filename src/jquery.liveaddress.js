@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.5";	// Version of this copy of the script
+	var version = "2.4.6";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -311,7 +311,8 @@
 						'village',
 						'cityname',
 						'city-name',
-						'city_name'
+						'city_name',
+						'cities'
 					],
 					labels: [
 						'city',
@@ -858,23 +859,34 @@
 				return;
 			}
 
-			if (input && addr.isDomestic() && autocompleteResponse)
-				containerUi.show();
-
-			if (input == addr.lastStreetInput || !input || !addr.isDomestic())
+			if (!input || input == addr.lastStreetInput || !addr.isDomestic())
 				return;
 
 			addr.lastStreetInput = input;	// Used so that autocomplete only fires on real changes (i.e. not just whitespace)
+
+			trigger('AutocompleteInvoked', {
+				containerUi: containerUi,
+				suggContainer: suggContainer,
+				streetField: streetField,
+				input: input,
+				addr: addr
+			});
+		}
+
+		this.requestAutocomplete = function(event, data)
+		{
+			if (data.input && data.addr.isDomestic() && autocompleteResponse)
+				data.containerUi.show();
 
 			var autocplrequest = {
 				callback: function(counter, json)
 				{
 					autocompleteResponse = json;
-					suggContainer.empty();
+					data.suggContainer.empty();
 
 					if (!json.suggestions || json.suggestions.length == 0)
 					{
-						suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
+						data.suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
 						return;
 					}
 
@@ -882,14 +894,14 @@
 					{
 						var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text + '</a>');
 						link.data("suggIndex", j);
-						suggContainer.append(link);
+						data.suggContainer.append(link);
 					}
 
-					suggContainer.css({
-						"width": Math.max(streetField.outerWidth(), 250) + "px"
+					data.suggContainer.css({
+						"width": Math.max(data.streetField.outerWidth(), 250) + "px"
 					});
 
-					containerUi.show();
+					data.containerUi.show();
 
 					// Delete all older callbacks so they don't get executed later because of latency
 					autocplRequests.splice(0, counter);
@@ -901,7 +913,7 @@
 
 			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", {
 				"auth-id": config.key,
-				prefix: input,
+				prefix: data.input,
 				city_filter: config.cityFilter,
 				state_filter: config.stateFilter,
 				prefer: config.cityStatePreference,
@@ -909,10 +921,18 @@
 				geolocate: config.geolocate
 			}, function(json)
 			{
-				if (autocplRequests[autocplrequest.number])
-					autocplRequests[autocplrequest.number].callback(autocplrequest.number, json);
+				trigger("AutocompleteReceived", $.extend(data, {
+					json: json,
+					autocplrequest: autocplrequest
+				}));
 			});
-		}
+		};
+
+		this.showAutocomplete = function(event, data)
+		{
+			if (autocplRequests[data.autocplrequest.number])
+				autocplRequests[data.autocplrequest.number].callback(data.autocplrequest.number, data.json);
+		};
 
 		function useAutocompleteSuggestion(addr, suggestion, containerUi)
 		{
@@ -2250,6 +2270,20 @@
 		{
 			if (config.debug)
 				console.log("EVENT:", "MapInitialized", "(Mapped fields have been wired up to the window"+(config.ui ? ", document, and UI" : " and document")+")", event, data);
+		},
+
+		AutocompleteInvoked: function(event, data)
+		{
+			if (config.debug)
+				console.log("EVENT:", "AutocompleteInvoked", "(A request is about to be sent to the autocomplete service)", event, data);
+			ui.requestAutocomplete(event, data);
+		},
+
+		AutocompleteReceived: function(event, data)
+		{
+			if (config.debug)
+				console.log("EVENT:", "AutocompleteReceived", "(A response has just been received from the autocomplete service)", event, data);
+			ui.showAutocomplete(event, data);
 		},
 
 		AddressChanged: function(event, data)
