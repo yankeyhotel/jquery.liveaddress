@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.6";	// Version of this copy of the script
+	var version = "2.4.7";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -276,8 +276,7 @@
 						'street',
 						'address',		// hazardous (e.g. "Email address") -- but we deal with that later
 						'line ',
-						' line',
-						'primary'
+						' line'
 					]
 				},
 				secondary: {
