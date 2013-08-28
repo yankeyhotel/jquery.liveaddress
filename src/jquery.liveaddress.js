@@ -1862,10 +1862,11 @@
 			ui.disableFields(self);
 			self.verifyCount ++;
 			var addrData = self.toRequest();
-			
+			var credentials = config.token ? "auth-id="+encodeURIComponent(config.key)+"&auth-token="+encodeURIComponent(config.token) : "auth-token="+encodeURIComponent(config.key);
+
 			$.ajax(
 			{
-				url: config.requestUrl+"?auth-token="+encodeURIComponent(config.key)+"&plugin="+encodeURIComponent(instance.version)+(config.debug ? "_debug" : "")+"&callback=?",
+				url: config.requestUrl+"?"+credentials+"&plugin="+encodeURIComponent(instance.version)+(config.debug ? "_debug" : "")+"&callback=?",
 				dataType: "jsonp",
 				data: addrData,
 				timeout: config.timeout
