@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.7";	// Version of this copy of the script
+	var version = "2.4.8";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -751,12 +751,19 @@
 						// Don't invoke verification if it's already processing or autocomplete is open and the user was pressing Enter to use a suggestion
 						if ((e.data.form && e.data.form.processing) || $('.smarty-active-suggestion:visible').length > 0)
 							return suppress(e);
-	
-						// In case programmatic changes were made to input fields, we need to sync
-						// those with internally-stored values (since the .change() event isn't fired
-						// by jQuery's val() function).
-						for (var j = 0; j < e.data.form.addresses.length; j++)
-							e.data.form.addresses[j].syncWithDom(true);
+
+						/*
+							IMPORTANT!
+							Prior to version 2.4.8, the plugin would call syncWithDom() at submit-time
+							in case programmatic changes were made to the address input fields, including
+							browser auto-fills. The sync function would detect those changes and force
+							a re-verification to not let invalid addresses through. Unfortunately, this
+							frequently caused infinite loops (runaway lookups), ultimately preventing
+							form submission, which is unacceptable. As a safety measure to protect our
+							customer's subscriptions, we've removed syncWithDom(). The website owner is
+							responsible for making sure that any changes to address field values raise the
+							"change" event on that element. Example: $('#city').val('New City').change();
+						*/
 	
 						if (!e.data.form.allActiveAddressesAccepted())
 						{
@@ -1661,7 +1668,7 @@
 				{
 					if (uiTag && !uiTag.is(':visible'))
 						uiTag.show();	// Show checkmark tag if address is in US
-					self.unaccept().syncWithDom();
+					self.unaccept();
 					trigger("AddressChanged", eventMeta);
 				}
 				else
@@ -1846,8 +1853,6 @@
 
 		this.verify = function(invoke, invokeFn)
 		{
-			self.syncWithDom(true);
-
 			// Invoke contains the element to "click" on once we're all done, or is a user-defined callback function (may also be undefined)
 			if (!invoke && !self.enoughInput())
 			{
@@ -1976,40 +1981,6 @@
 		this.status = function()
 		{
 			return state;
-		};
-
-		this.syncWithDom = function(internalPriority)
-		{
-			// Since programmatic changes to form field values (e.g. jQuery's .val() function)
-			// don't necessarily raise the "change" event, at verify time we should
-			// sync internally-stored values with those on the DOM.
-
-			// Set "internalPriority" to true if a field value exists internally but
-			// does not exist on the DOM, and yet you want to keep the internal value.
-			// This can cause problems for an address that is ambiguous more than once
-			// (for example, addressee may be populated by the response but is not in the DOM).
-
-			if (!config.ui)
-				return;
-
-			for (var prop in fields)
-			{
-				if (!fields[prop].dom && fields[prop].value && !internalPriority)
-				{
-					delete fields[prop];
-					continue;
-				}
-				else if (fields[prop].dom && typeof fields[prop].value !== 'undefined')
-				{
-					var domValue = $(fields[prop].dom).val() || "";
-					if (fields[prop].value != domValue && internalPriority)
-					{
-						fields[prop].value = domValue;
-						if (!ui.isDropdown(fields[prop].dom)) 	// Don't unaccept on dropdowns; this causes infinite loops on form submits if the dropdown has bad value attributes
-							self.unaccept();
-					}
-				}
-			}
 		};
 
 		this.getDomFields = function()
