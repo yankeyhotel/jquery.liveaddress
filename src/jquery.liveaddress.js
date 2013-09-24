@@ -2222,9 +2222,9 @@
 	{
 		if (invokeOn && typeof invokeOn !== 'function' && invokeFunction)
 			if (invokeFunction == "click")
-				$(invokeOn)[0].click();		// Very particular: we MUST call the native click() function, NOT jQuery's!
+				$(invokeOn).trigger('click');	// Very particular: we MUST fire the native 'click' event!
 			else if (invokeFunction == "submit")
-				$(invokeOn).submit();		// For submit(), we have to use jQuery's, so that all its submit handlers fire.
+				$(invokeOn).submit();	// For submit(), we have to use jQuery's, so that all its submit handlers fire.
 	};
 
 	var EventHandlers = {
