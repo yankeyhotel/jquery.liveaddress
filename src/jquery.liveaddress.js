@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.8";	// Version of this copy of the script
+	var version = "2.4.9";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -658,7 +658,7 @@
 								strField.attr("autocomplete", "off");	// Tell Firefox to keep quiet
 
 								strField.blur({ containerUi: containerUi }, function(event) {
-									setTimeout(function(event) { if (event.data) event.data.containerUi.hide(); }, 300, event);
+									setTimeout( (function(event) { return function() { if (event.data) event.data.containerUi.hide(); }; })(event), 300);	// This line is proudly IE9-compatible
 								});
 
 								strField.keydown({ containerUi: containerUi, addr: addr }, function(event) {
