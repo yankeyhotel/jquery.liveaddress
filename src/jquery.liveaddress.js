@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.9";	// Version of this copy of the script
+	var version = "2.4.10";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -898,7 +898,7 @@
 
 					for (var j = 0; j < json.suggestions.length; j++)
 					{
-						var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text + '</a>');
+						var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text.replace(/<|>/g, "") + '</a>');
 						link.data("suggIndex", j);
 						data.suggContainer.append(link);
 					}
@@ -1643,6 +1643,8 @@
 
 			if (!fields[key])
 				fields[key] = {};
+
+			value = value.replace(/<|>/g, "");	// prevents script injection attacks (< and > aren't in addresses, anyway)
 
 			var differentVal = fields[key].value != value;
 
