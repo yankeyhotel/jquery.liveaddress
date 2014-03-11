@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.10";	// Version of this copy of the script
+	var version = "2.4.11";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -1701,7 +1701,7 @@
 			fields = {};
 			id = addressID ? addressID.replace(/[^a-z0-9_\-]/ig, '') : randomInt(1, 99999);		// Strips non-selector-friendly characters
 
-			if (typeof domMap === 'object')
+			if (typeof domMap === 'object')	// can be an actual map to DOM elements or just field/value data
 			{
 				// Find the last field likely to appear on the DOM (used for UI attachments)
 				this.lastField = domMap.lastline || domMap.zipcode || domMap.state || domMap.city || domMap.street;
@@ -1712,9 +1712,14 @@
 				{
 					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
 						continue;
-
-					var elem = $(domMap[prop]), val, elemArray = elem.toArray();
-					var isData = elemArray ? elemArray.length == 0 : false;
+					var elem, val, elemArray, isData;
+					try
+					{
+						elem = $(domMap[prop]);
+						elemArray = elem.toArray();
+						isData = elemArray ? elemArray.length == 0 : false;
+					}
+					catch (e) { isData = true; }
 
 					if (isData) // Didn't match an HTML element, so treat it as an address string ("street1" data) instead
 						val = domMap[prop] || "";
@@ -1749,7 +1754,7 @@
 					// the state field, this change() event fires before the form is submitted, and if autoVerify is
 					// on, the verification will not invoke form submit, because it didn't come from a form submit.
 					// This is known behavior and is actually proper functioning in this uncommon edge case.
-					$(domMap[prop]).change(data, function(e)
+					!isData && $(domMap[prop]).change(data, function(e)
 					{
 						e.data.address.set(e.data.field, e.target.value, false, false, e, false);
 					});

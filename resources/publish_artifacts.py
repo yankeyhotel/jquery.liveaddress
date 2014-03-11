@@ -48,7 +48,7 @@ EXCLUDES = ['.DS_Store']
 DESTINATION = '/jquery.liveaddress/{0}'
 WORKING_DIRECTORY = './working/'
 S3_BUCKET = 'static.smartystreets.com'
-AWS_ACCESS_ID = 'AKIAIEPRJ7EJNOIBIJBA' # tatooine
+AWS_ACCESS_ID = 'AKIAIDKL2XWJIN7VEOJQ'
 
 
 if __name__ == '__main__':
