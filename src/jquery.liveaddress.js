@@ -1610,12 +1610,67 @@
 		};
 	}
 
+	var allStatesByName = {
+		"ALABAMA":"AL","ALASKA":"AK","AMERICAN SAMOA":"AS","ARIZONA":"AZ","ARKANSAS":"AR","CALIFORNIA":"CA","COLORADO":"CO","CONNECTICUT":"CT","DELAWARE":"DE","DISTRICT OF COLUMBIA":"DC","FEDERATED STATES OF MICRONESIA":"FM","FLORIDA":"FL","GEORGIA":"GA","GUAM":"GU","HAWAII":"HI","IDAHO":"ID","ILLINOIS":"IL","INDIANA":"IN","IOWA":"IA","KANSAS":"KS","KENTUCKY":"KY","LOUISIANA":"LA","MAINE":"ME","MARSHALL ISLANDS":"MH","MARYLAND":"MD","MASSACHUSETTS":"MA","MICHIGAN":"MI","MINNESOTA":"MN","MISSISSIPPI":"MS","MISSOURI":"MO","MONTANA":"MT","NEBRASKA":"NE","NEVADA":"NV","NEW HAMPSHIRE":"NH","NEW JERSEY":"NJ","NEW MEXICO":"NM","NEW YORK":"NY","NORTH CAROLINA":"NC","NORTH DAKOTA":"ND","NORTHERN MARIANA ISLANDS":"MP","OHIO":"OH","OKLAHOMA":"OK","OREGON":"OR","PALAU":"PW","PENNSYLVANIA":"PA","PUERTO RICO":"PR","RHODE ISLAND":"RI","SOUTH CAROLINA":"SC","SOUTH DAKOTA":"SD","TENNESSEE":"TN","TEXAS":"TX","UTAH":"UT","VERMONT":"VT","VIRGIN ISLANDS":"VI","VIRGINIA":"VA","WASHINGTON":"WA","WEST VIRGINIA":"WV","WISCONSIN":"WI","WYOMING":"WY",
+		"ARMED FORCES EUROPE, THE MIDDLE EAST, AND CANADA":"AE","ARMED FORCES CANADA":"AE","ARMED FORCES THE MIDDLE EAST":"AE","ARMED FORCES EUROPE":"AE","ARMED FORCES PACIFIC":"AP","ARMED FORCES AMERICAS (EXCEPT CANADA)":"AA","ARMED FORCES AMERICAS":"AA"
+	};
+	// this listing of stateNames has West Virginia before Virginia and the Virgin Islands (most specific to least specific)
+	var stateNames = ["ALABAMA","ALASKA","AMERICAN SAMOA","ARIZONA","ARKANSAS","CALIFORNIA","COLORADO","CONNECTICUT","DELAWARE","DISTRICT OF COLUMBIA","FEDERATED STATES OF MICRONESIA","FLORIDA","GEORGIA","GUAM","HAWAII","IDAHO","ILLINOIS","INDIANA","IOWA","KANSAS","KENTUCKY","LOUISIANA","MAINE","MARSHALL ISLANDS","MARYLAND","MASSACHUSETTS","MICHIGAN","MINNESOTA","MISSISSIPPI","MISSOURI","MONTANA","NEBRASKA","NEVADA","NEW HAMPSHIRE","NEW JERSEY","NEW MEXICO","NEW YORK","NORTH CAROLINA","NORTH DAKOTA","NORTHERN MARIANA ISLANDS","OHIO","OKLAHOMA","OREGON","PALAU","PENNSYLVANIA","PUERTO RICO","RHODE ISLAND","SOUTH CAROLINA","SOUTH DAKOTA","TENNESSEE","TEXAS","UTAH","VERMONT","WEST VIRGINIA","VIRGINIA","VIRGIN ISLANDS","WASHINGTON","WISCONSIN","WYOMING","ARMED FORCES EUROPE, THE MIDDLE EAST, AND CANADA","ARMED FORCES CANADA","ARMED FORCES THE MIDDLE EAST","ARMED FORCES EUROPE","ARMED FORCES PACIFIC","ARMED FORCES AMERICAS (EXCEPT CANADA)","ARMED FORCES AMERICAS"];
+	var stateAbbreviations = ["AL","AK","AS","AZ","AR","CA","CO","CT","DE","DC","FM","FL","GA","GU","HI","ID","IL","IN","IA","KS","KY","LA","ME","MH","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","MP","OH","OK","OR","PW","PA","PR","RI","SC","SD","TN","TX","UT","VT","VI","VA","WA","WV","WI","WY","AE","AP","AA"];
 
+	/*
+		Represents an option in a state dropdown menu. We look for any clues in the value or text
+		as to what state the option might represent so that when a verified result comes back we
+		can update the dropdown accordingly. Also allows us to submit the correct value to the server.
+		In many cases the value is a key that is only meaningful to the server-side code.
+	*/
+	function StateDropdownOption(option)
+	{
+		var self = this; // Pointer to self so that internal functions can reference its parent
 
+		this.standard = function() {
 
+			for (var x in stateNames) {
+				var name = stateNames[x];
 
+				// look in the option.text for the full state name...
+				var text = option.text.toUpperCase();
+				if (text.indexOf(name) > -1)
+					return allStatesByName[name];
 
+				// look in the option.value for the full state name...
+				var value = option.value.toUpperCase();
+				if (value.indexOf(name) > -1)
+					return allStatesByName[name];
+			}
 
+			for (var x in stateAbbreviations) {
+				var abbreviation = stateAbbreviations[x];
+
+				// look in the option.text for a state abbreviation...
+				var words = option.text.split(/[ ,]+/);
+				for (var y in words) {
+					var word = words[y].toUpperCase();
+					if (abbreviation === word)
+						return abbreviation;
+				}
+
+				// look in the option.value for a state abbreviation...
+				var words = option.value.split(/[ ,]+/);
+				for (var y in words) {
+					var word = words[y].toUpperCase();
+					if (abbreviation === word)
+						return abbreviation;
+				}
+			}
+
+			return '';
+		}
+
+		this.value = function() {
+			return option.value ? option.value : option.text;
+		}
+	}
 
 	/*
 		Represents an address inputted by the user, whether it has been verified yet or not.
@@ -1628,6 +1683,9 @@
 		var self = this;							// Pointer to self so that internal functions can reference its parent
 		var fields;									// Data values and references to DOM elements
 		var id;										// An ID by which to classify this address on the DOM
+		var statesOptions = {};						// Stores the actual state dropdown option values that correspond to the option names
+		var totalStatesOptions = 0;					// Total number of options in the state dropdown
+
 		var state = "accepted"; 					// Can be: "accepted" or "changed"
 		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai"}
 		// Some of the above fields will only be mapped manually, not automatically.
@@ -1651,9 +1709,16 @@
 			fields[key].undo = fields[key].value || "";
 			fields[key].value = value;
 
-			if (updateDomElement && fields[key].dom)
+			if (updateDomElement && fields[key].dom) {
+
+				// figure out which state dropdown option should be selected, if any...
+				if (key === 'state' && totalStatesOptions > 0 && value in statesOptions) {
+					value = statesOptions[value].value();
+				}
+
 				$(fields[key].dom).val(value);
-			
+			}
+
 			var eventMeta = {
 				sourceEvent: sourceEvent,	// may be undefined
 				field: key,
@@ -1661,7 +1726,7 @@
 				value: value,
 				suppressAutoVerification: suppressAutoVerify || false
 			};
-			
+
 			if (differentVal && !keepState)
 			{
 				ui.unmarkAsValid(self);
@@ -1683,9 +1748,6 @@
 
 			return true;
 		};
-
-
-
 
 		// PUBLIC MEMBERS //
 
@@ -1712,6 +1774,7 @@
 				{
 					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
 						continue;
+
 					var elem, val, elemArray, isData;
 					try
 					{
@@ -1725,6 +1788,16 @@
 						val = domMap[prop] || "";
 					else
 						val = elem.val() || "";
+
+					// Here we analyze the state dropdown so we can update it with verified address results later.
+					if (prop === "state" && elemArray[0].length != undefined) { // Is there a better way to detect a state dropdown from here?
+						$('option', elem).each(function(i){
+							var option = new StateDropdownOption(this);
+							var standardized = option.standard();
+							statesOptions[standardized] = option;
+							totalStatesOptions++;
+						});
+					}
 
 					fields[prop] = {};
 					fields[prop].value = val;
