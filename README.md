@@ -39,7 +39,7 @@ to help you find problems, and if necessary, map the fields manually. See the
 
 Troubleshooting
 -----------------------
-http://smartystreets.com/kb/liveaddress-api/plugin/troubleshooting
+https://smartystreets.com/docs/plugin/troubleshooting
 
 
 
@@ -119,4 +119,4 @@ We encourage anyone to contribute to the project and improve upon it.
 We are happy to fix bugs, so follow the instructions contained in this file to troubleshoot, then
 submit a proper bug report. Only the latest production version is actively maintained. Only modern browsers are supported.
 By using this plugin, you assume full responsibility for the behavior and functionality of your web page and agree to the
-other terms described in this repository and on [the SmartyStreets web site](http://smartystreets.com/kb/liveaddress-api/website-forms).
+other terms described in this repository and on [the SmartyStreets web site](https://smartystreets.com/docs/plugin).
