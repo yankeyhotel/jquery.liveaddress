@@ -14,7 +14,11 @@ our customers have used before that you can copy+paste into your page, then twea
 
 Full documentation
 -----------------------
-http://smartystreets.com/kb/liveaddress-api/website-forms
+https://smartystreets.com/docs/plugin
+
+Working Examples
+-----------------------
+http://smartystreets.github.io/jquery.liveaddress/
 
 
 Quick Start
