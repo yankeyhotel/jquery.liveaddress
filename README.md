@@ -105,6 +105,7 @@ License (GPLv3)
 All source code, resources, and other contents herein are copyright (c) 2012-2013 SmartyStreets and are distributed
 under [Version 3 of the GNU General Public License](http://opensource.org/licenses/GPL-3.0).
 
+If you require alternative licensing to embed this code into your product, please contact us to discuss your requirements.
 
 Disclaimer
 -----------------------
