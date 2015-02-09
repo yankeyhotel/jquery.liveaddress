@@ -26,16 +26,6 @@ def call(command):
     return output
 
 
-SAMPLE_GIT_BRANCH_OUTPUT = """
-  1.2
-  1.3
-  1.5
-  1.6
-* 1.7
-  master
-
-"""
-
 SAMPLE_TAG_OUTPUT = """
 1.6.9
 1.7.0
