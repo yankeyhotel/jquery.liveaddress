@@ -16,7 +16,7 @@ def main():
     tags = [t for t in tags if t.startswith(branch)]
     next_revision = 0 if not tags else max(int(x.split('.')[-1]) for x in tags) + 1
     print 'Tagging repository at: \'{0}.{1}\''.format(branch, next_revision)
-    call('git tag {0}.{1}'.format(branch, next_revision))
+    call('git tag -a {0}.{1} -m ""'.format(branch, next_revision))
 
 
 def call(command):
