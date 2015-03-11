@@ -962,13 +962,14 @@
 							// Checks for abbreviation match and maps full state name to abbreviation
 							if(domfields['state'].options[i].text.toUpperCase() === suggestion.state || allStatesByName[domfields['state'].options[i].text.toUpperCase()] === suggestion.state)
 							{
-								$(domfields['state']).val(domfields['state'].options[i].value).change();
+								$(domfields['state'])[0].selectedIndex = i;
+								$(domfields['state']).change();
 								break;
 							}
 						}
 					}
 					else
-						$(domfields['state']).val(suggestedState).change();
+						$(domfields['state']+'option').val(suggestedState).change();
 				}
 				if (domfields['lastline'])
 					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
