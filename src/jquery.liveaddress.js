@@ -954,22 +954,7 @@
 				if (domfields['city'])
 					$(domfields['city']).val(suggestion.city).change();
 				if (domfields['state'])
-				{
-					if(domfields['state'].options) // Checks for dropdown
-					{
-						for(var i = 0; i < domfields['state'].options.length; i++)
-						{
-							// Checks for abbreviation match and maps full state name to abbreviation
-							if(domfields['state'].options[i].text.toUpperCase() === suggestion.state || allStatesByName[domfields['state'].options[i].text.toUpperCase()] === suggestion.state)
-							{
-								$(domfields['state']).val(domfields['state'].options[i].value).change();
-								break;
-							}
-						}
-					}
-					else
-						$(domfields['state']).val(suggestedState).change();
-				}
+					$(domfields['state']).val(suggestion.state).change();
 				if (domfields['lastline'])
 					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
 			}
