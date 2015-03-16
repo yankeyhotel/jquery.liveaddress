@@ -1989,11 +1989,26 @@
 
 		this.enoughInput = function()
 		{
+			var stateText;
+
+			// Checks for state dropdown
+			if(fields.state)
+			{
+				stateText = fields.state.value;
+				if(fields.state.dom.length)
+				{
+					// Has the state been selected yet?
+					if(fields.state.dom.selectedIndex == 0)
+						stateText = "";
+					else
+						stateText = fields.state.dom.selectedOptions[0].text;
+				}
+			}
 			return (fields.street && fields.street.value)
 				&& (
 					(
 						(fields.city && fields.city.value)
-						&& (fields.state && fields.state.value && fields.state.value.length > 1)	// The last is for dropdowns that default to "0" (like osCommerce)
+						&& (fields.state && stateText.length > 0)
 					)
 					|| (fields.zipcode && fields.zipcode.value)
 					|| (fields.lastline && fields.lastline.value)
