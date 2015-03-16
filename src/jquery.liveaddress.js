@@ -2007,7 +2007,10 @@
 			for (var key in fields)
 			{
 				var keyval = {};
-				keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
+				if(key === "state" && fields[key].dom.length > 0)
+					keyval[key] = fields[key].dom[fields[key].dom.selectedIndex].text;
+				else 
+					keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
 				$.extend(obj, keyval);
 			}
 			return $.extend(obj, {candidates: config.candidates});
@@ -2015,11 +2018,18 @@
 
 		this.toString = function()
 		{
+			var stateText = fields.state.value;
+
+			// Sets state to text from dropdown, opposed to the value
+			if(fields.state.dom.length > 0)
+			{
+				stateText = fields.state.dom[fields.state.dom.selectedIndex].text;
+			}
 			return (fields.street ? fields.street.value + " " : "")
 				+ (fields.street2 ? fields.street2.value + " " : "")
 				+ (fields.secondary ? fields.secondary.value + " " : "")
 				+ (fields.city ? fields.city.value + " " : "")
-				+ (fields.state ? fields.state.value + " " : "")
+				+ (fields.state ? stateText + " " : "")
 				+ (fields.zipcode ? fields.zipcode.value : "");
 		}
 
