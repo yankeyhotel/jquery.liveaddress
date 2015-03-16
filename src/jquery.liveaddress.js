@@ -951,8 +951,7 @@
 			{
 				if (domfields['street'])
 					$(domfields['street']).val(suggestion.street_line).change();
-				if (domfields['city'])
-					$(domfields['city']).val(suggestion.city).change();
+				// State filled in before city so autoverify is not invoked without finishing using the suggestion
 				if (domfields['state'])
 				{
 					if(domfields['state'].options) // Checks for dropdown
@@ -971,6 +970,8 @@
 					else
 						$(domfields['state']).val(suggestion.state).change();
 				}
+				if (domfields['city'])
+					$(domfields['city']).val(suggestion.city).change();
 				if (domfields['lastline'])
 					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
 			}
@@ -1997,11 +1998,7 @@
 				stateText = fields.state.value;
 				if(fields.state.dom.length)
 				{
-					// Has the state been selected yet?
-					if(fields.state.dom.selectedIndex == 0)
-						stateText = "";
-					else
-						stateText = fields.state.dom.selectedOptions[0].text;
+					stateText = fields.state.dom.selectedOptions[0].text;
 				}
 			}
 			return (fields.street && fields.street.value)
