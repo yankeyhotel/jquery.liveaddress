@@ -969,7 +969,7 @@
 						}
 					}
 					else
-						$(domfields['state']+'option').val(suggestedState).change();
+						$(domfields['state']).val(suggestion.state).change();
 				}
 				if (domfields['lastline'])
 					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
