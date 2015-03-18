@@ -2000,7 +2000,10 @@
 				stateText = fields.state.value;
 				if(fields.state.dom.length)
 				{
-					stateText = fields.state.dom.selectedOptions[0].text;
+					if(fields.state.dom.selectedIndex < 1)
+						stateText = "";
+					else
+						stateText = fields.state.dom.selectedOptions[0].text;
 				}
 			}
 			return (fields.street && fields.street.value)
