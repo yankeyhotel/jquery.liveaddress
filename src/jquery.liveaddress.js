@@ -949,6 +949,8 @@
 				$(domfields['street']).val(suggestion.text).change();
 			else
 			{
+				if(domfields['zipcode'])
+					$(domfields['zipcode']).val("").change();
 				if (domfields['street'])
 					$(domfields['street']).val(suggestion.street_line).change();
 				// State filled in before city so autoverify is not invoked without finishing using the suggestion
