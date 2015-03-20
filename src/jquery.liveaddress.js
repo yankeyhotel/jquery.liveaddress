@@ -27,7 +27,7 @@
 
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
-	var version = "2.4.11";	// Version of this copy of the script
+	var version = "2.6.0";	// Version of this copy of the script
 	
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
@@ -949,12 +949,31 @@
 				$(domfields['street']).val(suggestion.text).change();
 			else
 			{
+				if(domfields['zipcode'])
+					$(domfields['zipcode']).val("").change();
 				if (domfields['street'])
 					$(domfields['street']).val(suggestion.street_line).change();
+				// State filled in before city so autoverify is not invoked without finishing using the suggestion
+				if (domfields['state'])
+				{
+					if(domfields['state'].options) // Checks for dropdown
+					{
+						for(var i = 0; i < domfields['state'].options.length; i++)
+						{
+							// Checks for abbreviation match and maps full state name to abbreviation
+							if(domfields['state'].options[i].text.toUpperCase() === suggestion.state || allStatesByName[domfields['state'].options[i].text.toUpperCase()] === suggestion.state)
+							{
+								$(domfields['state'])[0].selectedIndex = i;
+								$(domfields['state']).change();
+								break;
+							}
+						}
+					}
+					else
+						$(domfields['state']).val(suggestion.state).change();
+				}
 				if (domfields['city'])
 					$(domfields['city']).val(suggestion.city).change();
-				if (domfields['state'])
-					$(domfields['state']).val(suggestion.state).change();
 				if (domfields['lastline'])
 					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
 			}
@@ -1973,11 +1992,25 @@
 
 		this.enoughInput = function()
 		{
+			var stateText;
+
+			// Checks for state dropdown
+			if(fields.state)
+			{
+				stateText = fields.state.value;
+				if(fields.state.dom.length)
+				{
+					if(fields.state.dom.selectedIndex < 1)
+						stateText = "";
+					else
+						stateText = fields.state.dom.selectedOptions[0].text;
+				}
+			}
 			return (fields.street && fields.street.value)
 				&& (
 					(
 						(fields.city && fields.city.value)
-						&& (fields.state && fields.state.value && fields.state.value.length > 1)	// The last is for dropdowns that default to "0" (like osCommerce)
+						&& (fields.state && stateText.length > 0)
 					)
 					|| (fields.zipcode && fields.zipcode.value)
 					|| (fields.lastline && fields.lastline.value)
@@ -1991,7 +2024,10 @@
 			for (var key in fields)
 			{
 				var keyval = {};
-				keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
+				if(key === "state" && fields[key].dom.length > 0)
+					keyval[key] = fields[key].dom[fields[key].dom.selectedIndex].text;
+				else 
+					keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
 				$.extend(obj, keyval);
 			}
 			return $.extend(obj, {candidates: config.candidates});
@@ -1999,11 +2035,18 @@
 
 		this.toString = function()
 		{
+			var stateText = fields.state.value;
+
+			// Sets state to text from dropdown, opposed to the value
+			if(fields.state.dom.length > 0)
+			{
+				stateText = fields.state.dom[fields.state.dom.selectedIndex].text;
+			}
 			return (fields.street ? fields.street.value + " " : "")
 				+ (fields.street2 ? fields.street2.value + " " : "")
 				+ (fields.secondary ? fields.secondary.value + " " : "")
 				+ (fields.city ? fields.city.value + " " : "")
-				+ (fields.state ? fields.state.value + " " : "")
+				+ (fields.state ? stateText + " " : "")
 				+ (fields.zipcode ? fields.zipcode.value : "");
 		}
 
