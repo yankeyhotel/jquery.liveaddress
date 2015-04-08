@@ -2003,7 +2003,7 @@
 					if(fields.state.dom.selectedIndex < 1)
 						stateText = "";
 					else
-						stateText = fields.state.dom.selectedOptions[0].text;
+						stateText = fields.state.dom.options[fields.state.dom.selectedIndex].text;
 				}
 			}
 			return (fields.street && fields.street.value)
