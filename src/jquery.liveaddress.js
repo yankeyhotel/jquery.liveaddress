@@ -1998,7 +1998,7 @@
 			if(fields.state)
 			{
 				stateText = fields.state.value;
-				if(fields.state.dom.length)
+				if(fields.state.dom !== undefined && fields.state.dom.length !== undefined)
 				{
 					if(fields.state.dom.selectedIndex < 1)
 						stateText = "";
