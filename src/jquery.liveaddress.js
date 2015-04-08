@@ -2021,6 +2021,11 @@
 		this.toRequest = function()
 		{
 			var obj = {};
+			if(fields.hasOwnProperty("lastline") && fields.hasOwnProperty("city") && fields.hasOwnProperty("state") && fields.hasOwnProperty("zipcode")) {
+        		delete fields.city;
+        		delete fields.state;
+        		delete fields.zipcode
+      		}
 			for (var key in fields)
 			{
 				var keyval = {};
