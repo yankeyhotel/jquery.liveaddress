@@ -1809,7 +1809,7 @@
 						val = elem.val() || "";
 
 					// Here we analyze the state dropdown so we can update it with verified address results later.
-					if (prop === "state" && elemArray[0].length != undefined) { // Is there a better way to detect a state dropdown from here?
+					if (prop === "state" && elemArray[0] != undefined && elemArray[0].length != undefined) { // Is there a better way to detect a state dropdown from here?
 						$('option', elem).each(function(i){
 							var option = new StateDropdownOption(this);
 							var standardized = option.standard();
