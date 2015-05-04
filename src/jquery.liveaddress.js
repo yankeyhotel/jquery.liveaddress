@@ -1128,6 +1128,20 @@
 			}
 		}
 
+		function addDefaultToStateDropdown(dom) {
+			if (dom.getElementsByTagName("option").length > 0) {
+				if (arrayContains(stateNames, dom.getElementsByTagName("option")[0].text.toUpperCase()) ||
+					arrayContains(stateAbbreviations, dom.getElementsByTagName("option")[0].text.toUpperCase())) {
+					var option = document.createElement("OPTION");
+					option.innerText = "State";
+					option.selected = true;
+					$(dom.getElementsByTagName("select")[0]).prepend(option);
+
+					$(dom).change();
+				}
+			}
+		}
+
 		// ** AUTOMAPPING ** //
 		this.automap = function(context)
 		{
@@ -1275,6 +1289,7 @@
 
 				// Save the form we just finished mapping
 				disableBrowserAutofill(form.dom);
+				addDefaultToStateDropdown(form.dom);
 				forms.push(form);
 
 				if (config.debug)
@@ -1360,6 +1375,7 @@
 					// Mark the form as mapped then add it to our list
 					$(formDom).data(mapMeta.formDataProperty, 1);
 					disableBrowserAutofill(form.dom);
+					addDefaultToStateDropdown(form.dom);
 					formsFound.push(form);
 				}
 				else
