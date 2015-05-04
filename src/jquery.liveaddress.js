@@ -1136,7 +1136,6 @@
 					option.innerText = "State";
 					option.selected = true;
 					$(dom.getElementsByTagName("select")[0]).prepend(option);
-
 					$(dom).change();
 				}
 			}
