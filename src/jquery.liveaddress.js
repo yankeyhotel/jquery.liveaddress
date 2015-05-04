@@ -28,7 +28,7 @@
 	var instance;			// Contains public-facing functions and variables
 	var ui = new UI;		// Internal use only, for UI-related tasks
 	var version = "2.6.0";	// Version of this copy of the script
-	
+
 	var defaults = {
 		candidates: 3,															// Number of suggestions to show if ambiguous
 		autocomplete: 10,														// Number of autocomplete suggestions; set to 0 or false to disable
@@ -1119,6 +1119,14 @@
 				console.log("Done cleaning up; ready for new mapping.");
 		};
 
+		function disableBrowserAutofill(dom) {
+			//Does not disable autofill if config.autocomplete is disabled
+			if(config.autocomplete > 0) {
+				for (var i = 0; i < dom.getElementsByTagName("input").length; i++) {
+					dom.getElementsByTagName("input")[i].autocomplete = "smartystreets";
+				}
+			}
+		}
 
 		// ** AUTOMAPPING ** //
 		this.automap = function(context)
@@ -1266,6 +1274,7 @@
 				}
 
 				// Save the form we just finished mapping
+				disableBrowserAutofill(form.dom);
 				forms.push(form);
 
 				if (config.debug)
@@ -1350,6 +1359,7 @@
 				{
 					// Mark the form as mapped then add it to our list
 					$(formDom).data(mapMeta.formDataProperty, 1);
+					disableBrowserAutofill(form.dom);
 					formsFound.push(form);
 				}
 				else
