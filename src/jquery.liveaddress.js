@@ -2065,12 +2065,14 @@
 
 		this.toString = function()
 		{
-			var stateText = fields.state.value;
+			if(fields.state){
+				var stateText = fields.state.value;
 
-			// Sets state to text from dropdown, opposed to the value
-			if(fields.state.dom.length > 0)
-			{
-				stateText = fields.state.dom[fields.state.dom.selectedIndex].text;
+				// Sets state to text from dropdown, opposed to the value
+				if(fields.state.dom.length > 0)
+				{
+					stateText = fields.state.dom[fields.state.dom.selectedIndex].text;
+				}
 			}
 			return (fields.street ? fields.street.value + " " : "")
 				+ (fields.street2 ? fields.street2.value + " " : "")
