@@ -573,7 +573,7 @@
 							{
 								containerUi.css({
 									"left": $(domFields['street']).offset().left + "px",
-									"top": ($(domFields['street']).offset().top + $(domFields['street']).outerHeight()) + "px"
+									"top": ($(domFields['street']).offset().top + $(domFields['street']).outerHeight(false)) + "px"
 								});
 							}
 						}
@@ -635,7 +635,7 @@
 								containerUi.css({
 									"position": "absolute",
 									"left": strField.offset().left + "px",
-									"top": (strField.offset().top + strField.outerHeight()) + "px"
+									"top": (strField.offset().top + strField.outerHeight(false)) + "px"
 								});
 
 								containerUi.hide().appendTo("body");
@@ -904,7 +904,7 @@
 					}
 
 					data.suggContainer.css({
-						"width": Math.max(data.streetField.outerWidth(), 250) + "px"
+						"width": Math.max(data.streetField.outerWidth(false), 250) + "px"
 					});
 
 					data.containerUi.show();
@@ -1952,8 +1952,8 @@
 
 					var dom = fields[prop].dom;
 					var offset = $(dom).offset();
-					offset.right = offset.left + $(dom).outerWidth();
-					offset.bottom = offset.top + $(dom).outerHeight();
+					offset.right = offset.left + $(dom).outerWidth(false);
+					offset.bottom = offset.top + $(dom).outerHeight(false);
 
 					corners.top = !corners.top ? offset.top : Math.min(corners.top, offset.top);
 					corners.left = !corners.left ? offset.left : Math.min(corners.left, offset.left);
@@ -1965,8 +1965,8 @@
 			{
 				var jqDom = $(self.lastField);
 				corners = jqDom.offset();
-				corners.right = corners.left + jqDom.outerWidth();
-				corners.bottom = corners.top + jqDom.outerHeight();
+				corners.right = corners.left + jqDom.outerWidth(false);
+				corners.bottom = corners.top + jqDom.outerHeight(false);
 			}
 
 			corners.width = corners.right - corners.left;
