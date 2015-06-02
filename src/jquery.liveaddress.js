@@ -1673,50 +1673,19 @@
 	*/
 	function StateDropdownOption(option)
 	{
-		var self = this; // Pointer to self so that internal functions can reference its parent
-
-		this.standard = function() {
-
-			for (var x in stateNames) {
-				var name = stateNames[x];
-
-				// look in the option.text for the full state name...
-				var text = option.text.toUpperCase();
-				if (text.indexOf(name) > -1)
-					return allStatesByName[name];
-
-				// look in the option.value for the full state name...
-				var value = option.value.toUpperCase();
-				if (value.indexOf(name) > -1)
-					return allStatesByName[name];
+		this.standard = function () {
+			if (arrayContains(stateNames, option.text.toUpperCase())) {
+			  return allStatesByName[option.text.toUpperCase()];
 			}
-
-			for (var x in stateAbbreviations) {
-				var abbreviation = stateAbbreviations[x];
-
-				// look in the option.text for a state abbreviation...
-				var words = option.text.split(/[ ,]+/);
-				for (var y in words) {
-					var word = words[y].toUpperCase();
-					if (abbreviation === word)
-						return abbreviation;
-				}
-
-				// look in the option.value for a state abbreviation...
-				var words = option.value.split(/[ ,]+/);
-				for (var y in words) {
-					var word = words[y].toUpperCase();
-					if (abbreviation === word)
-						return abbreviation;
-				}
+			if (arrayContains(stateAbbreviations, option.text.toUpperCase())) {
+			  return option.text.toUpperCase();
 			}
-
 			return '';
-		}
+		};
 
-		this.value = function() {
+		this.value = function () {
 			return option.value ? option.value : option.text;
-		}
+		};
 	}
 
 	/*
