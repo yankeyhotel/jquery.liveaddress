@@ -116,6 +116,9 @@
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
+		// Parameter used for internal uses. If set to true, freeform will fail. Use with caution
+		config.xIncludeInvalid = typeof config.xIncludeInvalid === 'undefined' ? false : config.xIncludeInvalid;
+
 		if (typeof config.autocomplete === 'number')
 			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
 
@@ -1995,8 +1998,8 @@
 
 			$.ajax(
 			{
-				url: config.requestUrl+"?"+credentials+"&plugin="+encodeURIComponent(instance.version)+(config.debug ? "_debug" : "")+"&callback=?",
-				dataType: "jsonp",
+				url: config.requestUrl+"?"+credentials+"&plugin="+encodeURIComponent(instance.version)+(config.debug ? "_debug" : ""),
+				headers: {'x-include-invalid': config.xIncludeInvalid},
 				data: addrData,
 				timeout: config.timeout
 			})
@@ -2247,7 +2250,13 @@
 
 		this.isInvalid = function()
 		{
-			return this.length == 0;
+			if(!config.xIncludeInvalid) { 
+				return this.length == 0;
+			} else {
+				if(this.length == 1) {
+					return this.raw[0].analysis.dpv_match_code == "N";
+				}
+			}
 		};
 
 		this.isAmbiguous = function()
