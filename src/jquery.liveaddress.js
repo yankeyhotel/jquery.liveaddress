@@ -2222,8 +2222,10 @@
 			if(!config.xIncludeInvalid) { 
 				return this.length == 0;
 			} else {
-				if(this.length == 1) {
+				if(this.length == 1 && this.raw[0].analysis.dpv_match_code) {
 					return this.raw[0].analysis.dpv_match_code == "N";
+				} else {
+					return true;
 				}
 			}
 		};
