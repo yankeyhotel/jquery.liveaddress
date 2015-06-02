@@ -181,11 +181,11 @@
 						addr.push(forms[i].addresses[j]);
 				return addr;
 			},
-			getMappedAddressByID: function(id)
+			getMappedAddressByID: function(addressID)
 			{
 				for (var i = 0; i < forms.length; i++)
 					for (var j = 0; j < forms[i].addresses.length; j++)
-						if (forms[i].addresses[j].id() == id)
+						if (forms[i].addresses[j].id() == addressID)
 							return forms[i].addresses[j];
 			},
 			setKey: function(htmlkey)
