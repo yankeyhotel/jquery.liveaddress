@@ -113,6 +113,7 @@
 		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
 		config.cityStatePreference = typeof config.cityStatePreference === 'undefined' ? "" : config.cityStatePreference;
 		config.geolocate = typeof config.geolocate === 'undefined' ? true : config.geolocate;
+		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
@@ -890,6 +891,8 @@
 			var autocplrequest = {
 				callback: function(counter, json)
 				{
+					var patt = new RegExp("^\\w+\\s\\w+|^[A-Za-z]+$|^[A-Za-z]+\\s\\w*");
+					var filtering = patt.test(data.input);		
 					autocompleteResponse = json;
 					data.suggContainer.empty();
 
@@ -899,13 +902,26 @@
 						return;
 					}
 
-					for (var j = 0; j < json.suggestions.length; j++)
-					{
-						var link = $('<a href="javascript:" class="smarty-suggestion">' + json.suggestions[j].text.replace(/<|>/g, "") + '</a>');
-						link.data("suggIndex", j);
-						data.suggContainer.append(link);
-					}
+					if(config.waitForStreet && filtering == false){
+						var message = "";
+						if(config.stateFilter || config.cityFilter || config.geolocate || config.cityStatePreference) {
+							message = "filtered";
+						} else {
+							message = "address";
+						}
+						data.suggContainer.html('<div class="smarty-no-suggestions">Type more for ' + message + ' suggestions</div>')
+					} else {
+						for (var j = 0; j < json.suggestions.length; j++)
+						{
+							var suggAddr = json.suggestions[j].text.replace(/<|>/g, "");
+							suggAddr = suggAddr.replace(new RegExp('(' + data.input + ')', 'ig'), '<b>$1</b>');
+							var link = $('<a href="javascript:" class="smarty-suggestion">' + suggAddr + '</a>');
+							link.data("suggIndex", j);
 
+							data.suggContainer.append(link);
+						}
+					}
+					
 					data.suggContainer.css({
 						"width": Math.max(data.streetField.outerWidth(false), 250) + "px"
 					});
