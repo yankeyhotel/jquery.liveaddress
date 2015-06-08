@@ -2395,9 +2395,9 @@
 
 		AutocompleteUsed: function(event, data)
 		{
-      if (config.debug)
-        console.log("EVENT:", "AutocompleteUsed", "(A suggested address was used from the autocomplete service)", event, data);
-    },
+			if (config.debug)
+				console.log("EVENT:", "AutocompleteUsed", "(A suggested address was used from the autocomplete service)", event, data);
+		},
 
 		AddressChanged: function(event, data)
 		{
