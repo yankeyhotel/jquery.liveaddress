@@ -100,7 +100,7 @@
 		config.candidates = config.candidates || defaults.candidates;
 		config.ui = typeof config.ui === 'undefined' ? true : config.ui;
 		config.autoMap = typeof config.autoMap === 'undefined' ? true : config.autoMap;
-		config.autoVerify = typeof config.autoVerify === 'undefined' ? true : config.autoVerify;
+		config.autoVerify = config.autoVerify !== true && config.autoVerify !== false ? true : config.autoVerify;
 		config.submitVerify = typeof config.submitVerify === 'undefined' ? true : config.submitVerify;
 		config.timeout = config.timeout || defaults.timeout;
 		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
@@ -223,7 +223,7 @@
 			{
 				if (typeof setting === 'undefined')
 					return config.autoVerify;
-				else if (setting === "disable" || setting === "off" || !setting)
+				else if (setting === false)
 					config.autoVerify = false;
 				else
 					config.autoVerify = true;
