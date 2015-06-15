@@ -225,7 +225,7 @@
 					return config.autoVerify;
 				else if (setting === false)
 					config.autoVerify = false;
-				else
+				else if (setting === true)
 					config.autoVerify = true;
 			},
 			version: version
