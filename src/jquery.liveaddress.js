@@ -1865,8 +1865,7 @@
 					});
 				}
 
-				if (!isEmpty)
-					state = "changed";
+				state = "changed";
 			}
 		};
 
