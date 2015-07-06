@@ -818,6 +818,10 @@
 	
 					// Take any existing handlers (bound via jQuery) and re-bind them for AFTER our handler(s).
 					var formSubmitElements = $(config.submitSelector, f.dom);
+
+					// Highlight the submit button
+					if(config.debug && formSubmitElements.length > 0)
+						formSubmitElements[0].style.color = '#4BA341';
 	
 					// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core for binding)
 					// (but jQuery, when raising a form submit event with .submit() will NOT necessarily click the submit button)
@@ -825,8 +829,6 @@
 						bindSubmitHandler(this, 'click');	// These get fired first
 					});
 	
-					// These fire after button clicks, so these need to be bound AFTER binding to the submit button click events
-					bindSubmitHandler(f.dom, 'submit');
 				}
 			}
 
@@ -1112,8 +1114,10 @@
 					var doms = forms[i].addresses[j].getDomFields();
 					for (var prop in doms)
 					{
-						if (config.debug)
+						if (config.debug) {
 							$(doms[prop]).css('background', 'none').attr('placeholder', '');
+							$(config.submitSelector)[0].style.color = 'black';
+						}
 						$(doms[prop]).unbind('change');
 					}
 					if (doms['street'])
