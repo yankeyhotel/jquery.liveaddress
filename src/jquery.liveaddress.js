@@ -820,8 +820,11 @@
 					var formSubmitElements = $(config.submitSelector, f.dom);
 
 					// Highlight the submit button
-					if(config.debug && formSubmitElements.length > 0)
-						formSubmitElements[0].style.color = '#4BA341';
+					if(config.debug) {
+						for(var j = 0; j < formSubmitElements.length; j++) {
+							formSubmitElements[j].style.color = '#4BA341';
+						}
+					}
 	
 					// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core for binding)
 					// (but jQuery, when raising a form submit event with .submit() will NOT necessarily click the submit button)
@@ -1116,7 +1119,10 @@
 					{
 						if (config.debug) {
 							$(doms[prop]).css('background', 'none').attr('placeholder', '');
-							$(config.submitSelector)[0].style.color = 'black';
+							var submitButtons = $(config.submitSelector);
+							for(var k = 0; k < submitButtons.length; k++) {
+								submitButtons[k].style.color = 'black';
+							}
 						}
 						$(doms[prop]).unbind('change');
 					}
