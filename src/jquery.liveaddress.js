@@ -57,9 +57,6 @@
 
 	$.fn.LiveAddress = function(arg)
 	{
-		if (instance)
-			return instance;
-
 		var matched = this, wasChained = matched.prevObject ? !!matched.prevObject.prevObject : false;
 
 		// Make sure the jQuery version is compatible
@@ -88,12 +85,12 @@
 		if (typeof arg === 'string')
 		{
 			// Use the default configuration
-			config = { key: arg, candidates: defaults.candidates };
+			config = { key: arg };
 		}
 		else if (typeof arg === 'object')
 		{
-			// Persist the user's configuration
-			config = $.extend(config, arg);
+			// Use the user's configuration on top of the default
+			config = arg;
 		}
 
 		// Enforce some defaults
