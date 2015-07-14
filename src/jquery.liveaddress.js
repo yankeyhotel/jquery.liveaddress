@@ -2048,7 +2048,7 @@
 			for (var key in fields)
 			{
 				var keyval = {};
-				if(key === "state" && fields[key].dom.length > 0)
+				if(key === "state" && fields[key].dom && fields[key].dom.length > 0)
 					keyval[key] = fields[key].dom[fields[key].dom.selectedIndex].text;
 				else 
 					keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
