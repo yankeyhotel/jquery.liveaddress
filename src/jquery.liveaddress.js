@@ -205,16 +205,20 @@
 			activate: function(addressID)
 			{
 				var addr = instance.getMappedAddressByID(addressID);
-				if (addr)
+				if (addr) {
 					addr.active = true;
+					ui.showSmartyUI();
+				}
 			},
 			deactivate: function(addressID)
 			{
 				if (!addressID)
 					return ui.clean();
 				var addr = instance.getMappedAddressByID(addressID);
-				if (addr)
+				if (addr) {
 					addr.active = false;
+					ui.hideSmartyUI(addressID);
+				}
 			},
 			autoVerify: function(setting)
 			{
@@ -1092,6 +1096,25 @@
 			}
 		}
 
+		//shows the SmartyUI when activating 1 address
+		this.showSmartyUI = function() {
+			var smartyui = $('.deactivated');
+			smartyui.removeClass("deactivated");
+			smartyui.addClass("activated");
+			smartyui.show();
+		};
+
+		//hides the SmartyUI when deactivating 1 address
+		this.hideSmartyUI = function(addressID) {
+			var smartyui = $('.smarty-addr-'+addressID+':visible');
+			var autocompleteui = $('.smarty-autocomplete.smarty-addr-'+addressID);
+			smartyui.addClass("deactivated");
+			smartyui.parent().addClass("deactivated");
+			autocompleteui.addClass("deactivated");
+			smartyui.hide();
+			smartyui.parent().hide();
+			autocompleteui.hide();
+		};
 
 		// If anything was previously mapped, this resets it all for a new mapping.
 		this.clean = function()
