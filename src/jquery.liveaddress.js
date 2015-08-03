@@ -233,9 +233,11 @@
 		};
 
 		
-		// Bind each handler to an event
-		for (var prop in EventHandlers)
+		// Unbind old handlers then bind each handler to an event
+		for (var prop in EventHandlers) {
+			$(document).unbind(prop, HandleEvent);
 			bind(prop);
+		}
 
 		// Map the fields
 		instance.mapFields();
