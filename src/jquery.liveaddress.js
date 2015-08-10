@@ -2562,17 +2562,15 @@
 			
 			if (typeof data.invoke === "function")
 				data.invoke(data.response);	// User-defined callback function; we're all done here.
+
+			if (data.response.isInvalid())
+				trigger("AddressWasInvalid", data);
+			else if (config.verifySecondary && data.response.isMissingSecondary())
+				trigger("AddressWasMissingSecondary", data);
+			else if (data.response.isValid())
+				trigger("AddressWasValid", data);
 			else
-			{
-				if (data.response.isInvalid())
-					trigger("AddressWasInvalid", data);
-				else if (config.verifySecondary && data.response.isMissingSecondary())
-					trigger("AddressWasMissingSecondary", data);
-				else if (data.response.isValid())
-					trigger("AddressWasValid", data);
-				else
-					trigger("AddressWasAmbiguous", data);
-			}
+				trigger("AddressWasAmbiguous", data);
 		},
 
 		RequestTimedOut: function(event, data)
