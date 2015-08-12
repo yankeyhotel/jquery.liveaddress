@@ -1007,6 +1007,7 @@
 				if (domfields['lastline'])
 					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
 			}
+			trigger("AutocompleteUsed", {address: addr, suggestion: suggestion});
 		}
 
 		// Computes where the little checkmark tag of the UI goes, relative to the boundaries of the last field
@@ -2496,6 +2497,12 @@
 			if (config.debug)
 				console.log("EVENT:", "AutocompleteReceived", "(A response has just been received from the autocomplete service)", event, data);
 			ui.showAutocomplete(event, data);
+		},
+
+		AutocompleteUsed: function(event, data)
+		{
+			if (config.debug)
+				console.log("EVENT:", "AutocompleteUsed", "(A suggested address was used from the autocomplete service)", event, data);
 		},
 
 		AddressChanged: function(event, data)
