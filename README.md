@@ -37,6 +37,11 @@ to help you find problems, and if necessary, map the fields manually. See the
 [full documentation](http://smartystreets.com/kb/liveaddress-api/website-forms) for details.
 
 
+Node.js
+-----------------------
+If you prefer a local copy via Node.js, ```npm install liveaddress```
+
+
 Troubleshooting
 -----------------------
 https://smartystreets.com/docs/plugin/troubleshooting
