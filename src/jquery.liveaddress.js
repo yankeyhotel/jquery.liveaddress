@@ -1714,7 +1714,7 @@
 
 			var html = '<div class="smarty-ui" style="top: '+corners.top+'px; left: '+corners.left+'px; width: '+corners.width+'px; height: '+corners.height+'px;">'
 				+ '<div class="smarty-popup smarty-addr-'+addr.id()+'" style="width: '+(corners.width - 6)+'px; height: '+(corners.height - 3)+'px;">'
-				+ '<div class="smarty-popup-header smarty-popup-invalid-header">'+config.missingSecondaryMessage+'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>'
+				+ '<div class="smarty-popup-header smarty-popup-missing-secondary-header">'+config.missingSecondaryMessage+'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>'
 				+ '<div class="smarty-choice-list"><a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>'
 				+ '<div class="smarty-choice-alt"><a href="javascript:" class="smarty-choice smarty-choice-override">Click here to certify the address is correct<br>('+addr.toString()+')</a></div>'
 				+ '</div></div>';
