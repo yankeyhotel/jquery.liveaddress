@@ -1085,8 +1085,15 @@
 		// we need to remove all other events bound on that whole "pop-up"
 		// so that it doesn't interfere with any future "pop-ups".
 		function undelegateAllClicks(selectors) {
-			for (var selector in selectors)
-				$('body').undelegate(selectors[selector], 'click');
+			if (Array.isArray(selectors)) {
+				for (var selector in selectors) {
+					$('body').undelegate(selectors[selector], 'click');
+				}
+			} else if (typeof selectors === "string") {
+				$('body').undelegate(selectors, 'click');
+			} else {
+				alert("ERROR: Not an array or string passed in to undelegate all clicks");
+			}
 		}
 
 		// Utility function
@@ -1624,6 +1631,7 @@
 				}, 500);
 			}
 
+			undelegateAllClicks(data.selectors.abort);
 			// User rejects original input and agrees to double-check it
 			$('body').delegate(data.selectors.abort, 'click', data, function(e) {
 				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
@@ -1631,6 +1639,7 @@
 				trigger("InvalidAddressRejected", e.data);
 			});
 
+			undelegateAllClicks(data.selectors.useOriginal);
 			// User certifies that what they typed is correct
 			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e) {
 				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
@@ -1680,6 +1689,7 @@
 				}, 500);
 			}
 
+			undelegateAllClicks(data.selectors.abort);
 			// User rejects original input and agrees to double-check it
 			$('body').delegate(data.selectors.abort, 'click', data, function(e) {
 				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
@@ -1687,6 +1697,7 @@
 				trigger("InvalidAddressRejected", e.data);
 			});
 
+			undelegateAllClicks(data.selectors.useOriginal);
 			// User certifies that what they typed is correct
 			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e) {
 				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
