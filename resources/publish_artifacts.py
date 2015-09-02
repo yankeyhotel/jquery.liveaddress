@@ -6,17 +6,26 @@ This script is used by SmartyStreets when deploying a new version of the jquery.
 import os.path as path
 import os
 from boto.s3.bucket import Bucket
-from boto.s3.connection import S3Connection
+from boto.s3.connection import S3Connection, OrdinaryCallingFormat
 from boto.s3.key import Key
 from utils import get_mime_type
 
 
 def main():
-    connection = S3Connection()
+    connection = connect()
     bucket = Bucket(connection, S3_BUCKET)
-
     publish(bucket)
 
+
+def connect():
+    """
+    Workaround for '.' in bucket names when calling from Python 2.9+:
+        https://github.com/boto/boto/issues/2836#issuecomment-77283169
+    """
+    if '.' in S3_BUCKET:
+        return S3Connection(calling_format=OrdinaryCallingFormat())
+    else:
+        return S3Connection()
 
 def publish(bucket):
     if 'branch' not in os.environ:
