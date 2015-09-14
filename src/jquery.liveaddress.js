@@ -2461,11 +2461,14 @@
 
 	// Submits a form by calling `click` on a button element or `submit` on a form element
 	var submitForm = function(invokeOn, invokeFunction) {
-		if (invokeOn && typeof invokeOn !== 'function' && invokeFunction)
-			if (invokeFunction == "click")
-				$(invokeOn).click(); // Very particular: we MUST fire the native 'click' event!
-			else if (invokeFunction == "submit")
-			$(invokeOn).submit(); // For submit(), we have to use jQuery's, so that all its submit handlers fire.
+		if (invokeOn && typeof invokeOn !== 'function' && invokeFunction) {
+			if (invokeFunction == "click") {
+				setTimeout(function() {
+					$(invokeOn).click(); // Very particular: we MUST fire the native 'click' event!
+				}, 5);
+			} else if (invokeFunction == "submit")
+				$(invokeOn).submit(); // For submit(), we have to use jQuery's, so that all its submit handlers fire.
+		}
 	};
 
 	var EventHandlers = {
