@@ -1085,14 +1085,14 @@
 		// we need to remove all other events bound on that whole "pop-up"
 		// so that it doesn't interfere with any future "pop-ups".
 		function undelegateAllClicks(selectors) {
-			if (Array.isArray(selectors)) {
+			if (Array.isArray(selectors) || typeof selectors == "object") {
 				for (var selector in selectors) {
 					$('body').undelegate(selectors[selector], 'click');
 				}
 			} else if (typeof selectors === "string") {
 				$('body').undelegate(selectors, 'click');
 			} else {
-				alert("ERROR: Not an array or string passed in to undelegate all clicks");
+				alert("ERROR: Not an array, string, or object passed in to undelegate all clicks");
 			}
 		}
 
