@@ -2098,8 +2098,9 @@
 			$.ajax({
 					url: config.requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
 						(config.debug ? "_debug" : ""),
+					contentType: "jsonp",
 					headers: {
-						'x-include-invalid': config.xIncludeInvalid
+						"X-Include-Invalid": config.xIncludeInvalid
 					},
 					data: addrData,
 					timeout: config.timeout
