@@ -2187,7 +2187,7 @@
 			}
 			return (fields.street ? fields.street.value + " " : "") + (fields.street2 ? fields.street2.value + " " : "") +
 				(fields.secondary ? fields.secondary.value + " " : "") + (fields.city ? fields.city.value + " " : "") +
-				(fields.state ? stateText + " " : "") + (fields.zipcode ? fields.zipcode.value : "");
+				(fields.state ? stateText + " " : "") + (fields.zipcode ? fields.zipcode.value : "" + (fields.lastline ? fields.lastline.value: ""));
 		};
 
 		this.abort = function(event, keepAccept) {
