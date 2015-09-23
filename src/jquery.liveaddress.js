@@ -1004,9 +1004,12 @@
 					} else
 						$(domfields['state']).val(suggestion.state).change();
 				}
-				if (domfields['city'])
+				if (domfields['city']) {
+					addr.usedAutocomplete = true;
 					$(domfields['city']).val(suggestion.city).change();
+				}
 				if (domfields['lastline'])
+					addr.usedAutocomplete = true;
 					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
 			}
 			trigger("AutocompleteUsed", {
@@ -2520,12 +2523,13 @@
 			// AND the form, if any, isn't already chewing on an address...
 			// THEN verification has been invoked.
 			if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 ||
-					data.address.isFreeform()) && !data.suppressAutoVerification && data.address.hasDomFields() &&
+					data.address.isFreeform() || data.address.usedAutocomplete) && !data.suppressAutoVerification && data.address.hasDomFields() &&
 				data.address.active && !data.address.autocompleteVisible() &&
 				(data.address.form && !data.address.form.processing))
 				trigger("VerificationInvoked", {
 					address: data.address
 				});
+			data.address.usedAutocomplete = false;
 		},
 
 		VerificationInvoked: function(event, data) {
