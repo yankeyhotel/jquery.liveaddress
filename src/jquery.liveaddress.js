@@ -2119,7 +2119,7 @@
 			self.verifyCount++;
 			var addrData = self.toRequest();
 			var credentials = config.token ? "auth-id=" + encodeURIComponent(config.key) + "&auth-token=" +
-				encodeURIComponent(config.token) : "auth-token=" + encodeURIComponent(config.key);
+				encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
 
 			$.ajax({
 					url: config.requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
