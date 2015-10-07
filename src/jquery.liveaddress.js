@@ -38,6 +38,7 @@
 		ambiguousMessage: "Choose the correct address", // Message when address is ambiguous
 		invalidMessage: "Address not verified", // Message when address is invalid
 		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
+		certifyMessage: "Click here to ceritfy the address is correct",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last" // Selector to find a likely submit button or submit image (in a form)
 	};
@@ -103,6 +104,7 @@
 		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
 		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
 		config.missingSecondaryMessage = config.missingSecondaryMessage || defaults.missingSecondaryMessage;
+		config.certifyMessage = config.certifyMessage || defaults.certifyMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrl = config.requestUrl || defaults.requestUrl;
@@ -114,7 +116,7 @@
 		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
 		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
 		config.disableBypass = typeof config.disableBypass === 'undefined' ? false : config.disableBypass;
-		
+
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
 		// Parameter used for internal uses. If set to true, freeform will fail. Use with caution
@@ -1538,7 +1540,7 @@
 			html += '</div><div class="smarty-choice-alt">';
 			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a>';
 			if(!config.disableBypass) {
-				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">Click here to certify the address is correct<br>(' +
+				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' + config.certifyMessage + '<br>(' +
 					addr.toString() + ')</a>';
 			}
 			html += '</div></div></div>';
@@ -1630,7 +1632,7 @@
 				'<div class="smarty-choice-alt">';
 				if(!config.disableBypass) {
 					html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
-					'Click here to certify the address is correct<br>(' + addr.toString() + ')</a>';
+					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
 				}
 				html +='</div></div></div>';
 
@@ -1695,7 +1697,7 @@
 				'<div class="smarty-choice-alt">';
 				if(!config.disableBypass) {
 					html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
-					'Click here to certify the address is correct<br>(' + addr.toString() + ')</a>';
+					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
 				}
 				html += '</div>' + '</div></div>';
 
