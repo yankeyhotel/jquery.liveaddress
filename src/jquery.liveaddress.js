@@ -115,7 +115,7 @@
 		config.geolocate = typeof config.geolocate === 'undefined' ? true : config.geolocate;
 		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
 		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
-		config.disableBypass = typeof config.disableBypass === 'undefined' ? false : config.disableBypass;
+		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
@@ -1518,7 +1518,7 @@
 			var corners = addr.corners();
 			corners.width = Math.max(corners.width, 300); // minimum width
 			corners.height = Math.max(corners.height, response.length * 63 + 119); // minimum height
-			if(config.disableBypass) {
+			if(config.enforceVerification) {
 				corners.height -= 49;
 			}
 
@@ -1539,7 +1539,7 @@
 
 			html += '</div><div class="smarty-choice-alt">';
 			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a>';
-			if(!config.disableBypass) {
+			if(!config.enforceVerification) {
 				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' + config.certifyMessage + '<br>(' +
 					addr.toString() + ')</a>';
 			}
@@ -1618,7 +1618,7 @@
 			var corners = addr.corners();
 			corners.width = Math.max(corners.width, 300); // minimum width
 			corners.height = Math.max(corners.height, 180); // minimum height
-			if(config.disableBypass) {
+			if(config.enforceVerification) {
 				corners.height -= 49;
 			}
 
@@ -1630,7 +1630,7 @@
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
 				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
 				'<div class="smarty-choice-alt">';
-				if(!config.disableBypass) {
+				if(!config.enforceVerification) {
 					html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
 					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
 				}
@@ -1683,7 +1683,7 @@
 			var corners = addr.corners();
 			corners.width = Math.max(corners.width, 300);
 			corners.height = Math.max(corners.height, 180);
-			if(config.disableBypass) {
+			if(config.enforceVerification) {
 				corners.height -= 49;
 			}
 
@@ -1695,7 +1695,7 @@
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
 				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
 				'<div class="smarty-choice-alt">';
-				if(!config.disableBypass) {
+				if(!config.enforceVerification) {
 					html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
 					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
 				}
