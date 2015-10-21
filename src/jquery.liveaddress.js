@@ -38,7 +38,7 @@
 		ambiguousMessage: "Choose the correct address", // Message when address is ambiguous
 		invalidMessage: "Address not verified", // Message when address is invalid
 		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
-		certifyMessage: "Click here to ceritfy the address is correct",
+		certifyMessage: "Click here to certify the address is correct",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last" // Selector to find a likely submit button or submit image (in a form)
 	};
