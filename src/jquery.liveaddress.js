@@ -2204,7 +2204,7 @@
 				var stateText = fields.state.value;
 
 				// Sets state to text from dropdown, opposed to the value
-				if (fields.state.dom.length > 0) {
+				if (fields.state.dom.length > 0 && fields.state.dom[fields.state.dom.selectedIndex] != null) {
 					stateText = fields.state.dom[fields.state.dom.selectedIndex].text;
 				}
 			}
