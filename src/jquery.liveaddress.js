@@ -1008,6 +1008,7 @@
 						$(domfields['state']).val(suggestion.state).change();
 				}
 				if (domfields['city']) {
+					// $(domfields['city']).val("").change()
 					addr.usedAutocomplete = true;
 					$(domfields['city']).val(suggestion.city).change();
 				}
