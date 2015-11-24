@@ -225,6 +225,11 @@
 					config.autoVerify = false;
 				else if (setting === true)
 					config.autoVerify = true;
+				for(var i = 0; i < forms.length; i++) {
+					for(var j = 0; j < forms[i].addresses.length; j++) {
+						forms[i].addresses[j].verifyCount = 0;
+					}
+				}
 			},
 			version: version
 		};
