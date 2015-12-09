@@ -968,6 +968,7 @@
 
 			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", {
 				"auth-id": config.key,
+				"auth-token": config.token,
 				prefix: data.input,
 				city_filter: config.cityFilter,
 				state_filter: config.stateFilter,
