@@ -113,6 +113,7 @@
 		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
 		config.cityStatePreference = typeof config.cityStatePreference === 'undefined' ? "" : config.cityStatePreference;
 		config.geolocate = typeof config.geolocate === 'undefined' ? true : config.geolocate;
+		config.geolocate_precision = typeof config.geolocate_precision === 'undefined' ? 'city' : config.geolocate_precision;
 		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
 		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
 		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
@@ -974,7 +975,8 @@
 				state_filter: config.stateFilter,
 				prefer: config.cityStatePreference,
 				suggestions: config.autocomplete,
-				geolocate: config.geolocate
+				geolocate: config.geolocate,
+				geolocate_precision: config.geolocate_precision
 			}, function(json) {
 				trigger("AutocompleteReceived", $.extend(data, {
 					json: json,
