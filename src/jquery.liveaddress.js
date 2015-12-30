@@ -207,7 +207,7 @@
 				var addr = instance.getMappedAddressByID(addressID);
 				if (addr) {
 					addr.active = true;
-					ui.showSmartyUI();
+					ui.showSmartyUI(addressID);
 				}
 			},
 			deactivate: function(addressID) {
@@ -1124,8 +1124,9 @@
 		}
 
 		//shows the SmartyUI when activating 1 address
-		this.showSmartyUI = function() {
-			var smartyui = $('.deactivated');
+		this.showSmartyUI = function(addressID) {
+			var smartyui = $('.deactivated.smarty-addr-' + addressID);
+			smartyui.push(smartyui[0].parentElement);
 			smartyui.removeClass("deactivated");
 			smartyui.addClass("activated");
 			smartyui.show();
