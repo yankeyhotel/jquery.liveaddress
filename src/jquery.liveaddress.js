@@ -49,7 +49,9 @@
 	var acceptableFields = [
 		"street", "street2", "secondary", "city", "state", "zipcode", "lastline", "addressee", "urbanization", "country"
 	]; // API input field names
-
+	var verifyTimer = null; // Timer used when submitOnPause is true
+	var verifiedSugg = false; // submitOnPause feature. If true, then the user was prompted with a verified suggestion
+	
 	/*
 	 *	ENTRY POINT
 	 */
@@ -117,7 +119,8 @@
 		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
 		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
 		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
-
+		config.submitOnPause = typeof config.submitOnPause === 'undefined' ? false : config.submitOnPause;
+		
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
 		// Parameter used for internal uses. If set to true, freeform will fail. Use with caution
@@ -919,6 +922,11 @@
 		}
 
 		this.requestAutocomplete = function(event, data) {
+			if(verifyTimer) {
+				clearTimeout(verifyTimer);
+				verifyTimer = null;
+			}
+			verifiedSugg = false;
 			if (data.input && data.addr.isDomestic() && autocompleteResponse)
 				data.containerUi.show();
 
@@ -931,6 +939,37 @@
 
 					if (!json.suggestions || json.suggestions.length == 0) {
 						data.suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
+						if(config.submitOnPause) {
+							verifyTimer = setTimeout(function() {
+								// Send to street API
+								$.getJSON(config.requestUrl, {
+									"auth-id": config.key,
+									"auth-token": config.token,
+									street: data.input
+								}, function(json) {
+									if(json.length > 0) {
+										var verifiedAddresses = {
+											suggestions: []
+										}
+										verifiedSugg = true;
+										for(var i in json) {
+											var verifiedAddress = {
+												"text": json[i].delivery_line_1 + " " + json[i].last_line,
+												"street_line": json[i].delivery_line_1,
+												"city": json[i].components.city_name,
+												"state": json[i].components.state_abbreviation,
+												"zipcode": json[i].components.zipcode + "-" + json[i].components.plus4_code
+											}
+											var link = $('<a href="javascript:" class="smarty-suggestion">' + json[i].delivery_line_1 + " " + json[i].last_line + '</a>')
+											link.data("suggIndex", i);
+											verifiedAddresses.suggestions.push(verifiedAddress);
+											data.suggContainer.append(link);
+										}
+										autocompleteResponse = verifiedAddresses;
+									}
+								});
+							}, 5000);
+						}
 						return;
 					}
 
@@ -997,8 +1036,12 @@
 			if (addr.isFreeform())
 				$(domfields['street']).val(suggestion.text).change();
 			else {
-				if (domfields['zipcode'])
-					$(domfields['zipcode']).val("").change();
+				if (domfields['zipcode']) {
+					if(verifiedSugg)
+						$(domfields['zipcode']).val(suggestion.zipcode);
+					else
+						$(domfields['zipcode']).val("").change();
+				}
 				if (domfields['street'])
 					$(domfields['street']).val(suggestion.street_line).change();
 				// State filled in before city so autoverify is not invoked without finishing using the suggestion
@@ -1022,7 +1065,7 @@
 				}
 				if (domfields['lastline'])
 					addr.usedAutocomplete = true;
-					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state).change();
+					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state + " " +suggestion.zipcode).change();
 			}
 			trigger("AutocompleteUsed", {
 				address: addr,
@@ -2547,6 +2590,12 @@
 			if (config.debug)
 				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
 
+			if(verifiedSugg && (data.field == "city" || data.field == "lastline" || 
+				(data.address.isFreeform() && data.field == "street"))) {
+				data.address.accept();
+				data.address.verifyCount++;
+				return;
+			}
 			// If autoVerify is on, AND there's enough input in the address,
 			// AND it hasn't been verified automatically before -OR- it's a freeform address,
 			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
