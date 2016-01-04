@@ -939,7 +939,7 @@
 
 					if (!json.suggestions || json.suggestions.length == 0) {
 						data.suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
-						if(config.submitOnPause) {
+						if(config.submitOnPause && data.input.length >= 10) {
 							verifyTimer = setTimeout(function() {
 								// Send to street API
 								$.getJSON(config.requestUrl, {
@@ -952,6 +952,7 @@
 											suggestions: []
 										}
 										verifiedSugg = true;
+										data.suggContainer.html('<div class="smarty-no-suggestions">Verified suggestions</div>');
 										for(var i in json) {
 											var verifiedAddress = {
 												"text": json[i].delivery_line_1 + " " + json[i].last_line,
