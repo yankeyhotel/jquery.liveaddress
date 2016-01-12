@@ -36,7 +36,6 @@
 		speed: "medium", // Animation speed
 		ambiguousMessage: "Choose the correct address", // Message when address is ambiguous
 		invalidMessage: "Address not verified", // Message when address is invalid
-		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
 		certifyMessage: "Click here to certify the address is correct",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last" // Selector to find a likely submit button or submit image (in a form)
@@ -101,25 +100,16 @@
 		config.timeout = config.timeout || defaults.timeout;
 		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
 		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
-		config.missingSecondaryMessage = config.missingSecondaryMessage || defaults.missingSecondaryMessage;
 		config.certifyMessage = config.certifyMessage || defaults.certifyMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrl = config.requestUrl || defaults.requestUrl;
-		config.cityFilter = typeof config.cityFilter === 'undefined' ? "" : config.cityFilter;
-		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
-		config.cityStatePreference = typeof config.cityStatePreference === 'undefined' ? "" : config.cityStatePreference;
-		config.geolocate = typeof config.geolocate === 'undefined' ? true : config.geolocate;
-		config.geolocatePrecision = typeof config.geolocatePrecision === 'undefined' ? 'city' : config.geolocatePrecision;
-		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
-		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
+		config.geocode = typeof config.geocode === 'undefined' ? false : config.geolocate;
 		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
-		config.submitOnPause = typeof config.submitOnPause === 'undefined' ? false : config.submitOnPause;
-		
+
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
 		// Parameter used for internal uses. If set to true, freeform will fail. Use with caution
-		config.xIncludeInvalid = typeof config.xIncludeInvalid === 'undefined' ? false : config.xIncludeInvalid;
 
 		/*
 		 *	EXPOSED (PUBLIC) FUNCTIONS
@@ -185,15 +175,6 @@
 			},
 			setKey: function(htmlkey) {
 				config.key = htmlkey;
-			},
-			setCityFilter: function(cities) {
-				config.cityFilter = cities;
-			},
-			setStateFilter: function(states) {
-				config.stateFilter = states;
-			},
-			setCityStatePreference: function(pref) {
-				config.cityStatePreference = pref;
 			},
 			activate: function(addressID) {
 				var addr = instance.getMappedAddressByID(addressID);
@@ -1202,71 +1183,6 @@
 			});
 		};
 
-		this.showMissingSecondary = function(data) {
-			if (!config.ui || !data.address.hasDomFields())
-				return;
-			var addr = data.address;
-			var corners = addr.corners();
-			corners.width = Math.max(corners.width, 300);
-			corners.height = Math.max(corners.height, 180);
-			if(config.enforceVerification) {
-				corners.height -= 49;
-			}
-
-			var html = '<div class="smarty-ui" style="top: ' + corners.top + 'px; left: ' + corners.left + 'px; width: ' +
-				corners.width + 'px; height: ' + corners.height + 'px;">' + '<div class="smarty-popup smarty-addr-' +
-				addr.id() + '" style="width: ' + (corners.width - 6) + 'px; height: ' + (corners.height - 3) + 'px;">' +
-				'<div class="smarty-popup-header smarty-popup-missing-secondary-header">' + config.missingSecondaryMessage +
-				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
-				'<div class="smarty-choice-list"><a href="javascript:" ' +
-				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
-				'<div class="smarty-choice-alt">';
-				if(!config.enforceVerification) {
-					html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
-					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
-				}
-				html += '</div>' + '</div></div>';
-
-			$(html).hide().appendTo('body').show(defaults.speed);
-
-			data.selectors = {
-				useOriginal: '.smarty-popup.smarty-addr-' + addr.id() + ' .smarty-choice-override ',
-				abort: '.smarty-popup.smarty-addr-' + addr.id() + ' .smarty-abort'
-			};
-
-			// Scroll to it if necessary
-			if ($(document).scrollTop() > corners.top - 100 || $(document).scrollTop() < corners.top - $(window).height() + 100) {
-				$('html, body').stop().animate({
-					scrollTop: $('.smarty-popup.smarty-addr-' + addr.id()).offset().top - 100
-				}, 500);
-			}
-
-			undelegateAllClicks(data.selectors.abort);
-			// User rejects original input and agrees to double-check it
-			$('body').delegate(data.selectors.abort, 'click', data, function(e) {
-				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
-				delete e.data.selectors;
-				trigger("InvalidAddressRejected", e.data);
-			});
-
-			undelegateAllClicks(data.selectors.useOriginal);
-			// User certifies that what they typed is correct
-			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e) {
-				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
-				delete e.data.selectors;
-				trigger("OriginalInputSelected", e.data);
-			});
-
-			// User presses esc key
-			$(document).keyup(data, function(e) {
-				if (e.keyCode == 27) { //Esc
-					$(data.selectors.abort).click();
-					undelegateAllClicks(e.data.selectors);
-					userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
-				}
-			});
-		};
-
 	}
 
 	/*
@@ -1642,6 +1558,7 @@
 				keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
 				$.extend(obj, keyval);
 			}
+			obj.geocode = config.geocode;
 			return obj;
 		};
 
