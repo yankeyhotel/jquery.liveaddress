@@ -46,6 +46,12 @@
             }, {
                 freeform: '#freeform2',
                 country: '#country2'
+            }, {
+                freeform: '#freeform3',
+                country: '#country3'
+            }, {
+                freeform: '#freeform4',
+                country: '#country4'
             }],
             waitForStreet: true	// Hides autocomplete suggestions until a street is entered
         });
@@ -286,6 +292,35 @@
         <tr>
             <td>Country:</td>
             <td><input type="text" id="country2"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Submit Form"></td>
+        </tr>
+    </table>
+</form>
+
+<form id="twoFreeform">
+    <header>
+        <h3>Two Freeform addresses</h3>
+        <p>One might be for shipping, the other might be for billing</p>
+    </header>
+    <table>
+        <tr>
+            <td>Billing address:</td>
+            <td><textarea id="freeform3"></textarea></td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td><input type="text" id="country3"></td>
+        </tr>
+        <tr>
+            <td>Ship to:</td>
+            <td><textarea id="freeform4"></textarea></td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td><input type="text" id="country4"></td>
         </tr>
         <tr>
             <td></td>
