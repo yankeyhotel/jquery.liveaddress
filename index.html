@@ -64,6 +64,8 @@
                 administrative_area: '#administrativearea6',
                 postal_code: '#postalcode6',
                 country: '#country6'
+            }, {
+                address1: '#street17'
             }],
             waitForStreet: true	// Hides autocomplete suggestions until a street is entered
         });
@@ -393,6 +395,23 @@
         <tr>
             <td>Country:</td>
             <td><input type="text" id="country6"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Submit Form"></td>
+        </tr>
+    </table>
+</form>
+
+<form id="incomplete">
+    <header>
+        <h3>Incomplete address</h3>
+        <p>When there's not enough information to verify an address, the fields shouldn't be mapped</p>
+    </header>
+    <table>
+        <tr>
+            <td>Street address:</td>
+            <td><input type="text" id="street17"></td>
         </tr>
         <tr>
             <td></td>
