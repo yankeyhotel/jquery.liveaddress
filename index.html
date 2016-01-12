@@ -66,6 +66,12 @@
                 country: '#country6'
             }, {
                 address1: '#street17'
+            }, {
+                address1: '#street18',
+                locality: '#locality8',
+                administrative_area: '#administrativearea8',
+                postal_code: '#postalcode8',
+                country: '#country8'
             }],
             waitForStreet: true	// Hides autocomplete suggestions until a street is entered
         });
@@ -416,6 +422,40 @@
         <tr>
             <td></td>
             <td><input type="submit" value="Submit Form"></td>
+        </tr>
+    </table>
+</form>
+
+<form id="onClick">
+    <header>
+        <h3>onclick Handler</h3>
+        <p>Submit button has an "onclick" attribute which should fire if the button is clicked</p>
+    </header>
+    <table>
+        <tr>
+            <td>Street address:</td>
+            <td><input type="text" id="street18"></td>
+        </tr>
+        <tr>
+            <td>Locality (City):</td>
+            <td><input type="text" id="locality8"></td>
+        </tr>
+        <tr>
+            <td>Administrative Area (State):</td>
+            <td><input type="text" id="administrativearea8"></td>
+        </tr>
+        <tr>
+            <td>Postal Code:</td>
+            <td><input type="text" id="postalcode8"></td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td><input type="text" id="country8"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Submit Form"
+                       onclick="alert('onclick handler; this should happen AFTER address verification')"></td>
         </tr>
     </table>
 </form>
