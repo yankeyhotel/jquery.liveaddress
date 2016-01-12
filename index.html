@@ -78,6 +78,12 @@
                 administrative_area: '#administrativearea9',
                 postal_code: '#postalcode9',
                 country: '#country9'
+            }, {
+                address1: '#street110',
+                locality: '#locality10',
+                administrative_area: '#administrativearea10',
+                postal_code: '#postalcode10',
+                country: '#country10'
             }],
             waitForStreet: true	// Hides autocomplete suggestions until a street is entered
         });
@@ -495,6 +501,45 @@
         <tr>
             <td></td>
             <td><input type="submit" value="Submit Form"></td>
+        </tr>
+    </table>
+</form>
+
+<hr class="clear">
+
+<form id="twoHandlers"
+      onsubmit="alert('onsubmit handler; this should happen AFTER address verification and the onclick handlers')">
+    <header>
+        <h3>Two handlers</h3>
+        <p>First the address should be verified, then the submit button's onclick handlers should fire, then the form's
+            onsubmit handlers last</p>
+    </header>
+    <table>
+        <tr>
+            <td>Street address:</td>
+            <td><input type="text" id="street110"></td>
+        </tr>
+        <tr>
+            <td>Locality (City):</td>
+            <td><input type="text" id="locality10"></td>
+        </tr>
+        <tr>
+            <td>Administrative Area (State):</td>
+            <td><input type="text" id="administrativearea10"></td>
+        </tr>
+        <tr>
+            <td>Postal Code:</td>
+            <td><input type="text" id="postalcode10"></td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td><input type="text" id="country10"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Submit Form"
+                       onclick="alert('onclick handler; this should happen AFTER address verification and BEFORE onsubmit handlers')">
+            </td>
         </tr>
     </table>
 </form>
