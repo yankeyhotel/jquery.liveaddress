@@ -1,8 +1,8 @@
 /**
-	LiveAddress API jQuery Plugin
+	LiveAddress International API jQuery Plugin
 	by SmartyStreets - smartystreets.com
 
-	(c) 2012-2015 SmartyStreets
+	(c) 2016 SmartyStreets
 
 	LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE VERSION 3
 	(http://opensource.org/licenses/gpl-3.0.html)
@@ -27,12 +27,11 @@
 
 	var instance; // Contains public-facing functions and variables
 	var ui = new UI; // Internal use only, for UI-related tasks
-	var version = "2.8.25"; // Version of this copy of the script
+	var version = "1.0.0"; // Version of this copy of the script
 
 	var defaults = {
 		candidates: 3, // Number of suggestions to show if ambiguous
-		autocomplete: 10, // Number of autocomplete suggestions; set to 0 or false to disable
-		requestUrl: "https://api.smartystreets.com/street-address", // API endpoint
+		requestUrl: "https://international-street.api.smartystreets.com/verify", // API endpoint
 		timeout: 5000, // How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium", // Animation speed
 		ambiguousMessage: "Choose the correct address", // Message when address is ambiguous
@@ -47,11 +46,9 @@
 	var defaultSelector = 'body'; // Default selector which should be over the whole page (must be compatible with the .find() function; not document)
 	var mappedAddressCount = 0; // The number of currently-mapped addresses
 	var acceptableFields = [
-		"street", "street2", "secondary", "city", "state", "zipcode", "lastline", "addressee", "urbanization", "country"
+		"freeform", "address1", "address2", "address3", "address4", "organization", "locality", "administrative_area", "postal_code", "country"
 	]; // API input field names
-	var verifyTimer = null; // Timer used when submitOnPause is true
-	var verifiedSugg = false; // submitOnPause feature. If true, then the user was prompted with a verified suggestion
-	
+
 	/*
 	 *	ENTRY POINT
 	 */
@@ -99,7 +96,6 @@
 		// Enforce some defaults
 		config.candidates = config.candidates || defaults.candidates;
 		config.ui = typeof config.ui === 'undefined' ? true : config.ui;
-		config.autoMap = typeof config.autoMap === 'undefined' ? true : config.autoMap;
 		config.autoVerify = config.autoVerify !== true && config.autoVerify !== false ? true : config.autoVerify;
 		config.submitVerify = typeof config.submitVerify === 'undefined' ? true : config.submitVerify;
 		config.timeout = config.timeout || defaults.timeout;
@@ -110,7 +106,6 @@
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrl = config.requestUrl || defaults.requestUrl;
-		config.autocomplete = typeof config.autocomplete === 'undefined' ? defaults.autocomplete : config.autocomplete;
 		config.cityFilter = typeof config.cityFilter === 'undefined' ? "" : config.cityFilter;
 		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
 		config.cityStatePreference = typeof config.cityStatePreference === 'undefined' ? "" : config.cityStatePreference;
@@ -125,9 +120,6 @@
 
 		// Parameter used for internal uses. If set to true, freeform will fail. Use with caution
 		config.xIncludeInvalid = typeof config.xIncludeInvalid === 'undefined' ? false : config.xIncludeInvalid;
-
-		if (typeof config.autocomplete === 'number')
-			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
 
 		/*
 		 *	EXPOSED (PUBLIC) FUNCTIONS
@@ -145,14 +137,11 @@
 			},
 			mapFields: function(map) {
 				var doMap = function(map) {
-					if (map === "auto")
-						return ui.automap(matched);
-					else if (typeof map === 'object')
+
+					if (typeof map === 'object')
 						return ui.mapFields(map, matched);
 					else if (!map && typeof config.addresses === 'object')
 						return ui.mapFields(config.addresses, matched);
-					else if (config.autoMap)
-						return ui.automap(matched);
 					else
 						return false;
 				};
@@ -507,9 +496,6 @@
 			}
 		};
 
-		var autocompleteResponse; // The latest response from the autocomplete server
-		var autocplCounter = 0; // A counter so that only the most recent JSONP request is used
-		var autocplRequests = []; // The array that holds autocomplete requests in order
 		var loaderWidth = 24,
 			loaderHeight = 8; // TODO: Update these if the image changes
 		var uiCss = "<style>" + ".smarty-dots { display: none; position: absolute; z-index: 999; width: " +
@@ -562,12 +548,7 @@
 			"background: #A6D187 !important; box-shadow: inset 0 9px 15px #E3F6D5; }" + ".smarty-tag-grayed:hover " +
 			"{ border-color: #333 !important; }" + ".smarty-tag-check { padding-left: 4px; " +
 			"text-decoration: none !important; }" + ".smarty-tag-text { font-size: 12px !important; position: absolute; " +
-			"top: 0; left: 16px; width: 50px !important; text-align: center !important; }" + ".smarty-autocomplete " +
-			"{ border: 1px solid #777; background: white; overflow: hidden; white-space: nowrap; " +
-			"box-shadow: 1px 1px 3px #555; }" + ".smarty-suggestion { display: block; color: #444; " +
-			"text-decoration: none !important; font-size: 12px; padding: 1px 5px; }" + ".smarty-active-suggestion " +
-			"{ background: #EEE; color: #000; border: none; outline: none; }" + ".smarty-no-suggestions " +
-			"{ padding: 1px 5px; font-size: 12px; color: #AAA; font-style: italic; }" + "</style>";
+			"top: 0; left: 16px; width: 50px !important; text-align: center !important; }" + "</style>";
 
 
 		this.postMappingOperations = function() {
@@ -604,28 +585,8 @@
 							.parent('.smarty-ui')
 							.css('top', addrOffset.top + 'px')
 							.css('left', addrOffset.left + 'px');
-
-						if (config.autocomplete) { // Position of autocomplete boxes
-							var containerUi = $('.smarty-autocomplete.smarty-addr-' + addr.id()).closest('.smarty-ui');
-							var domFields = addr.getDomFields();
-							if (domFields['street']) {
-								containerUi.css({
-									"left": $(domFields['street']).offset().left + "px",
-									"top": ($(domFields['street']).offset().top + $(domFields['street']).outerHeight(false)) + "px"
-								});
-							}
-						}
 					});
 
-					// Disable for addresses defaulting to a foreign/non-US value
-					if (!addresses[i].isDomestic()) {
-						var uiTag = $('.smarty-ui .smarty-tag.smarty-addr-' + id);
-						if (uiTag.is(':visible'))
-							uiTag.hide();
-						addresses[i].accept({
-							address: addresses[i]
-						}, false);
-					}
 				}
 
 				$('body').delegate('.smarty-tag-grayed', 'click', function(e) {
@@ -644,139 +605,6 @@
 					// The undo functionality still works in those cases, but with no visible changes, the address doesn't fire "AddressChanged"...
 				});
 
-
-
-				// Prepare autocomplete UI
-				if (config.autocomplete && config.key) {
-					// For every mapped address, wire up autocomplete
-					for (var i = 0; i < forms.length; i++) {
-						var f = forms[i];
-
-						for (var j = 0; j < f.addresses.length; j++) {
-							var addr = f.addresses[j];
-							var domFields = addr.getDomFields();
-
-							if (domFields['street']) {
-								var strField = $(domFields['street']);
-								var containerUi = $('<div class="smarty-ui"></div>');
-								var autoUi = $('<div class="smarty-autocomplete"></div>');
-
-								autoUi.addClass('smarty-addr-' + addr.id());
-								containerUi.data("addrID", addr.id())
-								containerUi.append(autoUi);
-
-								containerUi.css({
-									"position": "absolute",
-									"left": strField.offset().left + "px",
-									"top": (strField.offset().top + strField.outerHeight(false)) + "px"
-								});
-
-								containerUi.hide().appendTo("body");
-
-								containerUi.delegate(".smarty-suggestion", "click", {
-									addr: addr,
-									containerUi: containerUi
-								}, function(event) {
-									var sugg = autocompleteResponse.suggestions[$(this).data('suggIndex')];
-									useAutocompleteSuggestion(event.data.addr, sugg, event.data.containerUi);
-								});
-
-								containerUi.delegate(".smarty-suggestion", "mouseover", function() {
-									$('.smarty-active-suggestion').removeClass('smarty-active-suggestion');
-									$(this).addClass('smarty-active-suggestion');
-								});
-
-								containerUi.delegate(".smarty-active-suggestion", "mouseleave", function() {
-									$(this).removeClass('smarty-active-suggestion');
-								});
-
-
-								strField.attr("autocomplete", "off"); // Tell Firefox to keep quiet
-
-								strField.blur({
-									containerUi: containerUi
-								}, function(event) {
-									setTimeout((function(event) {
-										return function() {
-											if (event.data) event.data.containerUi.hide();
-										};
-									})(event), 300); // This line is proudly IE9-compatible
-								});
-
-								strField.keydown({
-									containerUi: containerUi,
-									addr: addr
-								}, function(event) {
-									var suggContainer = $('.smarty-autocomplete', event.data.containerUi);
-									var currentChoice = $('.smarty-active-suggestion:visible', suggContainer).first();
-									var choiceSelectionIsNew = false;
-
-									if (event.keyCode == 9) { // Tab key
-										if (currentChoice.length > 0) {
-											var domFields = event.data.addr.getDomFields();
-											if (domFields['zipcode'])
-												$(domFields['zipcode']).focus();
-											else
-												$(domFields['street']).blur();
-											useAutocompleteSuggestion(event.data.addr, autocompleteResponse.suggestions[currentChoice.data("suggIndex")], event.data.containerUi);
-											return addr.isFreeform() ? true : suppress(event);
-										} else
-											event.data.containerUi.hide();
-									} else if (event.keyCode == 40) { // Down arrow
-										if (!currentChoice.hasClass('smarty-suggestion')) {
-											currentChoice = $('.smarty-suggestion', suggContainer).first().mouseover();
-											choiceSelectionIsNew = true;
-										}
-
-										if (!choiceSelectionIsNew) {
-											if (currentChoice.next('.smarty-addr-' + event.data.addr.id() + ' .smarty-suggestion').length > 0)
-												currentChoice.next('.smarty-suggestion').mouseover();
-											else
-												currentChoice.removeClass('smarty-active-suggestion');
-										}
-
-										moveCursorToEnd(this);
-									} else if (event.keyCode == 38) { // Up arrow
-										if (!currentChoice.hasClass('smarty-suggestion')) {
-											currentChoice = $('.smarty-suggestion', suggContainer).last().mouseover();
-											choiceSelectionIsNew = true;
-										}
-
-										if (!choiceSelectionIsNew) {
-											if (currentChoice.prev('.smarty-addr-' + event.data.addr.id() + ' .smarty-suggestion').length > 0)
-												currentChoice.prev('.smarty-suggestion').mouseover();
-											else
-												currentChoice.removeClass('smarty-active-suggestion');
-										}
-
-										moveCursorToEnd(this);
-									}
-								});
-
-								// Flip the on switch!
-								strField.keyup({
-									form: f,
-									addr: addr,
-									streetField: strField,
-									containerUi: containerUi
-								}, doAutocomplete);
-							}
-						}
-
-						$(document).keyup(function(event) {
-							if (event.keyCode == 27) // Esc key
-								$('.smarty-autocomplete').closest('.smarty-ui').hide();
-						});
-					}
-
-					// Try .5 and 1.5 seconds after the DOM loads to re-position UI elements; hack for Firefox.
-					setTimeout(function() {
-						$(window).resize();
-					}, 500);
-					setTimeout(function() {
-						$(window).resize();
-					}, 1500);
-				}
 			}
 
 			if (config.submitVerify) {
@@ -785,8 +613,8 @@
 					var f = forms[i];
 
 					submitHandler = function(e) {
-						// Don't invoke verification if it's already processing or autocomplete is open and the user was pressing Enter to use a suggestion
-						if ((e.data.form && e.data.form.processing) || $('.smarty-active-suggestion:visible').length > 0)
+						// Don't invoke verification if it's already processing
+						if (e.data.form && e.data.form.processing)
 							return suppress(e);
 
 						/*
@@ -875,204 +703,6 @@
 
 			trigger("MapInitialized");
 		};
-
-		function doAutocomplete(event) {
-			var addr = event.data.addr;
-			var streetField = event.data.streetField;
-			var input = $.trim(event.data.streetField.val());
-			var containerUi = event.data.containerUi;
-			var suggContainer = $('.smarty-autocomplete', containerUi);
-
-			if (!input) {
-				addr.lastStreetInput = input;
-				suggContainer.empty();
-				containerUi.hide();
-			}
-
-			if (event.keyCode == 13) { // Enter/return
-				if ($('.smarty-active-suggestion:visible').length > 0)
-					useAutocompleteSuggestion(addr, autocompleteResponse.suggestions[$('.smarty-active-suggestion:visible').first().data('suggIndex')], containerUi);
-				containerUi.hide();
-				streetField.blur();
-				return suppress(event);
-			}
-
-			if (event.keyCode == 40) { // Down arrow
-				moveCursorToEnd(streetField[0]);
-				return;
-			}
-
-			if (event.keyCode == 38) { // Up arrow
-				moveCursorToEnd(streetField[0]);
-				return;
-			}
-
-			if (!input || input == addr.lastStreetInput || !addr.isDomestic())
-				return;
-
-			addr.lastStreetInput = input; // Used so that autocomplete only fires on real changes (i.e. not just whitespace)
-
-			trigger('AutocompleteInvoked', {
-				containerUi: containerUi,
-				suggContainer: suggContainer,
-				streetField: streetField,
-				input: input,
-				addr: addr
-			});
-		}
-
-		this.requestAutocomplete = function(event, data) {
-			if(verifyTimer) {
-				clearTimeout(verifyTimer);
-				verifyTimer = null;
-			}
-			verifiedSugg = false;
-			if (data.input && data.addr.isDomestic() && autocompleteResponse)
-				data.containerUi.show();
-
-			var autocplrequest = {
-				callback: function(counter, json) {
-					var patt = new RegExp("^\\w+\\s\\w+|^[A-Za-z]+$|^[A-Za-z]+\\s\\w*");
-					var filtering = patt.test(data.input);
-					autocompleteResponse = json;
-					data.suggContainer.empty();
-
-					if (!json.suggestions || json.suggestions.length == 0) {
-						data.suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
-						if(config.submitOnPause && data.input.length >= 10) {
-							verifyTimer = setTimeout(function() {
-								// Send to street API
-								$.getJSON(config.requestUrl, {
-									"auth-id": config.key,
-									"auth-token": config.token,
-									street: data.input
-								}, function(json) {
-									if(json.length > 0) {
-										var verifiedAddresses = {
-											suggestions: []
-										}
-										verifiedSugg = true;
-										data.suggContainer.html('<div class="smarty-no-suggestions">Verified suggestions</div>');
-										for(var i in json) {
-											var verifiedAddress = {
-												"text": json[i].delivery_line_1 + " " + json[i].last_line,
-												"street_line": json[i].delivery_line_1,
-												"city": json[i].components.city_name,
-												"state": json[i].components.state_abbreviation,
-												"zipcode": json[i].components.zipcode + "-" + json[i].components.plus4_code
-											}
-											var link = $('<a href="javascript:" class="smarty-suggestion">' + json[i].delivery_line_1 + " " + json[i].last_line + '</a>')
-											link.data("suggIndex", i);
-											verifiedAddresses.suggestions.push(verifiedAddress);
-											data.suggContainer.append(link);
-										}
-										autocompleteResponse = verifiedAddresses;
-									}
-								});
-							}, 5000);
-						}
-						return;
-					}
-
-					if (config.waitForStreet && filtering == false) {
-						var message = "";
-						if (config.stateFilter || config.cityFilter || config.geolocate || config.cityStatePreference) {
-							message = "filtered";
-						} else {
-							message = "address";
-						}
-						data.suggContainer.html('<div class="smarty-no-suggestions">Type more for ' + message + ' suggestions</div>')
-					} else {
-						for (var j = 0; j < json.suggestions.length; j++) {
-							var suggAddr = json.suggestions[j].text.replace(/<|>/g, "");
-							suggAddr = suggAddr.replace(new RegExp('(' + data.input + ')', 'ig'), '<b>$1</b>');
-							var link = $('<a href="javascript:" class="smarty-suggestion">' + suggAddr + '</a>');
-							link.data("suggIndex", j);
-
-							data.suggContainer.append(link);
-						}
-					}
-
-					data.suggContainer.css({
-						"width": Math.max(data.streetField.outerWidth(false), 250) + "px"
-					});
-
-					data.containerUi.show();
-
-					// Delete all older callbacks so they don't get executed later because of latency
-					autocplRequests.splice(0, counter);
-				},
-				number: autocplCounter++
-			};
-
-			autocplRequests[autocplrequest.number] = autocplrequest;
-
-			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", {
-				"auth-id": config.key,
-				"auth-token": config.token,
-				prefix: data.input,
-				city_filter: config.cityFilter,
-				state_filter: config.stateFilter,
-				prefer: config.cityStatePreference,
-				suggestions: config.autocomplete,
-				geolocate: config.geolocate,
-				geolocate_precision: config.geolocatePrecision
-			}, function(json) {
-				trigger("AutocompleteReceived", $.extend(data, {
-					json: json,
-					autocplrequest: autocplrequest
-				}));
-			});
-		};
-
-		this.showAutocomplete = function(event, data) {
-			if (autocplRequests[data.autocplrequest.number])
-				autocplRequests[data.autocplrequest.number].callback(data.autocplrequest.number, data.json);
-		};
-
-		function useAutocompleteSuggestion(addr, suggestion, containerUi) {
-			var domfields = addr.getDomFields();
-			containerUi.hide(); // It's important that the suggestions are hidden before AddressChanged event fires
-
-			if (addr.isFreeform())
-				$(domfields['street']).val(suggestion.text).change();
-			else {
-				if (domfields['zipcode']) {
-					if(verifiedSugg)
-						$(domfields['zipcode']).val(suggestion.zipcode);
-					else
-						$(domfields['zipcode']).val("").change();
-				}
-				if (domfields['street'])
-					$(domfields['street']).val(suggestion.street_line).change();
-				// State filled in before city so autoverify is not invoked without finishing using the suggestion
-				if (domfields['state']) {
-					if (domfields['state'].options) { // Checks for dropdown
-						for (var i = 0; i < domfields['state'].options.length; i++) {
-							// Checks for abbreviation match and maps full state name to abbreviation
-							if (domfields['state'].options[i].text.toUpperCase() === suggestion.state || allStatesByName[domfields['state'].options[i].text.toUpperCase()] === suggestion.state) {
-								$(domfields['state'])[0].selectedIndex = i;
-								$(domfields['state']).change();
-								break;
-							}
-						}
-					} else
-						$(domfields['state']).val(suggestion.state).change();
-				}
-				if (domfields['city']) {
-					$(domfields['city']).val("").change()
-					addr.usedAutocomplete = true;
-					$(domfields['city']).val(suggestion.city).change();
-				}
-				if (domfields['lastline'])
-					addr.usedAutocomplete = true;
-					$(domfields['lastline']).val(suggestion.city + " " + suggestion.state + " " +suggestion.zipcode).change();
-			}
-			trigger("AutocompleteUsed", {
-				address: addr,
-				suggestion: suggestion
-			});
-		}
 
 		// Computes where the little checkmark tag of the UI goes, relative to the boundaries of the last field
 		function uiTagOffset(corners) {
@@ -1179,13 +809,10 @@
 		//hides the SmartyUI when deactivating 1 address
 		this.hideSmartyUI = function(addressID) {
 			var smartyui = $('.smarty-addr-' + addressID + ':visible');
-			var autocompleteui = $('.smarty-autocomplete.smarty-addr-' + addressID);
 			smartyui.addClass("deactivated");
 			smartyui.parent().addClass("deactivated");
-			autocompleteui.addClass("deactivated");
 			smartyui.hide();
 			smartyui.parent().hide();
-			autocompleteui.hide();
 		};
 
 		// If anything was previously mapped, this resets it all for a new mapping.
@@ -1214,8 +841,6 @@
 						}
 						$(doms[prop]).unbind('change');
 					}
-					if (doms['street'])
-						$(doms['street']).unbind('keyup').unbind('keydown').unbind('blur');
 				}
 
 				// Unbind our form submit and submit-button click handlers
@@ -1240,171 +865,6 @@
 				console.log("Done cleaning up; ready for new mapping.");
 		};
 
-		function disableBrowserAutofill(dom) {
-			//Does not disable autofill if config.autocomplete is disabled
-			if (config.autocomplete > 0) {
-				for (var i = 0; i < dom.getElementsByTagName("input").length; i++) {
-					dom.getElementsByTagName("input")[i].autocomplete = "smartystreets";
-				}
-			}
-		}
-
-		function addDefaultToStateDropdown(dom) {
-			if (dom.getElementsByTagName("option").length > 0) {
-				if (arrayContains(stateNames, dom.getElementsByTagName("option")[0].text.toUpperCase()) ||
-					arrayContains(stateAbbreviations, dom.getElementsByTagName("option")[0].text.toUpperCase())) {
-					var option = document.createElement("OPTION");
-					option.innerText = "State";
-					option.selected = true;
-					$(dom.getElementsByTagName("select")[0]).prepend(option);
-					$(dom).change();
-				}
-			}
-		}
-
-		// ** AUTOMAPPING ** //
-		this.automap = function(context) {
-			if (config.debug)
-				console.log("Automapping fields...");
-
-			this.clean();
-
-			//$('form').add($('iframe').contents().find('form')).each(function(idx) 	// Include forms in iframes, but they must be hosted on same domain (and iframe must have already loaded)
-			$('form').each(function(idx) { // For each form ...
-				var form = new Form(this);
-				var potential = {};
-
-				// Look for each type of field in this form
-				for (var fieldName in mapMeta.identifiers) {
-					var names = mapMeta.identifiers[fieldName].names;
-					var labels = mapMeta.identifiers[fieldName].labels;
-
-					// Find matching form elements and store them away
-					potential[fieldName] = $(config.fieldSelector, this)
-						.filter(function() {
-							// This potential address input element must be within the user's set of selected elements
-							return $(context).has(this).length > 0; // (Using has() is compatible with as low as jQuery 1.4)
-						})
-						.filter(':visible') // No "hidden" input fields allowed
-						.filter(function() {
-							var name = lowercase(this.name),
-								id = lowercase(this.id);
-
-							// "Street address line 1" is a special case because "address" is an ambiguous
-							// term, so we pre-screen this field by looking for exact matches.
-							if (fieldName == "streets") {
-								for (var i = 0; i < mapMeta.street1exacts.names.length; i++)
-									if (name == mapMeta.street1exacts.names[i] || id == mapMeta.street1exacts.names[i])
-										return true;
-							}
-
-							// Now perform the main filtering.
-							// If this is TRUE, then this form element is probably a match for this field type.
-							var filterResult = filterDomElement(this, names, labels);
-
-							if (fieldName == "streets") {
-								// Looking for "address" is a very liberal search, so we need to see if it contains another
-								// field name, too... this helps us find freeform addresses (SLAP).
-								var otherFields = ["secondary", "city", "state", "zipcode", "country", "lastline"];
-								for (var i = 0; i < otherFields.length; i++) {
-									// If any of these filters turns up true, then it's
-									// probably neither a "street" field, nor a SLAP address.
-									if (filterDomElement(this, mapMeta.identifiers[otherFields[i]].names,
-											mapMeta.identifiers[otherFields[i]].labels))
-										return false;
-								}
-							}
-
-							return filterResult;
-						})
-						.not(function() {
-							// The filter above can be a bit liberal at times, so we need to filter out
-							// results that are actually false positives (fields that aren't part of the address)
-							// Returning true from this function excludes the element from the result set.
-							var name = lowercase(this.name),
-								id = lowercase(this.id);
-							if (name == "name" || id == "name") // Exclude fields like "First Name", et al.
-								return true;
-							return filterDomElement(this, mapMeta.exclude.names, mapMeta.exclude.labels);
-						})
-						.toArray();
-				}
-
-				// Now prepare to differentiate between street1 and street2.
-				potential.street = [];
-				potential.street2 = [];
-
-				// If the ratio of 'street' fields to the number of addresses in the form
-				// (estimated by number of city or zip fields) is about the same, it's all street1.
-				if (potential.streets.length <= potential.city.length * 1.5 || potential.streets.length <= potential.zipcode.length * 1.5) {
-					potential.street = potential.streets;
-				} else {
-					// Otherwise, differentiate between the two
-					for (var i = 0; i < potential.streets.length; i++) {
-						// Try to map it to a street2 field first. If it fails, it's street1.
-						// The second condition is for naming schemes like "street[]" or "address[]", where the names
-						// are the same: the second one is usually street2.
-						var current = potential.streets[i];
-						if (filterDomElement(current, mapMeta.street2.names, mapMeta.street2.labels) || (i > 0 && current.name == potential.streets[i - 1].name)) {
-							// Mapped it to street2
-							potential.street2.push(current);
-						} else // Could not map to street2, so put it in street1
-							potential.street.push(current);
-					}
-				}
-
-				delete potential.streets; // No longer needed; we've moved them into street/street2.
-
-				if (config.debug)
-					console.log("For form " + idx + ", the initial scan found these fields:", potential);
-
-
-
-				// Now organize the mapped fields into addresses
-
-				// The number of addresses will be the number of street1 fields,
-				// and in case we support it in the future, maybe street2, or
-				// in case a mapping went a little awry.
-				var addressCount = Math.max(potential.street.length, potential.street2.length);
-
-				if (config.debug && addressCount == 0)
-					console.log("No addresses were found in form " + idx + ".");
-
-				for (var i = 0; i < addressCount; i++) {
-					var addrObj = {};
-					for (var field in potential) {
-						var current = potential[field][i];
-						if (current)
-							addrObj[field] = current;
-					}
-
-					// Don't map the address if there's not enough fields for a complete address
-					var hasCityAndStateOrZip = addrObj.zipcode || (addrObj.state && addrObj.city);
-					var hasCityOrStateOrZip = addrObj.city || addrObj.state || addrObj.zipcode;
-					if ((!addrObj.street && hasCityAndStateOrZip) || (addrObj.street && !hasCityAndStateOrZip && hasCityOrStateOrZip)) {
-						if (config.debug)
-							console.log("Form " + idx + " contains some address input elements that could not be resolved to a complete address.");
-						continue;
-					}
-
-					form.addresses.push(new Address(addrObj, form, "auto" + (++mappedAddressCount)));
-				}
-
-				// Save the form we just finished mapping
-				disableBrowserAutofill(form.dom);
-				addDefaultToStateDropdown(form.dom);
-				forms.push(form);
-
-				if (config.debug)
-					console.log("Form " + idx + " is finished:", form);
-			});
-
-			if (config.debug)
-				console.log("Automapping complete.");
-
-			trigger("FieldsMapped");
-		};
-
 
 		// ** MANUAL MAPPING ** //
 		this.mapFields = function(map, context) {
@@ -1423,7 +883,7 @@
 			for (var addrIdx in map) {
 				var address = map[addrIdx];
 
-				if (!address.street)
+				if (!address.country)
 					continue;
 
 				// Convert selectors into actual DOM references
@@ -1449,23 +909,20 @@
 					}
 				}
 
-				if (!((address.street) && (((address.city) && (address.state)) || (address.zipcode) || (address.lastline) ||
-						(!address.street2 && !address.city && !address.state && !address.zipcode && !address.lastline)))) {
+				if (!((address.country && address.freeform) || (address.address1 && address.postal_code) || (address.address1 && address.locality && address.administrative_area))) {
 					if (config.debug)
 						console.log("NOTICE: Address map (index " + addrIdx + ") was not mapped to a complete street address. Skipping...");
 					continue;
 				}
 
-				// Acquire the form based on the street address field (the required field)
-				var formDom = $(address.street).parents('form')[0];
+				// Acquire the form based on the country address field (the required field)
+				var formDom = $(address.country).parents('form')[0];
 				var form = new Form(formDom);
 
 				// Persist a reference to the form if it wasn't acquired before
 				if (!$(formDom).data(mapMeta.formDataProperty)) {
 					// Mark the form as mapped then add it to our list
 					$(formDom).data(mapMeta.formDataProperty, 1);
-					disableBrowserAutofill(form.dom);
-					addDefaultToStateDropdown(form.dom);
 					formsFound.push(form);
 				} else {
 					// Find the form in our list since we already put it there
@@ -1584,11 +1041,26 @@
 				'<div class="smarty-choice-list">';
 
 			for (var i = 0; i < response.raw.length; i++) {
-				var line1 = response.raw[i].delivery_line_1,
-					city = response.raw[i].components.city_name,
-					st = response.raw[i].components.state_abbreviation,
-					zip = response.raw[i].components.zipcode + "-" + response.raw[i].components.plus4_code;
-				html += '<a href="javascript:" class="smarty-choice" data-index="' + i + '">' + line1 + '<br>' + city + ', ' + st + ' ' + zip + '</a>';
+				var ambigAddr = '';
+				if(response.raw[i].address1) {
+					ambigAddr += response.raw[i].address1;
+				}
+				if(response.raw[i].address2) {
+					ambigAddr = ambigAddr + '<br>' + response.raw[i].address2;
+				}
+				if(response.raw[i].address3) {
+					ambigAddr = ambigAddr + '<br>' + response.raw[i].address3;
+				}
+				if(response.raw[i].address4) {
+					ambigAddr = ambigAddr + '<br>' + response.raw[i].address4;
+				}
+				if(response.raw[i].address5) {
+					ambigAddr = ambigAddr + '<br>' + response.raw[i].address5;
+				}
+				if(response.raw[i].address6) {
+					ambigAddr = ambigAddr + '<br>' + response.raw[i].address6;
+				}
+				html += '<a href="javascript:" class="smarty-choice" data-index="' + i + '">' + ambigAddr + '</a>';
 			}
 
 			html += '</div><div class="smarty-choice-alt">';
@@ -1795,119 +1267,6 @@
 			});
 		};
 
-		this.isDropdown = function(dom) {
-			return dom && ((dom.tagName || dom.nodeName || "").toUpperCase() == "SELECT");
-		};
-	}
-
-	var allStatesByName = {
-		"ALABAMA": "AL",
-		"ALASKA": "AK",
-		"AMERICAN SAMOA": "AS",
-		"ARIZONA": "AZ",
-		"ARKANSAS": "AR",
-		"CALIFORNIA": "CA",
-		"COLORADO": "CO",
-		"CONNECTICUT": "CT",
-		"DELAWARE": "DE",
-		"DISTRICT OF COLUMBIA": "DC",
-		"FEDERATED STATES OF MICRONESIA": "FM",
-		"FLORIDA": "FL",
-		"GEORGIA": "GA",
-		"GUAM": "GU",
-		"HAWAII": "HI",
-		"IDAHO": "ID",
-		"ILLINOIS": "IL",
-		"INDIANA": "IN",
-		"IOWA": "IA",
-		"KANSAS": "KS",
-		"KENTUCKY": "KY",
-		"LOUISIANA": "LA",
-		"MAINE": "ME",
-		"MARSHALL ISLANDS": "MH",
-		"MARYLAND": "MD",
-		"MASSACHUSETTS": "MA",
-		"MICHIGAN": "MI",
-		"MINNESOTA": "MN",
-		"MISSISSIPPI": "MS",
-		"MISSOURI": "MO",
-		"MONTANA": "MT",
-		"NEBRASKA": "NE",
-		"NEVADA": "NV",
-		"NEW HAMPSHIRE": "NH",
-		"NEW JERSEY": "NJ",
-		"NEW MEXICO": "NM",
-		"NEW YORK": "NY",
-		"NORTH CAROLINA": "NC",
-		"NORTH DAKOTA": "ND",
-		"NORTHERN MARIANA ISLANDS": "MP",
-		"OHIO": "OH",
-		"OKLAHOMA": "OK",
-		"OREGON": "OR",
-		"PALAU": "PW",
-		"PENNSYLVANIA": "PA",
-		"PUERTO RICO": "PR",
-		"RHODE ISLAND": "RI",
-		"SOUTH CAROLINA": "SC",
-		"SOUTH DAKOTA": "SD",
-		"TENNESSEE": "TN",
-		"TEXAS": "TX",
-		"UTAH": "UT",
-		"VERMONT": "VT",
-		"VIRGIN ISLANDS": "VI",
-		"VIRGINIA": "VA",
-		"WASHINGTON": "WA",
-		"WEST VIRGINIA": "WV",
-		"WISCONSIN": "WI",
-		"WYOMING": "WY",
-		"ARMED FORCES EUROPE, THE MIDDLE EAST, AND CANADA": "AE",
-		"ARMED FORCES CANADA": "AE",
-		"ARMED FORCES THE MIDDLE EAST": "AE",
-		"ARMED FORCES EUROPE": "AE",
-		"ARMED FORCES PACIFIC": "AP",
-		"ARMED FORCES AMERICAS (EXCEPT CANADA)": "AA",
-		"ARMED FORCES AMERICAS": "AA"
-	};
-	// this listing of stateNames has West Virginia before Virginia and the Virgin Islands (most specific to least specific)
-	var stateNames = [
-		"ALABAMA", "ALASKA", "AMERICAN SAMOA", "ARIZONA", "ARKANSAS", "CALIFORNIA", "COLORADO", "CONNECTICUT", "DELAWARE",
-		"DISTRICT OF COLUMBIA", "FEDERATED STATES OF MICRONESIA", "FLORIDA", "GEORGIA", "GUAM", "HAWAII", "IDAHO",
-		"ILLINOIS", "INDIANA", "IOWA", "KANSAS", "KENTUCKY", "LOUISIANA", "MAINE", "MARSHALL ISLANDS", "MARYLAND",
-		"MASSACHUSETTS", "MICHIGAN", "MINNESOTA", "MISSISSIPPI", "MISSOURI", "MONTANA", "NEBRASKA", "NEVADA",
-		"NEW HAMPSHIRE", "NEW JERSEY", "NEW MEXICO", "NEW YORK", "NORTH CAROLINA", "NORTH DAKOTA",
-		"NORTHERN MARIANA ISLANDS", "OHIO", "OKLAHOMA", "OREGON", "PALAU", "PENNSYLVANIA", "PUERTO RICO", "RHODE ISLAND",
-		"SOUTH CAROLINA", "SOUTH DAKOTA", "TENNESSEE", "TEXAS", "UTAH", "VERMONT", "WEST VIRGINIA", "VIRGINIA",
-		"VIRGIN ISLANDS", "WASHINGTON", "WISCONSIN", "WYOMING", "ARMED FORCES EUROPE, THE MIDDLE EAST, AND CANADA",
-		"ARMED FORCES CANADA", "ARMED FORCES THE MIDDLE EAST", "ARMED FORCES EUROPE", "ARMED FORCES PACIFIC",
-		"ARMED FORCES AMERICAS (EXCEPT CANADA)", "ARMED FORCES AMERICAS"
-	];
-	var stateAbbreviations = [
-		"AL", "AK", "AS", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FM", "FL", "GA", "GU", "HI", "ID", "IL", "IN", "IA",
-		"KS", "KY", "LA", "ME", "MH", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC",
-		"ND", "MP", "OH", "OK", "OR", "PW", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VI", "VA", "WA", "WV",
-		"WI", "WY", "AE", "AP", "AA"
-	];
-
-	/*
-		Represents an option in a state dropdown menu. We look for any clues in the value or text
-		as to what state the option might represent so that when a verified result comes back we
-		can update the dropdown accordingly. Also allows us to submit the correct value to the server.
-		In many cases the value is a key that is only meaningful to the server-side code.
-	*/
-	function StateDropdownOption(option) {
-		this.standard = function() {
-			if (arrayContains(stateNames, option.text.toUpperCase())) {
-				return allStatesByName[option.text.toUpperCase()];
-			}
-			if (arrayContains(stateAbbreviations, option.text.toUpperCase())) {
-				return option.text.toUpperCase();
-			}
-			return '';
-		};
-
-		this.value = function() {
-			return option.value ? option.value : option.text;
-		};
 	}
 
 	/*
@@ -1920,8 +1279,6 @@
 		var self = this; // Pointer to self so that internal functions can reference its parent
 		var fields; // Data values and references to DOM elements
 		var id; // An ID by which to classify this address on the DOM
-		var statesOptions = {}; // Stores the actual state dropdown option values that correspond to the option names
-		var totalStatesOptions = 0; // Total number of options in the state dropdown
 
 		var state = "accepted"; // Can be: "accepted" or "changed"
 		// Example of a field:  street: { value: "123 main", dom: DOMElement, undo: "123 mai"}
@@ -1946,12 +1303,6 @@
 			fields[key].value = value;
 
 			if (updateDomElement && fields[key].dom) {
-
-				// figure out which state dropdown option should be selected, if any...
-				if (key === 'state' && totalStatesOptions > 0 && value in statesOptions) {
-					value = statesOptions[value].value();
-				}
-
 				$(fields[key].dom).val(value);
 			}
 
@@ -1966,18 +1317,10 @@
 			if (differentVal && !keepState) {
 				ui.unmarkAsValid(self);
 				var uiTag = config.ui ? $('.smarty-ui .smarty-tag.smarty-addr-' + id) : undefined;
-				if (self.isDomestic()) {
-					if (uiTag && !uiTag.is(':visible'))
-						uiTag.show(); // Show checkmark tag if address is in US
-					self.unaccept();
-					trigger("AddressChanged", eventMeta);
-				} else {
-					if (uiTag && uiTag.is(':visible'))
-						uiTag.hide(); // Hide checkmark tag if address is non-US
-					self.accept({
-						address: self
-					}, false);
-				}
+				if (uiTag && !uiTag.is(':visible'))
+					uiTag.show(); // Show checkmark tag if address is in US
+				self.unaccept();
+				trigger("AddressChanged", eventMeta);
 			}
 
 			return true;
@@ -1989,7 +1332,6 @@
 		this.verifyCount = 0; // Number of times this address was submitted for verification
 		this.lastField; // The last field found (last to appear in the DOM) during mapping, or the order given
 		this.active = true; // If true, verify the address. If false, pass-thru entirely.
-		this.lastStreetInput = ""; // Used by autocomplete to detect changes
 
 		// Constructor-esque functionality (save the fields in this address object)
 		this.load = function(domMap, addressID) {
@@ -1998,7 +1340,7 @@
 
 			if (typeof domMap === 'object') { // can be an actual map to DOM elements or just field/value data
 				// Find the last field likely to appear on the DOM (used for UI attachments)
-				this.lastField = domMap.lastline || domMap.zipcode || domMap.state || domMap.city || domMap.street;
+				this.lastField = domMap.country || domMap.freeform || domMap.postal_code || domMap.administrative_area || domMap.locality || domMap.address1;
 
 				var isEmpty = true; // Whether the address has data in it (pre-populated) -- first assume it is empty.
 
@@ -2020,21 +1362,9 @@
 					else
 						val = elem.val() || "";
 
-					// Here we analyze the state dropdown so we can update it with verified address results later.
-					if (prop === "state" && elemArray[0] != undefined && elemArray[0].length != undefined) { // Is there a better way to detect a state dropdown from here?
-						$('option', elem).each(function(i) {
-							var option = new StateDropdownOption(this);
-							var standardized = option.standard();
-							statesOptions[standardized] = option;
-							totalStatesOptions++;
-						});
-					}
-
 					fields[prop] = {};
 					fields[prop].value = val;
 					fields[prop].undo = val;
-					// dropdowns could have an initial value, yet the address may be "empty" (<option value="None" selected>(Select state)</option>) ...
-					isEmpty = isEmpty ? val.length == 0 || ui.isDropdown(domMap[prop]) : false;
 
 					if (!isData) {
 						if (config.debug) {
@@ -2090,31 +1420,111 @@
 				resp = resp[0];
 
 			if (self.isFreeform()) {
-				var singleLineAddr = (resp.addressee ? resp.addressee + " " : "") +
-					(resp.delivery_line_1 ? resp.delivery_line_1 + " " : "") +
-					(resp.delivery_line_2 ? resp.delivery_line_2 + " " : "") +
-					(resp.components.urbanization ? resp.components.urbanization + " " : "") +
-					(resp.last_line ? resp.last_line : "");
-
-				self.set("street", singleLineAddr, updateDomElement, true, e, false);
+				var singleLineAddr = (resp.organization ? resp.organization + " " : "") +
+					(resp.address1 ? resp.address1 + " " : "") +
+					(resp.address2 ? resp.address2 + " " : "") +
+					(resp.address3 ? resp.address3 + " " : "") +
+					(resp.address4 ? resp.address4 + " " : "") +
+					(resp.address5 ? resp.address5 + " " : "") +
+					(resp.address6 ? resp.address6 + " " : "") +
+					(resp.address7 ? resp.address7 + " " : "") +
+					(resp.address8 ? resp.address8 + " " : "") +
+					(resp.address9 ? resp.address9 + " " : "") +
+					(resp.address10 ? resp.address10 + " " : "") +
+					(resp.address11 ? resp.address11 + " " : "") +
+					(resp.address12 ? resp.address12 + " " : "");
+				var countryLine = resp.components.country_iso_3 ? resp.components.country_iso_3 : "";
+				self.set("freeform", singleLineAddr, updateDomElement, true, e, false);
+				self.set("country", countryLine, updateDomElement, true, e, false);
 			} else {
-				if (resp.addressee)
-					self.set("addressee", resp.addressee, updateDomElement, true, e, false);
-				if (resp.delivery_line_1)
-					self.set("street", resp.delivery_line_1, updateDomElement, true, e, false);
-				if (resp.last_line && fields["lastline"])
-					self.set("lastline", resp.last_line, updateDomElement, true, e, false);
-				self.set("street2", resp.delivery_line_2 || "", updateDomElement, true, e, false); // Rarely used; must otherwise be blank.
-				self.set("secondary", "", updateDomElement, true, e, false); // Not used in standardized addresses
-				if (resp.components.urbanization)
-					self.set("urbanization", resp.components.urbanization, updateDomElement, true, e, false);
-				if (resp.components.city_name)
-					self.set("city", resp.components.city_name, updateDomElement, true, e, false);
-				if (resp.components.state_abbreviation)
-					self.set("state", resp.components.state_abbreviation, updateDomElement, true, e, false);
-				if (resp.components.zipcode && resp.components.plus4_code)
-					self.set("zipcode", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, true, e, false);
+				if (resp.organization)
+					self.set("organization", resp.organization, updateDomElement, true, e, false);
+				if (resp.components.locality)
+					self.set("locality", resp.components.locality, updateDomElement, true, e, false);
+				if (resp.components.administrative_area)
+					self.set("administrative_area", resp.components.administrative_area, updateDomElement, true, e, false);
+				if (resp.components.postal_code_short) {
+					var fullPostalCode = resp.components.postal_code_short;
+					if(resp.components.postal_code_extra)
+						fullPostalCode = fullPostalCode + "-" + resp.components.postal_code_extra;
+					self.set("postal_code", fullPostalCode, updateDomElement, true, e, false);
+				}
+				if (this.getDomFields().address4) {
+					if (resp.address1)
+						self.set("address1", resp.address1, updateDomElement, true, e, false);
+					if (resp.address2)
+						self.set("address2", resp.address2, updateDomElement, true, e, false);
+					if (resp.address3)
+						self.set("address3", resp.address3, updateDomElement, true, e, false);
+					var addressLine4 = "";
+					addressLine4 = addAddressLine(addressLine4, resp.address4, resp.address5);
+					addressLine4 = addAddressLine(addressLine4, resp.address5, resp.address6);
+					addressLine4 = addAddressLine(addressLine4, resp.address6, resp.address7);
+					addressLine4 = addAddressLine(addressLine4, resp.address7, resp.address8);
+					addressLine4 = addAddressLine(addressLine4, resp.address8, resp.address9);
+					addressLine4 = addAddressLine(addressLine4, resp.address9, resp.address10);
+					addressLine4 = addAddressLine(addressLine4, resp.address10, resp.address11);
+					addressLine4 = addAddressLine(addressLine4, resp.address11, resp.address12);
+					self.set("address4", addressLine4, updateDomElement, true, e, false);
+				} else if (this.getDomFields().address3) {
+					if (resp.address1)
+						self.set("address1", resp.address1, updateDomElement, true, e, false);
+					if (resp.address2)
+						self.set("address2", resp.address2, updateDomElement, true, e, false);
+					var addressLine3 = "";
+					addressLine3 = addAddressLine(addressLine3, resp.address3, resp.address4);
+					addressLine3 = addAddressLine(addressLine3, resp.address4, resp.address5);
+					addressLine3 = addAddressLine(addressLine3, resp.address5, resp.address6);
+					addressLine3 = addAddressLine(addressLine3, resp.address6, resp.address7);
+					addressLine3 = addAddressLine(addressLine3, resp.address7, resp.address8);
+					addressLine3 = addAddressLine(addressLine3, resp.address8, resp.address9);
+					addressLine3 = addAddressLine(addressLine3, resp.address9, resp.address10);
+					addressLine3 = addAddressLine(addressLine3, resp.address10, resp.address11);
+					addressLine3 = addAddressLine(addressLine3, resp.address11, resp.address12);
+					self.set("address3", addressLine3, updateDomElement, true, e, false);
+				} else if (this.getDomFields().address2) {
+					if (resp.address1)
+						self.set("address1", resp.address1, updateDomElement, true, e, false);
+					var addressLine2 = "";
+					addressLine2 = addAddressLine(addressLine2, resp.address2, resp.address3);
+					addressLine2 = addAddressLine(addressLine2, resp.address3, resp.address4);
+					addressLine2 = addAddressLine(addressLine2, resp.address4, resp.address5);
+					addressLine2 = addAddressLine(addressLine2, resp.address5, resp.address6);
+					addressLine2 = addAddressLine(addressLine2, resp.address6, resp.address7);
+					addressLine2 = addAddressLine(addressLine2, resp.address7, resp.address8);
+					addressLine2 = addAddressLine(addressLine2, resp.address8, resp.address9);
+					addressLine2 = addAddressLine(addressLine2, resp.address9, resp.address10);
+					addressLine2 = addAddressLine(addressLine2, resp.address10, resp.address11);
+					addressLine2 = addAddressLine(addressLine2, resp.address11, resp.address12);
+					self.set("address2", addressLine2, updateDomElement, true, e, false);
+				} else if (this.getDomFields().address1) {
+					var addressLine1 = "";
+					addressLine1 = addAddressLine(addressLine1, resp.address1, resp.address2);
+					addressLine1 = addAddressLine(addressLine1, resp.address2, resp.address3);
+					addressLine1 = addAddressLine(addressLine1, resp.address3, resp.address4);
+					addressLine1 = addAddressLine(addressLine1, resp.address4, resp.address5);
+					addressLine1 = addAddressLine(addressLine1, resp.address5, resp.address6);
+					addressLine1 = addAddressLine(addressLine1, resp.address6, resp.address7);
+					addressLine1 = addAddressLine(addressLine1, resp.address7, resp.address8);
+					addressLine1 = addAddressLine(addressLine1, resp.address8, resp.address9);
+					addressLine1 = addAddressLine(addressLine1, resp.address9, resp.address10);
+					addressLine1 = addAddressLine(addressLine1, resp.address10, resp.address11);
+					addressLine1 = addAddressLine(addressLine1, resp.address11, resp.address12);
+					self.set("address1", addressLine1, updateDomElement, true, e, false);
+				}
+				if (resp.components.country_iso_3)
+					self.set("country", resp.components.country_iso_3, updateDomElement, true, e, false);
+				
 			}
+		};
+
+		var addAddressLine = function(fullLine, addressLine, nextAddressLine) {
+			if(addressLine && nextAddressLine) {
+				if(fullLine != "")
+					fullLine += " "; 
+				fullLine += addressLine;
+			}
+			return fullLine;
 		};
 
 		this.corners = function(lastField) {
@@ -2179,9 +1589,6 @@
 					url: config.requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
 						(config.debug ? "_debug" : ""),
 					contentType: "jsonp",
-					headers: {
-						"X-Include-Invalid": config.xIncludeInvalid
-					},
 					data: addrData,
 					timeout: config.timeout
 				})
@@ -2211,60 +1618,39 @@
 		};
 
 		this.enoughInput = function() {
-			var stateText;
-
-			// Checks for state dropdown
-			if (fields.state) {
-				stateText = fields.state.value;
-				if (fields.state.dom !== undefined && fields.state.dom.length !== undefined) {
-					if (fields.state.dom.selectedIndex < 1)
-						stateText = "";
-					else
-						stateText = fields.state.dom.options[fields.state.dom.selectedIndex].text;
-				}
-			}
-			return (fields.street && fields.street.value) && (
-				((fields.city && fields.city.value) && (fields.state && stateText.length > 0)) ||
-				(fields.zipcode && fields.zipcode.value) || (fields.lastline && fields.lastline.value) ||
-				(!fields.street2 && !fields.city && !fields.state && !fields.zipcode && !fields.lastline) // Allow freeform addresses (only a street field)
+			return (fields.country && fields.country.value) && (
+				(fields.freeform && fields.freeform.value) ||
+				((fields.address1 && fields.address1.value) && (fields.postal_code && fields.postal_code.value)) ||
+				((fields.address1 && fields.address1.value) && (fields.locality && fields.locality.value) && (fields.administrative_area && fields.administrative_area.value))
 			);
 		};
 
 		this.toRequest = function() {
 			var obj = {};
-			if (fields.hasOwnProperty("lastline") &&
-				fields.hasOwnProperty("city") &&
-				fields.hasOwnProperty("state") &&
-				fields.hasOwnProperty("zipcode")) {
-				delete fields.city;
-				delete fields.state;
-				delete fields.zipcode
+			if (fields.hasOwnProperty("freeform") &&
+				fields.hasOwnProperty("address1") &&
+				fields.hasOwnProperty("locality") &&
+				fields.hasOwnProperty("administrative_area") &&
+				fields.hasOwnProperty("postal_code")) {
+				delete fields.address1;
+				delete fields.locality;
+				delete fields.administrative_area;
+				delete fields.postal_code;
 			}
 			for (var key in fields) {
 				var keyval = {};
-				if (key === "state" && fields[key].dom && fields[key].dom.length > 0)
-					keyval[key] = fields[key].dom[fields[key].dom.selectedIndex].text;
-				else
-					keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
+				keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
 				$.extend(obj, keyval);
 			}
-			return $.extend(obj, {
-				candidates: config.candidates
-			});
+			return obj;
 		};
 
 		this.toString = function() {
-			if (fields.state) {
-				var stateText = fields.state.value;
-
-				// Sets state to text from dropdown, opposed to the value
-				if (fields.state.dom.length > 0 && fields.state.dom[fields.state.dom.selectedIndex] != null) {
-					stateText = fields.state.dom[fields.state.dom.selectedIndex].text;
-				}
+			if(fields.freeform) {
+				return (fields.freeform ? fields.freeform.value + " " : "") + (fields.country ? fields.country.value : "");
+			} else {
+				return (fields.address1 ? fields.address1.value + " " : "") + (fields.locality ? fields.locality.value + " " : "") + (fields.administrative_area ? fields.administrative_area.value + " " : "") + (fields.postal_code ? fields.postal_code.value : "");
 			}
-			return (fields.street ? fields.street.value + " " : "") + (fields.street2 ? fields.street2.value + " " : "") +
-				(fields.secondary ? fields.secondary.value + " " : "") + (fields.city ? fields.city.value + " " : "") +
-				(fields.state ? stateText + " " : "") + (fields.zipcode ? fields.zipcode.value : "" + (fields.lastline ? fields.lastline.value: ""));
 		};
 
 		this.abort = function(event, keepAccept) {
@@ -2277,8 +1663,7 @@
 
 		// Based on the properties in "fields," determines if this is a single-line address
 		this.isFreeform = function() {
-			return fields.street && !fields.street2 && !fields.secondary && !fields.addressee && !fields.city &&
-				!fields.state && !fields.zipcode && !fields.urbanization && !fields.lastline;
+			return fields.freeform && fields.country;
 		};
 
 		this.get = function(key) {
@@ -2331,26 +1716,10 @@
 					return true;
 		};
 
-		this.isDomestic = function() {
-			if (!fields.country)
-				return true;
-			var countryValue = fields.country.value.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
-			var usa = ["", "0", "1", "COUNTRY", "NONE", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
-				"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
-				"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"
-			]; // 840 is ISO: 3166; and 223 is some shopping carts
-			return arrayContains(usa, countryValue) || fields.country.value == "-1";
-		};
-
-		this.autocompleteVisible = function() {
-			return config.ui && config.autocomplete && $('.smarty-autocomplete.smarty-addr-' + self.id()).is(':visible');
-		};
-
 		this.id = function() {
 			return id;
 		};
 	}
-
 
 	/*
 		Represents a <form> tag which contains mapped fields.
@@ -2373,7 +1742,6 @@
 			return this.activeAddressesNotAccepted().length == 0;
 		};
 	}
-
 
 	/*
 		Wraps output from the API in an easier-to-handle way
@@ -2405,19 +1773,11 @@
 		this.length = json.length;
 
 		this.isValid = function() {
-			return this.length == 1;
+			return (this.length == 1 && this.raw[0].analysis.verification_status == "Verified");
 		};
 
 		this.isInvalid = function() {
-			if (!config.xIncludeInvalid) {
-				return this.length == 0;
-			} else {
-				if (this.length == 1 && this.raw[0].analysis.dpv_match_code) {
-					return this.raw[0].analysis.dpv_match_code == "N";
-				} else {
-					return true;
-				}
-			}
+			return (this.length == 0 || (this.length == 1 && this.raw[0].analysis.verification_status != "Verified"));
 		};
 
 		this.isAmbiguous = function() {
@@ -2426,98 +1786,10 @@
 
 		// These next functions are not comprehensive, but helpful for common tasks.
 
-		this.isMissingSecondary = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1 ||
-				this.raw[idx].analysis.dpv_footnotes.indexOf("R1") > -1 ||
-				(this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("H#") > -1);
-		};
-
-		this.isBadSecondary = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("S#") > -1;
-		};
-
-		this.componentChanged = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("L#") > -1;
-		};
-
-		this.betterAddressExists = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("P#") > -1;
-		};
-
 		this.isExactMatch = function(idx) {
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.dpv_footnotes == "AABB";
-		};
-
-		this.isUniqueZipCode = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.dpv_footnotes.indexOf("U1") > -1 ||
-				(this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("Q#") > -1);
-		};
-
-		this.fixedAbbreviations = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("N#") > -1;
-		};
-
-		this.fixedZipCode = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("A#") > -1;
-		};
-
-		this.fixedSpelling = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.footnotes.indexOf("B#") > -1 ||
-				(this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("M#") > -1);
-		};
-
-		this.isBuildingDefault = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].metadata.building_default_indicator;
-		};
-
-		this.isMilitary = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.dpv_footnotes.indexOf("F1") > -1;
-		};
-
-		this.hasExtraSecondary = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.dpv_footnotes.indexOf("CC") > -1;
-		};
-
-		this.isLacsLink = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.lacslink_code == "A";
-		};
-
-		this.isCommercial = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].metadata.rdi == "Commercial";
-		};
-
-		this.isResidential = function(idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].metadata.rdi == "Residential";
+			return this.raw[idx].analysis.address_precision == "DeliveryPoint";
 		};
 	}
 
@@ -2567,52 +1839,24 @@
 					(config.ui ? ", document, and UI" : " and document") + ")", event, data);
 		},
 
-		AutocompleteInvoked: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AutocompleteInvoked",
-					"(A request is about to be sent to the autocomplete service)", event, data);
-			ui.requestAutocomplete(event, data);
-		},
-
-		AutocompleteReceived: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AutocompleteReceived",
-					"(A response has just been received from the autocomplete service)", event, data);
-			ui.showAutocomplete(event, data);
-		},
-
-		AutocompleteUsed: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AutocompleteUsed",
-					"(A suggested address was used from the autocomplete service)", event, data);
-		},
-
 		AddressChanged: function(event, data) {
 			if (config.debug)
 				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
 
-			if(verifiedSugg && (data.field == "city" || data.field == "lastline" || 
-				(data.address.isFreeform() && data.field == "street"))) {
-				data.address.accept();
-				data.address.verifyCount++;
-				return;
-			}
 			// If autoVerify is on, AND there's enough input in the address,
 			// AND it hasn't been verified automatically before -OR- it's a freeform address,
 			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
 			// AND it has a DOM element (it's not just a programmatic Address object)
 			// AND the address is "active" for verification
-			// AND the autocomplete suggestions aren't visible
 			// AND the form, if any, isn't already chewing on an address...
 			// THEN verification has been invoked.
 			if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 ||
-					data.address.isFreeform() || data.address.usedAutocomplete) && !data.suppressAutoVerification && data.address.hasDomFields() &&
-				data.address.active && !data.address.autocompleteVisible() &&
+					data.address.isFreeform()) && !data.suppressAutoVerification && data.address.hasDomFields() &&
+				data.address.active &&
 				(data.address.form && !data.address.form.processing))
 				trigger("VerificationInvoked", {
 					address: data.address
 				});
-			data.address.usedAutocomplete = false;
 		},
 
 		VerificationInvoked: function(event, data) {
@@ -2651,15 +1895,12 @@
 
 			if (typeof data.invoke === "function")
 				data.invoke(data.response); // User-defined callback function; we're all done here.
-
-			if (data.response.isInvalid())
-				trigger("AddressWasInvalid", data);
-			else if (config.verifySecondary && data.response.isMissingSecondary())
-				trigger("AddressWasMissingSecondary", data);
+			if (data.response.isAmbiguous())
+				trigger("AddressWasAmbiguous", data);
 			else if (data.response.isValid())
 				trigger("AddressWasValid", data);
-			else
-				trigger("AddressWasAmbiguous", data);
+			else if (data.response.isInvalid())
+				trigger("AddressWasInvalid", data);
 		},
 
 		RequestTimedOut: function(event, data) {
@@ -2703,28 +1944,11 @@
 			ui.showInvalid(data);
 		},
 
-		AddressWasMissingSecondary: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AddressWasMissingSecondary",
-					"(Response indicates input address was missing secondary", event, data);
-
-			ui.showMissingSecondary(data);
-		},
-
 		OriginalInputSelected: function(event, data) {
 			if (config.debug)
 				console.log("EVENT:", "OriginalInputSelected", "(User chose to use original input)", event, data);
 
 			data.address.accept(data, false);
-		},
-
-		UsedSuggestedAddress: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "UsedSuggestedAddress", "(User chose to a suggested address)", event, data);
-
-			data.response.chosen = data.chosenCandidate;
-			data.address.replaceWith(data.chosenCandidate, true, event);
-			data.address.accept(data);
 		},
 
 		InvalidAddressRejected: function(event, data) {
