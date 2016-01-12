@@ -11,7 +11,7 @@ import os
 
 SOURCE = '../src'
 WORKING = './working'
-JQUERY_PLUGIN = 'jquery.liveaddress.js'
+JQUERY_PLUGIN = 'jquery.liveaddress.international.js'
 IMAGE = 'dots.gif'
 MINIFICATION_ERROR = 'ERROR: A file failed the minification process ({0}). '
 SOURCE_FILE = os.path.join(SOURCE, JQUERY_PLUGIN)
