@@ -52,6 +52,18 @@
             }, {
                 freeform: '#freeform4',
                 country: '#country4'
+            }, {
+                address1: '#street15',
+                locality: '#locality5',
+                administrative_area: '#administrativearea5',
+                postal_code: '#postalcode5',
+                country: '#country5'
+            }, {
+                address1: '#street16',
+                locality: '#locality6',
+                administrative_area: '#administrativearea6',
+                postal_code: '#postalcode6',
+                country: '#country6'
             }],
             waitForStreet: true	// Hides autocomplete suggestions until a street is entered
         });
@@ -321,6 +333,66 @@
         <tr>
             <td>Country:</td>
             <td><input type="text" id="country4"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Submit Form"></td>
+        </tr>
+    </table>
+</form>
+
+<hr class="clear">
+
+<form id="twoAddresses">
+    <header>
+        <h3>Two addresses</h3>
+        <p>Likely, one would be a billing address, and the other would probably be shipping</p>
+    </header>
+    <table>
+        <tr>
+            <td>Street address:</td>
+            <td><input type="text" id="street15"></td>
+        </tr>
+        <tr>
+            <td>Locality (City):</td>
+            <td><input type="text" id="locality5"></td>
+        </tr>
+        <tr>
+            <td>Administrative Area (State):</td>
+            <td><input type="text" id="administrativearea5"></td>
+        </tr>
+        <tr>
+            <td>Postal Code:</td>
+            <td><input type="text" id="postalcode5"></td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td><input type="text" id="country5"></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <hr>
+            </td>
+        </tr>
+        <tr>
+            <td>Street address:</td>
+            <td><input type="text" id="street16"></td>
+        </tr>
+        <tr>
+            <td>Locality (City):</td>
+            <td><input type="text" id="locality6"></td>
+        </tr>
+        <tr>
+            <td>Administrative Area (State):</td>
+            <td><input type="text" id="administrativearea6"></td>
+        </tr>
+        <tr>
+            <td>Postal Code:</td>
+            <td><input type="text" id="postalcode6"></td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td><input type="text" id="country6"></td>
         </tr>
         <tr>
             <td></td>
