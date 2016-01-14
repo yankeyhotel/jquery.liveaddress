@@ -52,11 +52,11 @@
 	 *	ENTRY POINT
 	 */
 
-	$.LiveAddress = function(arg) {
-		return $(defaultSelector).LiveAddress(arg);
+	$.LiveAddressIntl = function(arg) {
+		return $(defaultSelector).LiveAddressIntl(arg);
 	};
 
-	$.fn.LiveAddress = function(arg) {
+	$.fn.LiveAddressIntl = function(arg) {
 		var matched = this,
 			wasChained = matched.prevObject ? !!matched.prevObject.prevObject : false;
 
@@ -64,14 +64,14 @@
 		var vers = $.fn.jquery.split(".");
 		if (vers.length >= 2) {
 			if (vers[0] < 1 || (vers[0] == 1 && vers[1] < 5)) {
-				console.log("jQuery version " + $.fn.jquery + " found, but LiveAddress requires jQuery version 1.5 or higher. Aborting.");
+				console.log("jQuery version " + $.fn.jquery + " found, but LiveAddressIntl requires jQuery version 1.5 or higher. Aborting.");
 				return false;
 			}
 		} else
 			return false;
 
 		if (arg.debug)
-			console.log("LiveAddress API jQuery Plugin version " + version + " (Debug mode)");
+			console.log("LiveAddressIntl API jQuery Plugin version " + version + " (Debug mode)");
 
 		// Mapping fields requires that the document be fully loaded in order to attach UI elements
 		if (document.readyState === "complete")
@@ -613,7 +613,7 @@
 			// "map" should be an array of objects mapping field types
 			// to a field by selector, all supplied by the user.
 			// "context" should be the set of elements in which fields will be mapped
-			// Context can be acquired like: $('#something').not('#something-else').LiveAddress( ... ); ...
+			// Context can be acquired like: $('#something').not('#something-else').LiveAddressIntl( ... ); ...
 
 			if (config.debug)
 				console.log("Manually mapping fields given this data:", map);
@@ -1478,7 +1478,7 @@
 
 
 	/*
-		Called every time a LiveAddress event is raised.
+		Called every time a LiveAddressIntl event is raised.
 		This allows us to maintain the binding even if the
 		callback function is changed later.
 		"event" is the actual event object, and
