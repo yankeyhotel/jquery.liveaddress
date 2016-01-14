@@ -2335,7 +2335,9 @@
 			if (!fields.country)
 				return true;
 			var countryValue = fields.country.value.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
-			var usa = ["", "0", "1", "COUNTRY", "NONE", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
+			if(fields.country.dom.selectedOptions)
+				countryValue = fields.country.dom.selectedOptions[0].text.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
+			var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
 				"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
 				"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA"
 			]; // 840 is ISO: 3166; and 223 is some shopping carts
