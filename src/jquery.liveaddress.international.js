@@ -937,8 +937,8 @@
 			// User presses esc key
 			$(document).keyup(data, function(e) {
 				if (e.keyCode == 27) { //Esc
-					$(data.selectors.abort).click();
 					undelegateAllClicks(e.data.selectors);
+					$(data.selectors.abort).click();
 					userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
 				}
 			});
