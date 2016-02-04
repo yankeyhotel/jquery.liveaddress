@@ -219,6 +219,8 @@
 				var addr = instance.getMappedAddressByID(addressID);
 				if (addr) {
 					addr.active = false;
+					addr.verifyCount = 0;
+					addr.unaccept();
 					ui.hideSmartyUI(addressID);
 				}
 			},
