@@ -1,6 +1,6 @@
 {
   "name": "liveaddress",
-  "version": "2.8.28",
+  "version": "2.8.29",
   "title": "LiveAddress - Address validation and autocomplete",
   "description": "Free or commercial plug-and-play US address verification and geocoding for website forms with autocomplete suggestions, powered by SmartyStreets.",
   "keywords": [
