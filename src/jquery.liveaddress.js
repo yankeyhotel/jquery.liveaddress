@@ -133,13 +133,225 @@
 		 *	EXPOSED (PUBLIC) FUNCTIONS
 		 */
 		instance = {
-			events: EventHandlers,
+			events: {
+				FieldsMapped: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "FieldsMapped", "(Fields mapped to their respective addresses)", event, data);
+
+					// We wait until the window is all loaded in case some elements are still loading
+					window.loaded ? ui.postMappingOperations() : $(window).load(ui.postMappingOperations);
+				},
+
+				MapInitialized: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "MapInitialized", "(Mapped fields have been wired up to the window" +
+							(config.ui ? ", document, and UI" : " and document") + ")", event, data);
+				},
+
+				AutocompleteInvoked: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AutocompleteInvoked",
+							"(A request is about to be sent to the autocomplete service)", event, data);
+					ui.requestAutocomplete(event, data);
+				},
+
+				AutocompleteReceived: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AutocompleteReceived",
+							"(A response has just been received from the autocomplete service)", event, data);
+					ui.showAutocomplete(event, data);
+				},
+
+				AutocompleteUsed: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AutocompleteUsed",
+							"(A suggested address was used from the autocomplete service)", event, data);
+				},
+
+				AddressChanged: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
+
+					if(verifiedSugg && (data.field == "city" || data.field == "lastline" || 
+						(data.address.isFreeform() && data.field == "street"))) {
+						data.address.accept();
+						data.address.verifyCount++;
+						return;
+					}
+					// If autoVerify is on, AND there's enough input in the address,
+					// AND it hasn't been verified automatically before -OR- it's a freeform address,
+					// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
+					// AND it has a DOM element (it's not just a programmatic Address object)
+					// AND the address is "active" for verification
+					// AND the autocomplete suggestions aren't visible
+					// AND the form, if any, isn't already chewing on an address...
+					// THEN verification has been invoked.
+					if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 ||
+							data.address.isFreeform() || data.address.usedAutocomplete) && !data.suppressAutoVerification && data.address.hasDomFields() &&
+						data.address.active && !data.address.autocompleteVisible() &&
+						(data.address.form && !data.address.form.processing))
+						trigger("VerificationInvoked", {
+							address: data.address
+						});
+					data.address.usedAutocomplete = false;
+				},
+
+				VerificationInvoked: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "VerificationInvoked", "(Address verification invoked)", event, data);
+
+					// Abort now if an address in the same form is already being processed
+					if (!data.address || (data.address && data.address.form && data.address.form.processing)) {
+						if (config.debug)
+							console.log("NOTICE: VerificationInvoked event handling aborted. Address is missing or an address in the " +
+								"same form is already processing.");
+						return;
+					} else if (data.address.status() == "accepted" && !data.verifyAccepted) {
+						if (config.debug)
+							console.log("NOTICE: VerificationInvoked raised on an accepted or un-changed address. Nothing to do.");
+						return trigger("Completed", data);
+					} else if (data.address.form)
+						data.address.form.processing = true;
+
+					data.address.verify(data.invoke, data.invokeFn);
+				},
+
+				RequestSubmitted: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "RequestSubmitted", "(Request submitted to server)", event, data);
+
+					ui.showLoader(data.address);
+				},
+
+				ResponseReceived: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "ResponseReceived",
+							"(Response received from server, but has not been inspected)", event, data);
+
+					ui.hideLoader(data.address);
+
+					if (typeof data.invoke === "function")
+						data.invoke(data.response); // User-defined callback function; we're all done here.
+
+					if (data.response.isInvalid())
+						trigger("AddressWasInvalid", data);
+					else if (config.verifySecondary && data.response.isMissingSecondary())
+						trigger("AddressWasMissingSecondary", data);
+					else if (data.response.isValid())
+						trigger("AddressWasValid", data);
+					else
+						trigger("AddressWasAmbiguous", data);
+				},
+
+				RequestTimedOut: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "RequestTimedOut", "(Request timed out)", event, data);
+
+					if (data.address.form)
+						delete data.address.form.processing; // Tell the potentially duplicate event handlers that we're done.
+
+					// If this was a form submit, don't let a network failure hold them back; just accept it and move on
+					if (data.invoke)
+						data.address.accept(data, false);
+
+					ui.enableFields(data.address);
+					ui.hideLoader(data.address);
+				},
+
+				AddressWasValid: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressWasValid", "(Response indicates input address was valid)", event, data);
+
+					var addr = data.address;
+					var resp = data.response;
+
+					data.response.chosen = resp.raw[0];
+					addr.replaceWith(resp.raw[0], true, event);
+					addr.accept(data);
+				},
+
+				AddressWasAmbiguous: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressWasAmbiguous", "(Response indiciates input address was ambiguous)", event, data);
+
+					ui.showAmbiguous(data);
+				},
+
+				AddressWasInvalid: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressWasInvalid", "(Response indicates input address was invalid)", event, data);
+
+					ui.showInvalid(data);
+				},
+
+				AddressWasMissingSecondary: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressWasMissingSecondary",
+							"(Response indicates input address was missing secondary", event, data);
+
+					ui.showMissingSecondary(data);
+				},
+
+				OriginalInputSelected: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "OriginalInputSelected", "(User chose to use original input)", event, data);
+
+					data.address.accept(data, false);
+				},
+
+				UsedSuggestedAddress: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "UsedSuggestedAddress", "(User chose to a suggested address)", event, data);
+
+					data.response.chosen = data.chosenCandidate;
+					data.address.replaceWith(data.chosenCandidate, true, event);
+					data.address.accept(data);
+				},
+
+				InvalidAddressRejected: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "InvalidAddressRejected", "(User chose to correct an invalid address)", event, data);
+
+					if (data.address.form)
+						delete data.address.form.processing; // We're done with this address and ready for the next, potentially
+
+					trigger("Completed", data);
+				},
+
+				AddressAccepted: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressAccepted", "(Address marked accepted)", event, data);
+
+					if (!data)
+						data = {};
+
+					if (data.address && data.address.form)
+						delete data.address.form.processing; // We're done with this address and ready for the next, potentially
+
+					// If this was the result of a form submit, re-submit the form (whether by clicking the button or raising form submit event)
+					if (data.invoke && data.invokeFn)
+						submitForm(data.invoke, data.invokeFn);
+
+					trigger("Completed", data);
+				},
+
+				Completed: function(event, data) {
+					if (config.debug)
+						console.log("EVENT:", "Completed", "(All done)", event, data);
+
+					if (data.address) {
+						ui.enableFields(data.address);
+						if (data.address.form)
+							delete data.address.form.processing; // We're done with this address and ready for the next, potentially
+					}
+				}
+			},
 			on: function(eventType, userHandler) {
-				if (!EventHandlers[eventType] || typeof userHandler !== 'function')
+				if (!this.events[eventType] || typeof userHandler !== 'function')
 					return false;
 
-				var previousHandler = EventHandlers[eventType];
-				EventHandlers[eventType] = function(event, data) {
+				var previousHandler = this.events[eventType];
+				this.events[eventType] = function(event, data) {
 					userHandler(event, data, previousHandler);
 				};
 			},
@@ -242,7 +454,7 @@
 
 
 		// Unbind old handlers then bind each handler to an event
-		for (var prop in EventHandlers) {
+		for (var prop in instance.events) {
 			$(document).unbind(prop, HandleEvent);
 			bind(prop);
 		}
@@ -2539,7 +2751,7 @@
 		"data" is anything extra to pass to the event handler.
 	*/
 	function HandleEvent(event, data) {
-		var handler = EventHandlers[event.type];
+		var handler = instance.events[event.type];
 		if (handler)
 			handler(event, data);
 	}
@@ -2553,220 +2765,6 @@
 				}, 5);
 			} else if (invokeFunction == "submit")
 				$(invokeOn).submit(); // For submit(), we have to use jQuery's, so that all its submit handlers fire.
-		}
-	};
-
-	var EventHandlers = {
-		FieldsMapped: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "FieldsMapped", "(Fields mapped to their respective addresses)", event, data);
-
-			// We wait until the window is all loaded in case some elements are still loading
-			window.loaded ? ui.postMappingOperations() : $(window).load(ui.postMappingOperations);
-		},
-
-		MapInitialized: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "MapInitialized", "(Mapped fields have been wired up to the window" +
-					(config.ui ? ", document, and UI" : " and document") + ")", event, data);
-		},
-
-		AutocompleteInvoked: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AutocompleteInvoked",
-					"(A request is about to be sent to the autocomplete service)", event, data);
-			ui.requestAutocomplete(event, data);
-		},
-
-		AutocompleteReceived: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AutocompleteReceived",
-					"(A response has just been received from the autocomplete service)", event, data);
-			ui.showAutocomplete(event, data);
-		},
-
-		AutocompleteUsed: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AutocompleteUsed",
-					"(A suggested address was used from the autocomplete service)", event, data);
-		},
-
-		AddressChanged: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
-
-			if(verifiedSugg && (data.field == "city" || data.field == "lastline" || 
-				(data.address.isFreeform() && data.field == "street"))) {
-				data.address.accept();
-				data.address.verifyCount++;
-				return;
-			}
-			// If autoVerify is on, AND there's enough input in the address,
-			// AND it hasn't been verified automatically before -OR- it's a freeform address,
-			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
-			// AND it has a DOM element (it's not just a programmatic Address object)
-			// AND the address is "active" for verification
-			// AND the autocomplete suggestions aren't visible
-			// AND the form, if any, isn't already chewing on an address...
-			// THEN verification has been invoked.
-			if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 ||
-					data.address.isFreeform() || data.address.usedAutocomplete) && !data.suppressAutoVerification && data.address.hasDomFields() &&
-				data.address.active && !data.address.autocompleteVisible() &&
-				(data.address.form && !data.address.form.processing))
-				trigger("VerificationInvoked", {
-					address: data.address
-				});
-			data.address.usedAutocomplete = false;
-		},
-
-		VerificationInvoked: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "VerificationInvoked", "(Address verification invoked)", event, data);
-
-			// Abort now if an address in the same form is already being processed
-			if (!data.address || (data.address && data.address.form && data.address.form.processing)) {
-				if (config.debug)
-					console.log("NOTICE: VerificationInvoked event handling aborted. Address is missing or an address in the " +
-						"same form is already processing.");
-				return;
-			} else if (data.address.status() == "accepted" && !data.verifyAccepted) {
-				if (config.debug)
-					console.log("NOTICE: VerificationInvoked raised on an accepted or un-changed address. Nothing to do.");
-				return trigger("Completed", data);
-			} else if (data.address.form)
-				data.address.form.processing = true;
-
-			data.address.verify(data.invoke, data.invokeFn);
-		},
-
-		RequestSubmitted: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "RequestSubmitted", "(Request submitted to server)", event, data);
-
-			ui.showLoader(data.address);
-		},
-
-		ResponseReceived: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "ResponseReceived",
-					"(Response received from server, but has not been inspected)", event, data);
-
-			ui.hideLoader(data.address);
-
-			if (typeof data.invoke === "function")
-				data.invoke(data.response); // User-defined callback function; we're all done here.
-
-			if (data.response.isInvalid())
-				trigger("AddressWasInvalid", data);
-			else if (config.verifySecondary && data.response.isMissingSecondary())
-				trigger("AddressWasMissingSecondary", data);
-			else if (data.response.isValid())
-				trigger("AddressWasValid", data);
-			else
-				trigger("AddressWasAmbiguous", data);
-		},
-
-		RequestTimedOut: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "RequestTimedOut", "(Request timed out)", event, data);
-
-			if (data.address.form)
-				delete data.address.form.processing; // Tell the potentially duplicate event handlers that we're done.
-
-			// If this was a form submit, don't let a network failure hold them back; just accept it and move on
-			if (data.invoke)
-				data.address.accept(data, false);
-
-			ui.enableFields(data.address);
-			ui.hideLoader(data.address);
-		},
-
-		AddressWasValid: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AddressWasValid", "(Response indicates input address was valid)", event, data);
-
-			var addr = data.address;
-			var resp = data.response;
-
-			data.response.chosen = resp.raw[0];
-			addr.replaceWith(resp.raw[0], true, event);
-			addr.accept(data);
-		},
-
-		AddressWasAmbiguous: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AddressWasAmbiguous", "(Response indiciates input address was ambiguous)", event, data);
-
-			ui.showAmbiguous(data);
-		},
-
-		AddressWasInvalid: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AddressWasInvalid", "(Response indicates input address was invalid)", event, data);
-
-			ui.showInvalid(data);
-		},
-
-		AddressWasMissingSecondary: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AddressWasMissingSecondary",
-					"(Response indicates input address was missing secondary", event, data);
-
-			ui.showMissingSecondary(data);
-		},
-
-		OriginalInputSelected: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "OriginalInputSelected", "(User chose to use original input)", event, data);
-
-			data.address.accept(data, false);
-		},
-
-		UsedSuggestedAddress: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "UsedSuggestedAddress", "(User chose to a suggested address)", event, data);
-
-			data.response.chosen = data.chosenCandidate;
-			data.address.replaceWith(data.chosenCandidate, true, event);
-			data.address.accept(data);
-		},
-
-		InvalidAddressRejected: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "InvalidAddressRejected", "(User chose to correct an invalid address)", event, data);
-
-			if (data.address.form)
-				delete data.address.form.processing; // We're done with this address and ready for the next, potentially
-
-			trigger("Completed", data);
-		},
-
-		AddressAccepted: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "AddressAccepted", "(Address marked accepted)", event, data);
-
-			if (!data)
-				data = {};
-
-			if (data.address && data.address.form)
-				delete data.address.form.processing; // We're done with this address and ready for the next, potentially
-
-			// If this was the result of a form submit, re-submit the form (whether by clicking the button or raising form submit event)
-			if (data.invoke && data.invokeFn)
-				submitForm(data.invoke, data.invokeFn);
-
-			trigger("Completed", data);
-		},
-
-		Completed: function(event, data) {
-			if (config.debug)
-				console.log("EVENT:", "Completed", "(All done)", event, data);
-
-			if (data.address) {
-				ui.enableFields(data.address);
-				if (data.address.form)
-					delete data.address.form.processing; // We're done with this address and ready for the next, potentially
-			}
 		}
 	};
 
