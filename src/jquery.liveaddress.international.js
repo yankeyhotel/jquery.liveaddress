@@ -31,6 +31,7 @@
 
 	var defaults = {
 		candidates: 3, // Number of suggestions to show if ambiguous
+		autocomplete: 10, // Number of autocomplete suggestions; set to 0 or false to disable
 		requestUrlIntl: "https://international-street.api.smartystreets.com/verify", // International API endpoint
 		requestUrlUS: "https://api.smartystreets.com/street-address", // US API endpoint
 		timeout: 5000, // How long to wait before the request times out (5000 = 5 seconds)
@@ -106,12 +107,21 @@
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrlIntl = config.requestUrlIntl || defaults.requestUrlIntl;
 		config.requestUrlUS = config.requestUrlUS || defaults.requestUrlUS;
+		config.autocomplete = typeof config.autocomplete === 'undefined' ? defaults.autocomplete : config.autocomplete;
+		config.cityFilter = typeof config.cityFilter === 'undefined' ? "" : config.cityFilter;
+		config.stateFilter = typeof config.stateFilter === 'undefined' ? "" : config.stateFilter;
+		config.cityStatePreference = typeof config.cityStatePreference === 'undefined' ? "" : config.cityStatePreference;
+		config.geolocate = typeof config.geolocate === 'undefined' ? true : config.geolocate;
+		config.geolocatePrecision = typeof config.geolocatePrecision === 'undefined' ? 'city' : config.geolocatePrecision;
+		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
+		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
 		config.geocode = typeof config.geocode === 'undefined' ? false : config.geolocate;
 		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
-		// Parameter used for internal uses. If set to true, freeform will fail. Use with caution
+		if (typeof config.autocomplete === 'number')
+			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
 
 		/*
 		 *	EXPOSED (PUBLIC) FUNCTIONS
@@ -178,6 +188,15 @@
 			setKey: function (htmlkey) {
 				config.key = htmlkey;
 			},
+			setCityFilter: function (cities) {
+				config.cityFilter = cities;
+			},
+			setStateFilter: function (states) {
+				config.stateFilter = states;
+			},
+			setCityStatePreference: function (pref) {
+				config.cityStatePreference = pref;
+			},
 			activate: function (addressID) {
 				var addr = instance.getMappedAddressByID(addressID);
 				if (addr) {
@@ -191,6 +210,8 @@
 				var addr = instance.getMappedAddressByID(addressID);
 				if (addr) {
 					addr.active = false;
+					addr.verifyCount = 0;
+					addr.unaccept();
 					ui.hideSmartyUI(addressID);
 				}
 			},
@@ -234,7 +255,9 @@
 	function UI() {
 		var submitHandler; // Function which is later bound to handle form submits
 		var formDataProperty = "smarty-form"; // Indicates whether we've stored the form already
-
+		var autocompleteResponse; // The latest response from the autocomplete server
+		var autocplCounter = 0; // A counter so that only the most recent JSONP request is used
+		var autocplRequests = []; // The array that holds autocomplete requests in order
 		var loaderWidth = 24,
 			loaderHeight = 8; // TODO: Update these if the image changes
 		var uiCss = "<style>" + ".smarty-dots { display: none; position: absolute; z-index: 999; width: " +
@@ -287,7 +310,12 @@
 			"background: #A6D187 !important; box-shadow: inset 0 9px 15px #E3F6D5; }" + ".smarty-tag-grayed:hover " +
 			"{ border-color: #333 !important; }" + ".smarty-tag-check { padding-left: 4px; " +
 			"text-decoration: none !important; }" + ".smarty-tag-text { font-size: 12px !important; position: absolute; " +
-			"top: 0; left: 16px; width: 50px !important; text-align: center !important; }" + "</style>";
+			"top: 0; left: 16px; width: 50px !important; text-align: center !important; }" + ".smarty-autocomplete " +
+			"{ border: 1px solid #777; background: white; overflow: hidden; white-space: nowrap; " +
+			"box-shadow: 1px 1px 3px #555; }" + ".smarty-suggestion { display: block; color: #444; " +
+			"text-decoration: none !important; font-size: 12px; padding: 1px 5px; }" + ".smarty-active-suggestion " +
+			"{ background: #EEE; color: #000; border: none; outline: none; }" + ".smarty-no-suggestions " +
+			"{ padding: 1px 5px; font-size: 12px; color: #AAA; font-style: italic; }" + "</style>";
 
 		this.postMappingOperations = function () {
 			// Injects materials into the DOM, binds to form submit events, etc... very important.
@@ -323,6 +351,17 @@
 							.parent('.smarty-ui')
 							.css('top', addrOffset.top + 'px')
 							.css('left', addrOffset.left + 'px');
+
+						if (config.autocomplete) { // Position of autocomplete boxes
+							var containerUi = $('.smarty-autocomplete.smarty-addr-' + addr.id()).closest('.smarty-ui');
+							var domFields = addr.getDomFields();
+							if (domFields['address1']) {
+								containerUi.css({
+									"left": $(domFields['address1']).offset().left + "px",
+									"top": ($(domFields['address1']).offset().top + $(domFields['address1']).outerHeight(false)) + "px"
+								});
+							}
+						}
 					});
 
 				}
@@ -343,6 +382,136 @@
 					// The undo functionality still works in those cases, but with no visible changes, the address doesn't fire "AddressChanged"...
 				});
 
+				// Prepare autocomplete UI
+				if (config.autocomplete && config.key) {
+					// For every mapped address, wire up autocomplete
+					for (var i = 0; i < forms.length; i++) {
+						var f = forms[i];
+
+						for (var j = 0; j < f.addresses.length; j++) {
+							var addr = f.addresses[j];
+							var domFields = addr.getDomFields();
+
+							if (domFields['address1']) {
+								var strField = $(domFields['address1']);
+								var containerUi = $('<div class="smarty-ui"></div>');
+								var autoUi = $('<div class="smarty-autocomplete"></div>');
+
+								autoUi.addClass('smarty-addr-' + addr.id());
+								containerUi.data("addrID", addr.id());
+								containerUi.append(autoUi);
+
+								containerUi.css({
+									"position": "absolute",
+									"left": strField.offset().left + "px",
+									"top": (strField.offset().top + strField.outerHeight(false)) + "px"
+								});
+
+								containerUi.hide().appendTo("body");
+
+								containerUi.delegate(".smarty-suggestion", "click", {
+									addr: addr,
+									containerUi: containerUi
+								}, function (event) {
+									var sugg = autocompleteResponse.suggestions[$(this).data('suggIndex')];
+									useAutocompleteSuggestion(event.data.addr, sugg, event.data.containerUi);
+								});
+
+								containerUi.delegate(".smarty-suggestion", "mouseover", function () {
+									$('.smarty-active-suggestion').removeClass('smarty-active-suggestion');
+									$(this).addClass('smarty-active-suggestion');
+								});
+
+								containerUi.delegate(".smarty-active-suggestion", "mouseleave", function () {
+									$(this).removeClass('smarty-active-suggestion');
+								});
+								strField.attr("autocomplete", "off"); // Tell Firefox to keep quiet
+
+								strField.blur({
+									containerUi: containerUi
+								}, function (event) {
+									setTimeout((function (event) {
+										return function () {
+											if (event.data) event.data.containerUi.hide();
+										};
+									})(event), 300); // This line is proudly IE9-compatible
+								});
+
+								strField.keydown({
+									containerUi: containerUi,
+									addr: addr
+								}, function (event) {
+									var suggContainer = $('.smarty-autocomplete', event.data.containerUi);
+									var currentChoice = $('.smarty-active-suggestion:visible', suggContainer).first();
+									var choiceSelectionIsNew = false;
+
+									if (event.keyCode == 9) { // Tab key
+										if (currentChoice.length > 0) {
+											var domFields = event.data.addr.getDomFields();
+											if (domFields['zipcode'])
+												$(domFields['zipcode']).focus();
+											else
+												$(domFields['address1']).blur();
+											useAutocompleteSuggestion(event.data.addr, autocompleteResponse.suggestions[currentChoice.data("suggIndex")], event.data.containerUi);
+											return addr.isFreeform() ? true : suppress(event);
+										} else
+											event.data.containerUi.hide();
+									} else if (event.keyCode == 40) { // Down arrow
+										if (!currentChoice.hasClass('smarty-suggestion')) {
+											currentChoice = $('.smarty-suggestion', suggContainer).first().mouseover();
+											choiceSelectionIsNew = true;
+										}
+
+										if (!choiceSelectionIsNew) {
+											if (currentChoice.next('.smarty-addr-' + event.data.addr.id() + ' .smarty-suggestion').length > 0)
+												currentChoice.next('.smarty-suggestion').mouseover();
+											else
+												currentChoice.removeClass('smarty-active-suggestion');
+										}
+
+										moveCursorToEnd(this);
+									} else if (event.keyCode == 38) { // Up arrow
+										if (!currentChoice.hasClass('smarty-suggestion')) {
+											currentChoice = $('.smarty-suggestion', suggContainer).last().mouseover();
+											choiceSelectionIsNew = true;
+										}
+
+										if (!choiceSelectionIsNew) {
+											if (currentChoice.prev('.smarty-addr-' + event.data.addr.id() + ' .smarty-suggestion').length > 0)
+												currentChoice.prev('.smarty-suggestion').mouseover();
+											else
+												currentChoice.removeClass('smarty-active-suggestion');
+										}
+
+										moveCursorToEnd(this);
+									}
+								});
+
+								// Flip the on switch!
+								strField.keyup({
+									form: f,
+									addr: addr,
+									streetField: strField,
+									containerUi: containerUi
+								}, doAutocomplete);
+							}
+						}
+
+						$(document).keyup(function (event) {
+							if (event.keyCode == 27) // Esc key
+								$('.smarty-autocomplete').closest('.smarty-ui').hide();
+						});
+					}
+
+					// Try .5 and 1.5 seconds after the DOM loads to re-position UI elements; hack for Firefox.
+					setTimeout(function () {
+						$(window).resize();
+					}, 500);
+					setTimeout(function () {
+						$(window).resize();
+					}, 1500);
+				}
+
 			}
 
 			if (config.submitVerify) {
@@ -351,8 +520,8 @@
 					var f = forms[i];
 
 					submitHandler = function (e) {
-						// Don't invoke verification if it's already processing
-						if (e.data.form && e.data.form.processing)
+						// Don't invoke verification if it's already processing or autocomplete is open and the user was pressing Enter to use a suggestion
+						if ((e.data.form && e.data.form.processing) || $('.smarty-active-suggestion:visible').length > 0)
 							return suppress(e);
 
 						/*
@@ -441,6 +610,151 @@
 
 			trigger("MapInitialized");
 		};
+
+		function doAutocomplete(event) {
+			var addr = event.data.addr;
+			var streetField = event.data.streetField;
+			var input = $.trim(event.data.streetField.val());
+			var containerUi = event.data.containerUi;
+			var suggContainer = $('.smarty-autocomplete', containerUi);
+
+			if (!input) {
+				addr.lastStreetInput = input;
+				suggContainer.empty();
+				containerUi.hide();
+			}
+
+			if (event.keyCode == 13) { // Enter/return
+				if ($('.smarty-active-suggestion:visible').length > 0)
+					useAutocompleteSuggestion(addr, autocompleteResponse.suggestions[$('.smarty-active-suggestion:visible').first().data('suggIndex')], containerUi);
+				containerUi.hide();
+				streetField.blur();
+				return suppress(event);
+			}
+
+			if (event.keyCode == 40) { // Down arrow
+				moveCursorToEnd(streetField[0]);
+				return;
+			}
+
+			if (event.keyCode == 38) { // Up arrow
+				moveCursorToEnd(streetField[0]);
+				return;
+			}
+
+			if (!input || input == addr.lastStreetInput || !addr.isDomestic())
+				return;
+
+			addr.lastStreetInput = input; // Used so that autocomplete only fires on real changes (i.e. not just whitespace)
+
+			trigger('AutocompleteInvoked', {
+				containerUi: containerUi,
+				suggContainer: suggContainer,
+				streetField: streetField,
+				input: input,
+				addr: addr
+			});
+		}
+
+		this.requestAutocomplete = function (event, data) {
+			if (data.input && data.addr.isDomestic() && autocompleteResponse)
+				data.containerUi.show();
+
+			var autocplrequest = {
+				callback: function (counter, json) {
+					var patt = new RegExp("^\\w+\\s\\w+|^[A-Za-z]+$|^[A-Za-z]+\\s\\w*");
+					var filtering = patt.test(data.input);
+					autocompleteResponse = json;
+					data.suggContainer.empty();
+
+					if (!json.suggestions || json.suggestions.length == 0) {
+						data.suggContainer.html('<div class="smarty-no-suggestions">No suggestions</div>');
+						return;
+					}
+
+					if (config.waitForStreet && filtering == false) {
+						var message = "";
+						if (config.stateFilter || config.cityFilter || config.geolocate || config.cityStatePreference) {
+							message = "filtered";
+						} else {
+							message = "address";
+						}
+						data.suggContainer.html('<div class="smarty-no-suggestions">Type more for ' + message + ' suggestions</div>')
+					} else {
+						for (var j = 0; j < json.suggestions.length; j++) {
+							var suggAddr = json.suggestions[j].text.replace(/<|>/g, "");
+							suggAddr = suggAddr.replace(new RegExp('(' + data.input + ')', 'ig'), '<b>$1</b>');
+							var link = $('<a href="javascript:" class="smarty-suggestion">' + suggAddr + '</a>');
+							link.data("suggIndex", j);
+
+							data.suggContainer.append(link);
+						}
+					}
+
+					data.suggContainer.css({
+						"width": Math.max(data.streetField.outerWidth(false), 250) + "px"
+					});
+
+					data.containerUi.show();
+
+					// Delete all older callbacks so they don't get executed later because of latency
+					autocplRequests.splice(0, counter);
+				},
+				number: autocplCounter++
+			};
+
+			autocplRequests[autocplrequest.number] = autocplrequest;
+
+			$.getJSON("https://autocomplete-api.smartystreets.com/suggest?callback=?", {
+				"auth-id": config.key,
+				"auth-token": config.token,
+				prefix: data.input,
+				city_filter: config.cityFilter,
+				state_filter: config.stateFilter,
+				prefer: config.cityStatePreference,
+				suggestions: config.autocomplete,
+				geolocate: config.geolocate,
+				geolocate_precision: config.geolocatePrecision
+			}, function (json) {
+				trigger("AutocompleteReceived", $.extend(data, {
+					json: json,
+					autocplrequest: autocplrequest
+				}));
+			});
+		};
+
+		this.showAutocomplete = function (event, data) {
+			if (autocplRequests[data.autocplrequest.number])
+				autocplRequests[data.autocplrequest.number].callback(data.autocplrequest.number, data.json);
+		};
+
+		function useAutocompleteSuggestion(addr, suggestion, containerUi) {
+			var domfields = addr.getDomFields();
+			containerUi.hide(); // It's important that the suggestions are hidden before AddressChanged event fires
+
+			if (addr.isFreeform())
+				$(domfields['address1']).val(suggestion.text).change();
+			else {
+				if (domfields['postal_code']) {
+					$(domfields['postal_code']).val("").change();
+				}
+				if (domfields['adress1'])
+					$(domfields['address1']).val(suggestion.street_line).change();
+				// State filled in before city so autoverify is not invoked without finishing using the suggestion
+				if (domfields['administrative_area']) {
+					$(domfields['administrative_area']).val(suggestion.state).change();
+				}
+				if (domfields['locality']) {
+					$(domfields['locality']).val("").change();
+					addr.usedAutocomplete = true;
+					$(domfields['locality']).val(suggestion.city).change();
+				}
+			}
+			trigger("AutocompleteUsed", {
+				address: addr,
+				suggestion: suggestion
+			});
+		}
 
 		// Computes where the little checkmark tag of the UI goes, relative to the boundaries of the last field
 		function uiTagOffset(corners) {
@@ -547,10 +861,13 @@
 		//hides the SmartyUI when deactivating 1 address
 		this.hideSmartyUI = function (addressID) {
 			var smartyui = $('.smarty-addr-' + addressID + ':visible');
+			var autocompleteui = $('.smarty-autocomplete.smarty-addr-' + addressID);
 			smartyui.addClass("deactivated");
 			smartyui.parent().addClass("deactivated");
+			autocompleteui.addClass("deactivated");
 			smartyui.hide();
 			smartyui.parent().hide();
+			autocompleteui.hide();
 		};
 
 		// If anything was previously mapped, this resets it all for a new mapping.
@@ -579,6 +896,8 @@
 						}
 						$(doms[prop]).unbind('change');
 					}
+					if (doms['address1'])
+						$(doms['address1']).unbind('keyup').unbind('keydown').unbind('blur');
 				}
 
 				// Unbind our form submit and submit-button click handlers
@@ -602,6 +921,15 @@
 			if (config.debug)
 				console.log("Done cleaning up; ready for new mapping.");
 		};
+
+		function disableBrowserAutofill(dom) {
+			//Does not disable autofill if config.autocomplete is disabled
+			if (config.autocomplete > 0) {
+				for (var i = 0; i < dom.getElementsByTagName("input").length; i++) {
+					dom.getElementsByTagName("input")[i].autocomplete = "smartystreets";
+				}
+			}
+		}
 
 		// ** MANUAL MAPPING ** //
 		this.mapFields = function (map, context) {
@@ -660,6 +988,8 @@
 				if (!$(formDom).data(formDataProperty)) {
 					// Mark the form as mapped then add it to our list
 					$(formDom).data(formDataProperty, 1);
+					disableBrowserAutofill(form.dom);
+					formsFound.push(form);
 					formsFound.push(form);
 				} else {
 					// Find the form in our list since we already put it there
@@ -1002,6 +1332,7 @@
 		this.verifyCount = 0; // Number of times this address was submitted for verification
 		this.lastField; // The last field found (last to appear in the DOM) during mapping, or the order given
 		this.active = true; // If true, verify the address. If false, pass-thru entirely.
+		this.lastStreetInput = ""; // Used by autocomplete to detect changes
 
 		// Constructor-esque functionality (save the fields in this address object)
 		this.load = function (domMap, addressID) {
@@ -1454,6 +1785,10 @@
 			return arrayContains(usa, countryValue) || fields.country.value == "-1";
 		};
 
+		this.autocompleteVisible = function () {
+			return config.ui && config.autocomplete && $('.smarty-autocomplete.smarty-addr-' + self.id()).is(':visible');
+		};
+
 		this.id = function () {
 			return id;
 		};
@@ -1580,6 +1915,26 @@
 					(config.ui ? ", document, and UI" : " and document") + ")", event, data);
 		},
 
+		AutocompleteInvoked: function (event, data) {
+			if (config.debug)
+				console.log("EVENT:", "AutocompleteInvoked",
+					"(A request is about to be sent to the autocomplete service)", event, data);
+			ui.requestAutocomplete(event, data);
+		},
+
+		AutocompleteReceived: function (event, data) {
+			if (config.debug)
+				console.log("EVENT:", "AutocompleteReceived",
+					"(A response has just been received from the autocomplete service)", event, data);
+			ui.showAutocomplete(event, data);
+		},
+
+		AutocompleteUsed: function (event, data) {
+			if (config.debug)
+				console.log("EVENT:", "AutocompleteUsed",
+					"(A suggested address was used from the autocomplete service)", event, data);
+		},
+
 		AddressChanged: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
@@ -1589,15 +1944,17 @@
 			// AND autoVerification isn't suppressed (from an Undo click, even on a freeform address)
 			// AND it has a DOM element (it's not just a programmatic Address object)
 			// AND the address is "active" for verification
+			// AND the autocomplete suggestions aren't visible
 			// AND the form, if any, isn't already chewing on an address...
 			// THEN verification has been invoked.
 			if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 ||
-				data.address.isFreeform()) && !data.suppressAutoVerification && data.address.hasDomFields() &&
-				data.address.active &&
+				data.address.isFreeform() || data.address.usedAutcomplete) && !data.suppressAutoVerification && data.address.hasDomFields() &&
+				data.address.active && !data.address.autocompleteVisible() &&
 				(data.address.form && !data.address.form.processing))
 				trigger("VerificationInvoked", {
 					address: data.address
 				});
+			data.address.usedAutocomplete = false;
 		},
 
 		VerificationInvoked: function (event, data) {
