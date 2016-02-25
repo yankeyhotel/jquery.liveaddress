@@ -31,7 +31,8 @@
 
 	var defaults = {
 		candidates: 3, // Number of suggestions to show if ambiguous
-		requestUrl: "https://international-street.api.smartystreets.com/verify", // API endpoint
+		requestUrlIntl: "https://international-street.api.smartystreets.com/verify", // International API endpoint
+		requestUrlUS: "https://api.smartystreets.com/street-address", // US API endpoint
 		timeout: 5000, // How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium", // Animation speed
 		ambiguousMessage: "Choose the correct address", // Message when address is ambiguous
@@ -103,7 +104,8 @@
 		config.certifyMessage = config.certifyMessage || defaults.certifyMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
-		config.requestUrl = config.requestUrl || defaults.requestUrl;
+		config.requestUrlIntl = config.requestUrlIntl || defaults.requestUrlIntl;
+		config.requestUrlUS = config.requestUrlUS || defaults.requestUrlUS;
 		config.geocode = typeof config.geocode === 'undefined' ? false : config.geolocate;
 		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
 
@@ -1093,14 +1095,18 @@
 						(resp.delivery_line_2 ? resp.delivery_line_2 + " " : "") +
 						(resp.components.urbanization ? resp.components.urbanization + " " : "") +
 						(resp.last_line ? resp.last_line : "");
-
-					self.set("address1", singleLineAddr, updateDomElement, true, e, false);
+					var fieldKey = "freeform";
+					if (fields.address1) {
+						fieldKey = "address1";
+					}
+					self.set(fieldKey, singleLineAddr, updateDomElement, true, e, false);
 				} else {
 					if (resp.addressee)
 						self.set("organization", resp.addressee, updateDomElement, true, e, false);
 					if (resp.delivery_line_1)
 						self.set("address1", resp.delivery_line_1, updateDomElement, true, e, false);
-					self.set("address2", resp.delivery_line_2 || "", updateDomElement, true, e, false); // Rarely used; must otherwise be blank.
+					if (resp.delivery_line_2)
+						self.set("address2", resp.delivery_line_2 || "", updateDomElement, true, e, false); // Rarely used; must otherwise be blank.
 					if (resp.components.city_name)
 						self.set("locality", resp.components.city_name, updateDomElement, true, e, false);
 					if (resp.components.state_abbreviation)
@@ -1276,9 +1282,9 @@
 			var addrData = self.toRequest();
 			var credentials = config.token ? "auth-id=" + encodeURIComponent(config.key) + "&auth-token=" +
 			encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
-			var requestUrl = config.requestUrl;
+			var requestUrl = config.requestUrlIntl;
 			if (self.isDomestic()) {
-				requestUrl = "https://api.smartystreets.com/street-address";
+				requestUrl = config.requestUrlUS;
 				addrData = self.toRequestUS();
 			}
 			$.ajax({
@@ -1316,6 +1322,7 @@
 		this.enoughInput = function () {
 			return (fields.country && fields.country.value) && (
 					(fields.freeform && fields.freeform.value) ||
+					(fields.address1 && fields.address1.value) ||
 					((fields.address1 && fields.address1.value) && (fields.postal_code && fields.postal_code.value)) ||
 					((fields.address1 && fields.address1.value) && (fields.locality && fields.locality.value) && (fields.administrative_area && fields.administrative_area.value))
 				);
