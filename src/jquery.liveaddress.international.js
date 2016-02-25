@@ -1108,7 +1108,7 @@
 					if (resp.components.zipcode && resp.components.plus4_code)
 						self.set("postal_code", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, true, e, false);
 				}
-				self.set("country", "United States", updateDomElement, true, e, false);
+				self.set("country", "USA", updateDomElement, true, e, false);
 			} else { // Sent via international API
 				if (self.isFreeform()) {
 					var singleLineAddr = (resp.organization ? resp.organization + " " : "") +
