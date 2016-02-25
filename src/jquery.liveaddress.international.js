@@ -1,24 +1,24 @@
 /**
-	LiveAddress International API jQuery Plugin
-	by SmartyStreets - smartystreets.com
+ LiveAddress International API jQuery Plugin
+ by SmartyStreets - smartystreets.com
 
-	(c) 2016 SmartyStreets
+ (c) 2016 SmartyStreets
 
-	LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE VERSION 3
-	(http://opensource.org/licenses/gpl-3.0.html)
+ LICENSED UNDER THE GNU GENERAL PUBLIC LICENSE VERSION 3
+ (http://opensource.org/licenses/gpl-3.0.html)
 
-	Documentation: 			http://smartystreets.com/kb/liveaddress-api/website-forms
-	Version: 				(See variable below for version)
-	Minified:				(See documentation or GitHub repository for minified script file)
-	Latest stable version: 	(See documentation)
-	Bleeding-edge release: 	https://github.com/smartystreets/jquery.liveaddress
+ Documentation:      http://smartystreets.com/kb/liveaddress-api/website-forms
+ Version:        (See variable below for version)
+ Minified:        (See documentation or GitHub repository for minified script file)
+ Latest stable version:  (See documentation)
+ Bleeding-edge release:  https://github.com/smartystreets/jquery.liveaddress
 
-	Feel free to contribute to this project on GitHub by
-	submitting pull requests and reporting issues.
-**/
+ Feel free to contribute to this project on GitHub by
+ submitting pull requests and reporting issues.
+ **/
 
 
-(function($, window, document) {
+(function ($, window, document) {
 	"use strict"; //  http://ejohn.org/blog/ecmascript-5-strict-mode-json-and-more/
 
 	/*
@@ -52,11 +52,11 @@
 	 *	ENTRY POINT
 	 */
 
-	$.LiveAddressIntl = function(arg) {
+	$.LiveAddressIntl = function (arg) {
 		return $(defaultSelector).LiveAddressIntl(arg);
 	};
 
-	$.fn.LiveAddressIntl = function(arg) {
+	$.fn.LiveAddressIntl = function (arg) {
 		var matched = this,
 			wasChained = matched.prevObject ? !!matched.prevObject.prevObject : false;
 
@@ -77,7 +77,7 @@
 		if (document.readyState === "complete")
 			window.loaded = true;
 		else
-			$(window).load(function() {
+			$(window).load(function () {
 				window.loaded = true;
 			});
 
@@ -116,17 +116,17 @@
 		 */
 		instance = {
 			events: EventHandlers,
-			on: function(eventType, userHandler) {
+			on: function (eventType, userHandler) {
 				if (!EventHandlers[eventType] || typeof userHandler !== 'function')
 					return false;
 
 				var previousHandler = EventHandlers[eventType];
-				EventHandlers[eventType] = function(event, data) {
+				EventHandlers[eventType] = function (event, data) {
 					userHandler(event, data, previousHandler);
 				};
 			},
-			mapFields: function(map) {
-				var doMap = function(map) {
+			mapFields: function (map) {
+				var doMap = function (map) {
 
 					if (typeof map === 'object')
 						return ui.mapFields(map, matched);
@@ -138,21 +138,21 @@
 				if ($.isReady)
 					doMap(map);
 				else
-					$(function() {
+					$(function () {
 						if (!wasChained)
 							matched = $(matched.selector);
 						doMap(map);
 					});
 			},
-			makeAddress: function(addressData) {
+			makeAddress: function (addressData) {
 				if (typeof addressData !== "object")
 					return instance.getMappedAddressByID(addressData) || new Address({
-						street: addressData
-					});
+							street: addressData
+						});
 				else
 					return new Address(addressData);
 			},
-			verify: function(input, callback) {
+			verify: function (input, callback) {
 				var addr = instance.makeAddress(input); // Below means, force re-verify even if accepted/unchanged.
 				trigger("VerificationInvoked", {
 					address: addr,
@@ -160,30 +160,30 @@
 					invoke: callback
 				});
 			},
-			getMappedAddresses: function() {
+			getMappedAddresses: function () {
 				var addr = [];
 				for (var i = 0; i < forms.length; i++)
 					for (var j = 0; j < forms[i].addresses.length; j++)
 						addr.push(forms[i].addresses[j]);
 				return addr;
 			},
-			getMappedAddressByID: function(addressID) {
+			getMappedAddressByID: function (addressID) {
 				for (var i = 0; i < forms.length; i++)
 					for (var j = 0; j < forms[i].addresses.length; j++)
 						if (forms[i].addresses[j].id() == addressID)
 							return forms[i].addresses[j];
 			},
-			setKey: function(htmlkey) {
+			setKey: function (htmlkey) {
 				config.key = htmlkey;
 			},
-			activate: function(addressID) {
+			activate: function (addressID) {
 				var addr = instance.getMappedAddressByID(addressID);
 				if (addr) {
 					addr.active = true;
 					ui.showSmartyUI(addressID);
 				}
 			},
-			deactivate: function(addressID) {
+			deactivate: function (addressID) {
 				if (!addressID)
 					return ui.clean();
 				var addr = instance.getMappedAddressByID(addressID);
@@ -192,22 +192,21 @@
 					ui.hideSmartyUI(addressID);
 				}
 			},
-			autoVerify: function(setting) {
+			autoVerify: function (setting) {
 				if (typeof setting === 'undefined')
 					return config.autoVerify;
 				else if (setting === false)
 					config.autoVerify = false;
 				else if (setting === true)
 					config.autoVerify = true;
-				for(var i = 0; i < forms.length; i++) {
-					for(var j = 0; j < forms[i].addresses.length; j++) {
+				for (var i = 0; i < forms.length; i++) {
+					for (var j = 0; j < forms[i].addresses.length; j++) {
 						forms[i].addresses[j].verifyCount = 0;
 					}
 				}
 			},
 			version: version
 		};
-
 
 		// Unbind old handlers then bind each handler to an event
 		for (var prop in EventHandlers) {
@@ -221,19 +220,15 @@
 		return instance;
 	};
 
-
-
 	/*
 	 *	PRIVATE FUNCTIONS / OBJECTS
 	 */
 
-
-
 	/*
-		The UI object auto-maps the fields and controls
-		interaction with the user during the address
-		verification process.
-	*/
+	 The UI object auto-maps the fields and controls
+	 interaction with the user during the address
+	 verification process.
+	 */
 	function UI() {
 		var submitHandler; // Function which is later bound to handle form submits
 		var formDataProperty = "smarty-form"; // Indicates whether we've stored the form already
@@ -292,8 +287,7 @@
 			"text-decoration: none !important; }" + ".smarty-tag-text { font-size: 12px !important; position: absolute; " +
 			"top: 0; left: 16px; width: 50px !important; text-align: center !important; }" + "</style>";
 
-
-		this.postMappingOperations = function() {
+		this.postMappingOperations = function () {
 			// Injects materials into the DOM, binds to form submit events, etc... very important.
 
 			if (config.ui) {
@@ -314,7 +308,7 @@
 					// Move the UI elements around when browser window is resized
 					$(window).resize({
 						addr: addresses[i]
-					}, function(e) {
+					}, function (e) {
 						var addr = e.data.addr;
 						var offset = uiTagOffset(addr.corners(true)); // Position of lil' tag
 						$('.smarty-tag.smarty-addr-' + addr.id())
@@ -331,13 +325,13 @@
 
 				}
 
-				$('body').delegate('.smarty-tag-grayed', 'click', function(e) {
+				$('body').delegate('.smarty-tag-grayed', 'click', function (e) {
 					// "Verify" clicked -- manually invoke verification
 					var addrId = $(this).data('addressid');
 					instance.verify(addrId);
 				});
 
-				$('body').delegate('.smarty-undo', 'click', function(e) {
+				$('body').delegate('.smarty-undo', 'click', function (e) {
 					// "Undo" clicked -- replace field values with previous input
 					var addrId = $(this).parent().data('addressid');
 					var addr = instance.getMappedAddressByID(addrId);
@@ -354,23 +348,23 @@
 				for (var i = 0; i < forms.length; i++) {
 					var f = forms[i];
 
-					submitHandler = function(e) {
+					submitHandler = function (e) {
 						// Don't invoke verification if it's already processing
 						if (e.data.form && e.data.form.processing)
 							return suppress(e);
 
 						/*
-							IMPORTANT!
-							Prior to version 2.4.8, the plugin would call syncWithDom() at submit-time
-							in case programmatic changes were made to the address input fields, including
-							browser auto-fills. The sync function would detect those changes and force
-							a re-verification to not let invalid addresses through. Unfortunately, this
-							frequently caused infinite loops (runaway lookups), ultimately preventing
-							form submission, which is unacceptable. As a safety measure to protect our
-							customer's subscriptions, we've removed syncWithDom(). The website owner is
-							responsible for making sure that any changes to address field values raise the
-							"change" event on that element. Example: $('#city').val('New City').change();
-						*/
+						 IMPORTANT!
+						 Prior to version 2.4.8, the plugin would call syncWithDom() at submit-time
+						 in case programmatic changes were made to the address input fields, including
+						 browser auto-fills. The sync function would detect those changes and force
+						 a re-verification to not let invalid addresses through. Unfortunately, this
+						 frequently caused infinite loops (runaway lookups), ultimately preventing
+						 form submission, which is unacceptable. As a safety measure to protect our
+						 customer's subscriptions, we've removed syncWithDom(). The website owner is
+						 responsible for making sure that any changes to address field values raise the
+						 "change" event on that element. Example: $('#city').val('New City').change();
+						 */
 
 						if (!e.data.form.allActiveAddressesAccepted()) {
 							// We could verify all the addresses at once, but that can overwhelm the user.
@@ -388,7 +382,7 @@
 
 					// Performs the tricky operation of uprooting existing event handlers that we have references to
 					// (either by jQuery's data cache or HTML attributes) planting ours, then laying theirs on top
-					var bindSubmitHandler = function(domElement, eventName) {
+					var bindSubmitHandler = function (domElement, eventName) {
 						if (!domElement || !eventName)
 							return;
 
@@ -436,7 +430,7 @@
 
 					// Form submit() events are apparently invoked by CLICKING the submit button (even jQuery does this at its core for binding)
 					// (but jQuery, when raising a form submit event with .submit() will NOT necessarily click the submit button)
-					formSubmitElements.each(function(idx) {
+					formSubmitElements.each(function (idx) {
 						bindSubmitHandler(this, 'click'); // These get fired first
 					});
 
@@ -457,11 +451,11 @@
 		// This function is used to find and properly map elements to their field type
 		function filterDomElement(domElement, names, labels) {
 			/*
-				Where we look to find a match, in this order:
-			 	name, id, <label> tags, placeholder, title
-			 	Our searches first conduct fairly liberal "contains" searches:
-			 	if the attribute even contains the name or label, we map it.
-			 	The names and labels we choose to find are very particular.
+			 Where we look to find a match, in this order:
+			 name, id, <label> tags, placeholder, title
+			 Our searches first conduct fairly liberal "contains" searches:
+			 if the attribute even contains the name or label, we map it.
+			 The names and labels we choose to find are very particular.
 			 */
 
 			var name = lowercase(domElement.name);
@@ -475,9 +469,9 @@
 				if (name.indexOf(names[i]) > -1 || id.indexOf(names[i]) > -1)
 					return true;
 
-				// If we can't find it in name or id, look at labels associated to the element.
-				// Webkit automatically associates labels with form elements for us. But for other
-				// browsers, we have to find them manually, which this next block does.
+			// If we can't find it in name or id, look at labels associated to the element.
+			// Webkit automatically associates labels with form elements for us. But for other
+			// browsers, we have to find them manually, which this next block does.
 			if (!('labels' in domElement)) {
 				var lbl = $('label[for="' + selectorSafeID + '"]')[0] || $(domElement).parents('label')[0];
 				domElement.labels = !lbl ? [] : [lbl];
@@ -496,7 +490,7 @@
 				if (placeholder.indexOf(labels[i]) > -1 || title.indexOf(labels[i]) > -1)
 					return true;
 
-				// Got all the way to here? Probably not a match then.
+			// Got all the way to here? Probably not a match then.
 			return false;
 		}
 
@@ -506,7 +500,7 @@
 			// this is for simplicity: and I figure, it won't happen too often.
 			// (Otherwise "Completed" events are raised by pressing Esc even if nothing is happening)
 			$(document).unbind('keyup');
-			$(uiPopup).slideUp(defaults.speed, function() {
+			$(uiPopup).slideUp(defaults.speed, function () {
 				$(this).parent('.smarty-ui').remove();
 			});
 			trigger("Completed", e.data);
@@ -540,7 +534,7 @@
 		}
 
 		//shows the SmartyUI when activating 1 address
-		this.showSmartyUI = function(addressID) {
+		this.showSmartyUI = function (addressID) {
 			var smartyui = $('.deactivated.smarty-addr-' + addressID);
 			smartyui.push(smartyui[0].parentElement);
 			smartyui.removeClass("deactivated");
@@ -549,7 +543,7 @@
 		};
 
 		//hides the SmartyUI when deactivating 1 address
-		this.hideSmartyUI = function(addressID) {
+		this.hideSmartyUI = function (addressID) {
 			var smartyui = $('.smarty-addr-' + addressID + ':visible');
 			smartyui.addClass("deactivated");
 			smartyui.parent().addClass("deactivated");
@@ -558,7 +552,7 @@
 		};
 
 		// If anything was previously mapped, this resets it all for a new mapping.
-		this.clean = function() {
+		this.clean = function () {
 			if (forms.length == 0)
 				return;
 
@@ -586,10 +580,10 @@
 				}
 
 				// Unbind our form submit and submit-button click handlers
-				$.each(forms, function(idx) {
+				$.each(forms, function (idx) {
 					$(this.dom).unbind('submit', submitHandler);
 				});
-				$(config.submitSelector, forms[i].dom).each(function(idx) {
+				$(config.submitSelector, forms[i].dom).each(function (idx) {
 					$(this).unbind('click', submitHandler);
 				});
 			}
@@ -607,9 +601,8 @@
 				console.log("Done cleaning up; ready for new mapping.");
 		};
 
-
 		// ** MANUAL MAPPING ** //
-		this.mapFields = function(map, context) {
+		this.mapFields = function (map, context) {
 			// "map" should be an array of objects mapping field types
 			// to a field by selector, all supplied by the user.
 			// "context" should be the set of elements in which fields will be mapped
@@ -688,8 +681,7 @@
 			trigger("FieldsMapped");
 		};
 
-
-		this.disableFields = function(address) {
+		this.disableFields = function (address) {
 			// Given an address, disables the input fields for the address, also the submit button
 			if (!config.ui)
 				return;
@@ -705,7 +697,7 @@
 			}
 		};
 
-		this.enableFields = function(address) {
+		this.enableFields = function (address) {
 			// Given an address, re-enables the input fields for the address
 			if (!config.ui)
 				return;
@@ -721,7 +713,7 @@
 			}
 		};
 
-		this.showLoader = function(addr) {
+		this.showLoader = function (addr) {
 			if (!config.ui || !addr.hasDomFields())
 				return;
 
@@ -734,25 +726,25 @@
 			$('.smarty-dots', loaderUI).show();
 		};
 
-		this.hideLoader = function(addr) {
+		this.hideLoader = function (addr) {
 			if (config.ui)
 				$('.smarty-dots.smarty-addr-' + addr.id()).hide();
 		};
 
-		this.markAsValid = function(addr) {
+		this.markAsValid = function (addr) {
 			if (!config.ui || !addr)
 				return;
 
 			var domTag = $('.smarty-tag.smarty-tag-grayed.smarty-addr-' + addr.id());
 			domTag.removeClass('smarty-tag-grayed').addClass('smarty-tag-green').attr("title", "Address verified! Click to undo.");
-			$('.smarty-tag-text', domTag).text('Verified').hover(function() {
+			$('.smarty-tag-text', domTag).text('Verified').hover(function () {
 				$(this).text('Undo');
-			}, function() {
+			}, function () {
 				$(this).text('Verified');
 			}).addClass('smarty-undo');
 		};
 
-		this.unmarkAsValid = function(addr) {
+		this.unmarkAsValid = function (addr) {
 			var validSelector = '.smarty-tag.smarty-addr-' + addr.id();
 			if (!config.ui || !addr || $(validSelector).length == 0)
 				return;
@@ -762,7 +754,7 @@
 			$('.smarty-tag-text', domTag).text('Verify').unbind('mouseenter mouseleave').removeClass('smarty-undo');
 		};
 
-		this.showAmbiguous = function(data) {
+		this.showAmbiguous = function (data) {
 			if (!config.ui || !data.address.hasDomFields())
 				return;
 
@@ -771,7 +763,7 @@
 			var corners = addr.corners();
 			corners.width = Math.max(corners.width, 300); // minimum width
 			corners.height = Math.max(corners.height, response.length * 63 + 119); // minimum height
-			if(config.enforceVerification) {
+			if (config.enforceVerification) {
 				corners.height -= 49;
 			}
 
@@ -784,22 +776,22 @@
 
 			for (var i = 0; i < response.raw.length; i++) {
 				var ambigAddr = '';
-				if(response.raw[i].address1) {
+				if (response.raw[i].address1) {
 					ambigAddr += response.raw[i].address1;
 				}
-				if(response.raw[i].address2) {
+				if (response.raw[i].address2) {
 					ambigAddr = ambigAddr + '<br>' + response.raw[i].address2;
 				}
-				if(response.raw[i].address3) {
+				if (response.raw[i].address3) {
 					ambigAddr = ambigAddr + '<br>' + response.raw[i].address3;
 				}
-				if(response.raw[i].address4) {
+				if (response.raw[i].address4) {
 					ambigAddr = ambigAddr + '<br>' + response.raw[i].address4;
 				}
-				if(response.raw[i].address5) {
+				if (response.raw[i].address5) {
 					ambigAddr = ambigAddr + '<br>' + response.raw[i].address5;
 				}
-				if(response.raw[i].address6) {
+				if (response.raw[i].address6) {
 					ambigAddr = ambigAddr + '<br>' + response.raw[i].address6;
 				}
 				html += '<a href="javascript:" class="smarty-choice" data-index="' + i + '">' + ambigAddr + '</a>';
@@ -807,7 +799,7 @@
 
 			html += '</div><div class="smarty-choice-alt">';
 			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a>';
-			if(!config.enforceVerification) {
+			if (!config.enforceVerification) {
 				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' + config.certifyMessage + '<br>(' +
 					addr.toString() + ')</a>';
 			}
@@ -828,8 +820,8 @@
 			};
 
 			// User chose a candidate address
-			$('body').delegate(data.selectors.goodAddr, 'click', data, function(e) {
-				$('.smarty-popup.smarty-addr-' + addr.id()).slideUp(defaults.speed, function() {
+			$('body').delegate(data.selectors.goodAddr, 'click', data, function (e) {
+				$('.smarty-popup.smarty-addr-' + addr.id()).slideUp(defaults.speed, function () {
 					$(this).parent('.smarty-ui').remove();
 					$(this).remove();
 				});
@@ -847,8 +839,8 @@
 			});
 
 			// User wants to revert to what they typed (forced accept)
-			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e) {
-				$(this).parents('.smarty-popup').slideUp(defaults.speed, function() {
+			$('body').delegate(data.selectors.useOriginal, 'click', data, function (e) {
+				$(this).parents('.smarty-popup').slideUp(defaults.speed, function () {
 					$(this).parent('.smarty-ui').remove();
 					$(this).remove();
 				});
@@ -859,7 +851,7 @@
 			});
 
 			// User presses Esc key
-			$(document).keyup(data, function(e) {
+			$(document).keyup(data, function (e) {
 				if (e.keyCode == 27) { //Esc
 					undelegateAllClicks(e.data.selectors);
 					delete e.data.selectors;
@@ -869,15 +861,14 @@
 			});
 
 			// User clicks "x" in corner or chooses to try a different address (same effect as Esc key)
-			$('body').delegate(data.selectors.abort, 'click', data, function(e) {
+			$('body').delegate(data.selectors.abort, 'click', data, function (e) {
 				undelegateAllClicks(e.data.selectors);
 				delete e.data.selectors;
 				userAborted($(this).parents('.smarty-popup'), e);
 			});
 		};
 
-
-		this.showInvalid = function(data) {
+		this.showInvalid = function (data) {
 			if (!config.ui || !data.address.hasDomFields())
 				return;
 
@@ -886,7 +877,7 @@
 			var corners = addr.corners();
 			corners.width = Math.max(corners.width, 300); // minimum width
 			corners.height = Math.max(corners.height, 180); // minimum height
-			if(config.enforceVerification) {
+			if (config.enforceVerification) {
 				corners.height -= 49;
 			}
 
@@ -898,11 +889,11 @@
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
 				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
 				'<div class="smarty-choice-alt">';
-				if(!config.enforceVerification) {
-					html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
+			if (!config.enforceVerification) {
+				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
 					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
-				}
-				html +='</div></div></div>';
+			}
+			html += '</div></div></div>';
 
 			$(html).hide().appendTo('body').show(defaults.speed);
 
@@ -920,7 +911,7 @@
 
 			undelegateAllClicks(data.selectors.abort);
 			// User rejects original input and agrees to double-check it
-			$('body').delegate(data.selectors.abort, 'click', data, function(e) {
+			$('body').delegate(data.selectors.abort, 'click', data, function (e) {
 				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
 				delete e.data.selectors;
 				trigger("InvalidAddressRejected", e.data);
@@ -928,14 +919,14 @@
 
 			undelegateAllClicks(data.selectors.useOriginal);
 			// User certifies that what they typed is correct
-			$('body').delegate(data.selectors.useOriginal, 'click', data, function(e) {
+			$('body').delegate(data.selectors.useOriginal, 'click', data, function (e) {
 				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
 				delete e.data.selectors;
 				trigger("OriginalInputSelected", e.data);
 			});
 
 			// User presses esc key
-			$(document).keyup(data, function(e) {
+			$(document).keyup(data, function (e) {
 				if (e.keyCode == 27) { //Esc
 					undelegateAllClicks(e.data.selectors);
 					$(data.selectors.abort).click();
@@ -947,9 +938,9 @@
 	}
 
 	/*
-		Represents an address inputted by the user, whether it has been verified yet or not.
-		formObj must be a Form OBJECT, not a <form> tag... and the addressID is optional.
-	*/
+	 Represents an address inputted by the user, whether it has been verified yet or not.
+	 formObj must be a Form OBJECT, not a <form> tag... and the addressID is optional.
+	 */
 	function Address(domMap, formObj, addressID) {
 		// PRIVATE MEMBERS //
 
@@ -964,8 +955,8 @@
 		// Private method that actually changes the address. The keepState parameter is
 		// used by the results of verification after an address is chosen; (or an "undo"
 		// on a freeform address), otherwise an infinite loop of requests is executed
-		// because the address keeps changing! (Set "suppressAutoVerify" to true when coming from the "Undo" link)	
-		var doSet = function(key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify) {
+		// because the address keeps changing! (Set "suppressAutoVerify" to true when coming from the "Undo" link)
+		var doSet = function (key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify) {
 			if (!arrayContains(acceptableFields, key)) // Skip "id" and other unacceptable fields
 				return false;
 
@@ -1011,7 +1002,7 @@
 		this.active = true; // If true, verify the address. If false, pass-thru entirely.
 
 		// Constructor-esque functionality (save the fields in this address object)
-		this.load = function(domMap, addressID) {
+		this.load = function (domMap, addressID) {
 			fields = {};
 			id = addressID ? addressID.replace(/[^a-z0-9_\-]/ig, '') : randomInt(1, 99999); // Strips non-selector-friendly characters
 
@@ -1051,7 +1042,6 @@
 						fields[prop].dom = domMap[prop];
 					}
 
-
 					// This has to be passed in at bind-time; they cannot be obtained at run-time
 					var data = {
 						address: this,
@@ -1064,7 +1054,7 @@
 					// the state field, this change() event fires before the form is submitted, and if autoVerify is
 					// on, the verification will not invoke form submit, because it didn't come from a form submit.
 					// This is known behavior and is actually proper functioning in this uncommon edge case.
-					!isData && $(domMap[prop]).change(data, function(e) {
+					!isData && $(domMap[prop]).change(data, function (e) {
 						e.data.address.set(e.data.field, e.target.value, false, false, e, false);
 					});
 				}
@@ -1076,8 +1066,7 @@
 		// Run the "constructor" to load up the address
 		this.load(domMap, addressID);
 
-
-		this.set = function(key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify) {
+		this.set = function (key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify) {
 			if (typeof key === 'string' && arguments.length >= 2)
 				return doSet(key, value, updateDomElement, keepState, sourceEvent, suppressAutoVerify);
 			else if (typeof key === 'object') {
@@ -1088,7 +1077,7 @@
 			}
 		};
 
-		this.replaceWith = function(resp, updateDomElement, e) {
+		this.replaceWith = function (resp, updateDomElement, e) {
 			// Given the response from an API request associated with this address,
 			// replace the values in the address... and if updateDomElement is true,
 			// then change the values in the fields on the page accordingly.
@@ -1096,115 +1085,141 @@
 			if (typeof resp === 'array' && resp.length > 0)
 				resp = resp[0];
 
-			if (self.isFreeform()) {
-				var singleLineAddr = (resp.organization ? resp.organization + " " : "") +
-					(resp.address1 ? resp.address1 + " " : "") +
-					(resp.address2 ? resp.address2 + " " : "") +
-					(resp.address3 ? resp.address3 + " " : "") +
-					(resp.address4 ? resp.address4 + " " : "") +
-					(resp.address5 ? resp.address5 + " " : "") +
-					(resp.address6 ? resp.address6 + " " : "") +
-					(resp.address7 ? resp.address7 + " " : "") +
-					(resp.address8 ? resp.address8 + " " : "") +
-					(resp.address9 ? resp.address9 + " " : "") +
-					(resp.address10 ? resp.address10 + " " : "") +
-					(resp.address11 ? resp.address11 + " " : "") +
-					(resp.address12 ? resp.address12 + " " : "");
-				var countryLine = resp.components.country_iso_3 ? resp.components.country_iso_3 : "";
-				self.set("freeform", singleLineAddr, updateDomElement, true, e, false);
-				self.set("country", countryLine, updateDomElement, true, e, false);
-			} else {
-				if (resp.organization)
-					self.set("organization", resp.organization, updateDomElement, true, e, false);
-				if (resp.components.locality)
-					self.set("locality", resp.components.locality, updateDomElement, true, e, false);
-				if (resp.components.administrative_area)
-					self.set("administrative_area", resp.components.administrative_area, updateDomElement, true, e, false);
-				if (resp.components.postal_code_short) {
-					var fullPostalCode = resp.components.postal_code_short;
-					if(resp.components.postal_code_extra)
-						fullPostalCode = fullPostalCode + "-" + resp.components.postal_code_extra;
-					self.set("postal_code", fullPostalCode, updateDomElement, true, e, false);
+			// Sent via US api
+			if (typeof resp.candidate_index != 'undefined') {
+				if (self.isFreeform()) {
+					var singleLineAddr = (resp.addressee ? resp.addressee + " " : "") +
+						(resp.delivery_line_1 ? resp.delivery_line_1 + " " : "") +
+						(resp.delivery_line_2 ? resp.delivery_line_2 + " " : "") +
+						(resp.components.urbanization ? resp.components.urbanization + " " : "") +
+						(resp.last_line ? resp.last_line : "");
+
+					self.set("address1", singleLineAddr, updateDomElement, true, e, false);
+				} else {
+					if (resp.addressee)
+						self.set("organization", resp.addressee, updateDomElement, true, e, false);
+					if (resp.delivery_line_1)
+						self.set("address1", resp.delivery_line_1, updateDomElement, true, e, false);
+					self.set("address2", resp.delivery_line_2 || "", updateDomElement, true, e, false); // Rarely used; must otherwise be blank.
+					if (resp.components.city_name)
+						self.set("locality", resp.components.city_name, updateDomElement, true, e, false);
+					if (resp.components.state_abbreviation)
+						self.set("administrative_area", resp.components.state_abbreviation, updateDomElement, true, e, false);
+					if (resp.components.zipcode && resp.components.plus4_code)
+						self.set("postal_code", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, true, e, false);
 				}
-				if (this.getDomFields().address4) {
-					if (resp.address1)
-						self.set("address1", resp.address1, updateDomElement, true, e, false);
-					if (resp.address2)
-						self.set("address2", resp.address2, updateDomElement, true, e, false);
-					if (resp.address3)
-						self.set("address3", resp.address3, updateDomElement, true, e, false);
-					var addressLine4 = "";
-					addressLine4 = addAddressLine(addressLine4, resp.address4, resp.address5);
-					addressLine4 = addAddressLine(addressLine4, resp.address5, resp.address6);
-					addressLine4 = addAddressLine(addressLine4, resp.address6, resp.address7);
-					addressLine4 = addAddressLine(addressLine4, resp.address7, resp.address8);
-					addressLine4 = addAddressLine(addressLine4, resp.address8, resp.address9);
-					addressLine4 = addAddressLine(addressLine4, resp.address9, resp.address10);
-					addressLine4 = addAddressLine(addressLine4, resp.address10, resp.address11);
-					addressLine4 = addAddressLine(addressLine4, resp.address11, resp.address12);
-					self.set("address4", addressLine4, updateDomElement, true, e, false);
-				} else if (this.getDomFields().address3) {
-					if (resp.address1)
-						self.set("address1", resp.address1, updateDomElement, true, e, false);
-					if (resp.address2)
-						self.set("address2", resp.address2, updateDomElement, true, e, false);
-					var addressLine3 = "";
-					addressLine3 = addAddressLine(addressLine3, resp.address3, resp.address4);
-					addressLine3 = addAddressLine(addressLine3, resp.address4, resp.address5);
-					addressLine3 = addAddressLine(addressLine3, resp.address5, resp.address6);
-					addressLine3 = addAddressLine(addressLine3, resp.address6, resp.address7);
-					addressLine3 = addAddressLine(addressLine3, resp.address7, resp.address8);
-					addressLine3 = addAddressLine(addressLine3, resp.address8, resp.address9);
-					addressLine3 = addAddressLine(addressLine3, resp.address9, resp.address10);
-					addressLine3 = addAddressLine(addressLine3, resp.address10, resp.address11);
-					addressLine3 = addAddressLine(addressLine3, resp.address11, resp.address12);
-					self.set("address3", addressLine3, updateDomElement, true, e, false);
-				} else if (this.getDomFields().address2) {
-					if (resp.address1)
-						self.set("address1", resp.address1, updateDomElement, true, e, false);
-					var addressLine2 = "";
-					addressLine2 = addAddressLine(addressLine2, resp.address2, resp.address3);
-					addressLine2 = addAddressLine(addressLine2, resp.address3, resp.address4);
-					addressLine2 = addAddressLine(addressLine2, resp.address4, resp.address5);
-					addressLine2 = addAddressLine(addressLine2, resp.address5, resp.address6);
-					addressLine2 = addAddressLine(addressLine2, resp.address6, resp.address7);
-					addressLine2 = addAddressLine(addressLine2, resp.address7, resp.address8);
-					addressLine2 = addAddressLine(addressLine2, resp.address8, resp.address9);
-					addressLine2 = addAddressLine(addressLine2, resp.address9, resp.address10);
-					addressLine2 = addAddressLine(addressLine2, resp.address10, resp.address11);
-					addressLine2 = addAddressLine(addressLine2, resp.address11, resp.address12);
-					self.set("address2", addressLine2, updateDomElement, true, e, false);
-				} else if (this.getDomFields().address1) {
-					var addressLine1 = "";
-					addressLine1 = addAddressLine(addressLine1, resp.address1, resp.address2);
-					addressLine1 = addAddressLine(addressLine1, resp.address2, resp.address3);
-					addressLine1 = addAddressLine(addressLine1, resp.address3, resp.address4);
-					addressLine1 = addAddressLine(addressLine1, resp.address4, resp.address5);
-					addressLine1 = addAddressLine(addressLine1, resp.address5, resp.address6);
-					addressLine1 = addAddressLine(addressLine1, resp.address6, resp.address7);
-					addressLine1 = addAddressLine(addressLine1, resp.address7, resp.address8);
-					addressLine1 = addAddressLine(addressLine1, resp.address8, resp.address9);
-					addressLine1 = addAddressLine(addressLine1, resp.address9, resp.address10);
-					addressLine1 = addAddressLine(addressLine1, resp.address10, resp.address11);
-					addressLine1 = addAddressLine(addressLine1, resp.address11, resp.address12);
-					self.set("address1", addressLine1, updateDomElement, true, e, false);
+				self.set("country", "United States", updateDomElement, true, e, false);
+			} else { // Sent via international API
+				if (self.isFreeform()) {
+					var singleLineAddr = (resp.organization ? resp.organization + " " : "") +
+						(resp.address1 ? resp.address1 + " " : "") +
+						(resp.address2 ? resp.address2 + " " : "") +
+						(resp.address3 ? resp.address3 + " " : "") +
+						(resp.address4 ? resp.address4 + " " : "") +
+						(resp.address5 ? resp.address5 + " " : "") +
+						(resp.address6 ? resp.address6 + " " : "") +
+						(resp.address7 ? resp.address7 + " " : "") +
+						(resp.address8 ? resp.address8 + " " : "") +
+						(resp.address9 ? resp.address9 + " " : "") +
+						(resp.address10 ? resp.address10 + " " : "") +
+						(resp.address11 ? resp.address11 + " " : "") +
+						(resp.address12 ? resp.address12 + " " : "");
+					var countryLine = resp.components.country_iso_3 ? resp.components.country_iso_3 : "";
+					self.set("freeform", singleLineAddr, updateDomElement, true, e, false);
+					self.set("country", countryLine, updateDomElement, true, e, false);
+				} else {
+					if (resp.organization)
+						self.set("organization", resp.organization, updateDomElement, true, e, false);
+					if (resp.components.locality)
+						self.set("locality", resp.components.locality, updateDomElement, true, e, false);
+					if (resp.components.administrative_area)
+						self.set("administrative_area", resp.components.administrative_area, updateDomElement, true, e, false);
+					if (resp.components.postal_code_short) {
+						var fullPostalCode = resp.components.postal_code_short;
+						if (resp.components.postal_code_extra)
+							fullPostalCode = fullPostalCode + "-" + resp.components.postal_code_extra;
+						self.set("postal_code", fullPostalCode, updateDomElement, true, e, false);
+					}
+					if (this.getDomFields().address4) {
+						if (resp.address1)
+							self.set("address1", resp.address1, updateDomElement, true, e, false);
+						if (resp.address2)
+							self.set("address2", resp.address2, updateDomElement, true, e, false);
+						if (resp.address3)
+							self.set("address3", resp.address3, updateDomElement, true, e, false);
+						var addressLine4 = "";
+						addressLine4 = addAddressLine(addressLine4, resp.address4, resp.address5);
+						addressLine4 = addAddressLine(addressLine4, resp.address5, resp.address6);
+						addressLine4 = addAddressLine(addressLine4, resp.address6, resp.address7);
+						addressLine4 = addAddressLine(addressLine4, resp.address7, resp.address8);
+						addressLine4 = addAddressLine(addressLine4, resp.address8, resp.address9);
+						addressLine4 = addAddressLine(addressLine4, resp.address9, resp.address10);
+						addressLine4 = addAddressLine(addressLine4, resp.address10, resp.address11);
+						addressLine4 = addAddressLine(addressLine4, resp.address11, resp.address12);
+						self.set("address4", addressLine4, updateDomElement, true, e, false);
+					} else if (this.getDomFields().address3) {
+						if (resp.address1)
+							self.set("address1", resp.address1, updateDomElement, true, e, false);
+						if (resp.address2)
+							self.set("address2", resp.address2, updateDomElement, true, e, false);
+						var addressLine3 = "";
+						addressLine3 = addAddressLine(addressLine3, resp.address3, resp.address4);
+						addressLine3 = addAddressLine(addressLine3, resp.address4, resp.address5);
+						addressLine3 = addAddressLine(addressLine3, resp.address5, resp.address6);
+						addressLine3 = addAddressLine(addressLine3, resp.address6, resp.address7);
+						addressLine3 = addAddressLine(addressLine3, resp.address7, resp.address8);
+						addressLine3 = addAddressLine(addressLine3, resp.address8, resp.address9);
+						addressLine3 = addAddressLine(addressLine3, resp.address9, resp.address10);
+						addressLine3 = addAddressLine(addressLine3, resp.address10, resp.address11);
+						addressLine3 = addAddressLine(addressLine3, resp.address11, resp.address12);
+						self.set("address3", addressLine3, updateDomElement, true, e, false);
+					} else if (this.getDomFields().address2) {
+						if (resp.address1)
+							self.set("address1", resp.address1, updateDomElement, true, e, false);
+						var addressLine2 = "";
+						addressLine2 = addAddressLine(addressLine2, resp.address2, resp.address3);
+						addressLine2 = addAddressLine(addressLine2, resp.address3, resp.address4);
+						addressLine2 = addAddressLine(addressLine2, resp.address4, resp.address5);
+						addressLine2 = addAddressLine(addressLine2, resp.address5, resp.address6);
+						addressLine2 = addAddressLine(addressLine2, resp.address6, resp.address7);
+						addressLine2 = addAddressLine(addressLine2, resp.address7, resp.address8);
+						addressLine2 = addAddressLine(addressLine2, resp.address8, resp.address9);
+						addressLine2 = addAddressLine(addressLine2, resp.address9, resp.address10);
+						addressLine2 = addAddressLine(addressLine2, resp.address10, resp.address11);
+						addressLine2 = addAddressLine(addressLine2, resp.address11, resp.address12);
+						self.set("address2", addressLine2, updateDomElement, true, e, false);
+					} else if (this.getDomFields().address1) {
+						var addressLine1 = "";
+						addressLine1 = addAddressLine(addressLine1, resp.address1, resp.address2);
+						addressLine1 = addAddressLine(addressLine1, resp.address2, resp.address3);
+						addressLine1 = addAddressLine(addressLine1, resp.address3, resp.address4);
+						addressLine1 = addAddressLine(addressLine1, resp.address4, resp.address5);
+						addressLine1 = addAddressLine(addressLine1, resp.address5, resp.address6);
+						addressLine1 = addAddressLine(addressLine1, resp.address6, resp.address7);
+						addressLine1 = addAddressLine(addressLine1, resp.address7, resp.address8);
+						addressLine1 = addAddressLine(addressLine1, resp.address8, resp.address9);
+						addressLine1 = addAddressLine(addressLine1, resp.address9, resp.address10);
+						addressLine1 = addAddressLine(addressLine1, resp.address10, resp.address11);
+						addressLine1 = addAddressLine(addressLine1, resp.address11, resp.address12);
+						self.set("address1", addressLine1, updateDomElement, true, e, false);
+					}
+					if (resp.components.country_iso_3)
+						self.set("country", resp.components.country_iso_3, updateDomElement, true, e, false);
+
 				}
-				if (resp.components.country_iso_3)
-					self.set("country", resp.components.country_iso_3, updateDomElement, true, e, false);
-				
 			}
 		};
 
-		var addAddressLine = function(fullLine, addressLine, nextAddressLine) {
-			if(addressLine && nextAddressLine) {
-				if(fullLine != "")
-					fullLine += " "; 
+		var addAddressLine = function (fullLine, addressLine, nextAddressLine) {
+			if (addressLine && nextAddressLine) {
+				if (fullLine != "")
+					fullLine += " ";
 				fullLine += addressLine;
 			}
 			return fullLine;
 		};
 
-		this.corners = function(lastField) {
+		this.corners = function (lastField) {
 			var corners = {};
 
 			if (!lastField) {
@@ -1235,7 +1250,7 @@
 			return corners;
 		};
 
-		this.verify = function(invoke, invokeFn) {
+		this.verify = function (invoke, invokeFn) {
 			// Invoke contains the element to "click" on once we're all done, or is a user-defined callback function (may also be undefined)
 			if (!invoke && !self.enoughInput()) {
 				if (config.debug)
@@ -1260,16 +1275,20 @@
 			self.verifyCount++;
 			var addrData = self.toRequest();
 			var credentials = config.token ? "auth-id=" + encodeURIComponent(config.key) + "&auth-token=" +
-				encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
-
+			encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
+			var requestUrl = config.requestUrl;
+			if (self.isDomestic()) {
+				requestUrl = "https://api.smartystreets.com/street-address";
+				addrData = self.toRequestUS();
+			}
 			$.ajax({
-					url: config.requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
-						(config.debug ? "_debug" : ""),
+					url: requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
+					(config.debug ? "_debug" : ""),
 					contentType: "jsonp",
 					data: addrData,
 					timeout: config.timeout
 				})
-				.done(function(response, statusText, xhr) {
+				.done(function (response, statusText, xhr) {
 					trigger("ResponseReceived", {
 						address: self,
 						response: new Response(response),
@@ -1277,7 +1296,7 @@
 						invokeFn: invokeFn
 					});
 				})
-				.fail(function(xhr, statusText) {
+				.fail(function (xhr, statusText) {
 					trigger("RequestTimedOut", {
 						address: self,
 						status: statusText,
@@ -1294,15 +1313,15 @@
 			});
 		};
 
-		this.enoughInput = function() {
+		this.enoughInput = function () {
 			return (fields.country && fields.country.value) && (
-				(fields.freeform && fields.freeform.value) ||
-				((fields.address1 && fields.address1.value) && (fields.postal_code && fields.postal_code.value)) ||
-				((fields.address1 && fields.address1.value) && (fields.locality && fields.locality.value) && (fields.administrative_area && fields.administrative_area.value))
-			);
+					(fields.freeform && fields.freeform.value) ||
+					((fields.address1 && fields.address1.value) && (fields.postal_code && fields.postal_code.value)) ||
+					((fields.address1 && fields.address1.value) && (fields.locality && fields.locality.value) && (fields.administrative_area && fields.administrative_area.value))
+				);
 		};
 
-		this.toRequest = function() {
+		this.toRequest = function () {
 			var obj = {};
 			if (fields.hasOwnProperty("freeform") &&
 				fields.hasOwnProperty("address1") &&
@@ -1323,15 +1342,38 @@
 			return obj;
 		};
 
-		this.toString = function() {
-			if(fields.freeform) {
+		this.toRequestUS = function () {
+			var obj = {};
+			if (fields.address1 && fields.address1.dom.value) {
+				obj.street = fields.address1.dom.value;
+			}
+			if (fields.address2 && fields.address2.dom.value) {
+				obj.street2 = fields.address2.dom.value;
+			}
+			if (fields.locality && fields.locality.dom.value) {
+				obj.city = fields.locality.dom.value;
+			}
+			if (fields.administrative_area && fields.administrative_area.dom.value) {
+				obj.state = fields.administrative_area.dom.value;
+			}
+			if (fields.postal_code && fields.postal_code.dom.value) {
+				obj.zipcode = fields.postal_code.dom.value;
+			}
+			if (fields.freeform && fields.freeform.dom.value) {
+				obj.street = fields.freeform.dom.value;
+			}
+			return obj;
+		};
+
+		this.toString = function () {
+			if (fields.freeform) {
 				return (fields.freeform ? fields.freeform.value + " " : "") + (fields.country ? fields.country.value : "");
 			} else {
 				return (fields.address1 ? fields.address1.value + " " : "") + (fields.locality ? fields.locality.value + " " : "") + (fields.administrative_area ? fields.administrative_area.value + " " : "") + (fields.postal_code ? fields.postal_code.value : "");
 			}
 		};
 
-		this.abort = function(event, keepAccept) {
+		this.abort = function (event, keepAccept) {
 			keepAccept = typeof keepAccept === 'undefined' ? false : keepAccept;
 			if (!keepAccept)
 				self.unaccept();
@@ -1340,21 +1382,21 @@
 		};
 
 		// Based on the properties in "fields," determines if this is a single-line address
-		this.isFreeform = function() {
+		this.isFreeform = function () {
 			return fields.freeform && fields.country;
 		};
 
-		this.get = function(key) {
+		this.get = function (key) {
 			return fields[key] ? fields[key].value : null
 		};
 
-		this.undo = function(updateDomElement) {
+		this.undo = function (updateDomElement) {
 			updateDomElement = typeof updateDomElement === 'undefined' ? true : updateDomElement;
 			for (var key in fields)
 				this.set(key, fields[key].undo, updateDomElement, false, undefined, true);
 		};
 
-		this.accept = function(data, showValid) {
+		this.accept = function (data, showValid) {
 			showValid = typeof showValid === 'undefined' ? true : showValid;
 			state = "accepted";
 			ui.enableFields(self);
@@ -1363,21 +1405,21 @@
 			trigger("AddressAccepted", data);
 		};
 
-		this.unaccept = function() {
+		this.unaccept = function () {
 			state = "changed";
 			ui.unmarkAsValid(self);
 			return self;
 		};
 
-		this.getUndoValue = function(key) {
+		this.getUndoValue = function (key) {
 			return fields[key].undo;
 		};
 
-		this.status = function() {
+		this.status = function () {
 			return state;
 		};
 
-		this.getDomFields = function() {
+		this.getDomFields = function () {
 			// Gets just the DOM elements for each field
 			var obj = {};
 			for (var prop in fields) {
@@ -1388,25 +1430,36 @@
 			return obj;
 		};
 
-		this.hasDomFields = function() {
+		this.hasDomFields = function () {
 			for (var prop in fields)
 				if (fields[prop].dom)
 					return true;
 		};
 
-		this.id = function() {
+		this.isDomestic = function () {
+			var countryValue = fields.country.dom.value.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
+			if (fields.country.dom.selectedOptions)
+				countryValue = fields.country.dom.selectedOptions[0].text.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
+			var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
+				"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
+				"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA", "UNITEDSTATESUS"
+			]; // 840 is ISO: 3166; and 223 is some shopping carts
+			return arrayContains(usa, countryValue) || fields.country.value == "-1";
+		};
+
+		this.id = function () {
 			return id;
 		};
 	}
 
 	/*
-		Represents a <form> tag which contains mapped fields.
-	*/
+	 Represents a <form> tag which contains mapped fields.
+	 */
 	function Form(domElement) {
 		this.addresses = [];
 		this.dom = domElement;
 
-		this.activeAddressesNotAccepted = function() {
+		this.activeAddressesNotAccepted = function () {
 			var addrs = [];
 			for (var i = 0; i < this.addresses.length; i++) {
 				var addr = this.addresses[i];
@@ -1416,19 +1469,19 @@
 			return addrs;
 		};
 
-		this.allActiveAddressesAccepted = function() {
+		this.allActiveAddressesAccepted = function () {
 			return this.activeAddressesNotAccepted().length == 0;
 		};
 	}
 
 	/*
-		Wraps output from the API in an easier-to-handle way
-	*/
+	 Wraps output from the API in an easier-to-handle way
+	 */
 
 	function Response(json) {
 		// PRIVATE MEMBERS //
 
-		var checkBounds = function(idx) {
+		var checkBounds = function (idx) {
 			// Ensures that an index is within the number of candidates
 			if (idx >= json.length || idx < 0) {
 				if (json.length == 0)
@@ -1439,51 +1492,54 @@
 			}
 		};
 
-		var maybeDefault = function(idx) {
+		var maybeDefault = function (idx) {
 			// Assigns index to 0, the default value, if no value is passed in
 			return typeof idx === 'undefined' ? 0 : idx;
 		};
-
 
 		// PUBLIC-FACING MEMBERS //
 
 		this.raw = json;
 		this.length = json.length;
 
-		this.isValid = function() {
-			return (this.length == 1 && this.raw[0].analysis.verification_status == "Verified");
+		this.isValid = function () {
+			return (this.length == 1 &&
+			(this.raw[0].analysis.verification_status == "Verified" ||
+			(typeof this.raw[0].analysis.dpv_match_code != 'undefined' && this.raw[0].analysis.dpv_match_code != "N")));
 		};
 
-		this.isInvalid = function() {
-			return (this.length == 0 || (this.length == 1 && this.raw[0].analysis.verification_status != "Verified"));
+		this.isInvalid = function () {
+			return (this.length == 0 ||
+			(this.length == 1 &&
+			(this.raw[0].analysis.verification_status == "None" ||
+			this.raw[0].analysis.verification_status == "Partial" ||
+			this.raw[0].analysis.dpv_match_code == "N")));
 		};
 
-		this.isAmbiguous = function() {
+		this.isAmbiguous = function () {
 			return this.length > 1;
 		};
 
 		// These next functions are not comprehensive, but helpful for common tasks.
 
-		this.isExactMatch = function(idx) {
+		this.isExactMatch = function (idx) {
 			idx = maybeDefault(idx);
 			checkBounds(idx);
 			return this.raw[idx].analysis.address_precision == "DeliveryPoint";
 		};
 	}
 
-
 	/*
 	 *	EVENT HANDLER "SHTUFF"
 	 */
 
-
 	/*
-		Called every time a LiveAddressIntl event is raised.
-		This allows us to maintain the binding even if the
-		callback function is changed later.
-		"event" is the actual event object, and
-		"data" is anything extra to pass to the event handler.
-	*/
+	 Called every time a LiveAddressIntl event is raised.
+	 This allows us to maintain the binding even if the
+	 callback function is changed later.
+	 "event" is the actual event object, and
+	 "data" is anything extra to pass to the event handler.
+	 */
 	function HandleEvent(event, data) {
 		var handler = EventHandlers[event.type];
 		if (handler)
@@ -1491,10 +1547,10 @@
 	}
 
 	// Submits a form by calling `click` on a button element or `submit` on a form element
-	var submitForm = function(invokeOn, invokeFunction) {
+	var submitForm = function (invokeOn, invokeFunction) {
 		if (invokeOn && typeof invokeOn !== 'function' && invokeFunction) {
 			if (invokeFunction == "click") {
-				setTimeout(function() {
+				setTimeout(function () {
 					$(invokeOn).click(); // Very particular: we MUST fire the native 'click' event!
 				}, 5);
 			} else if (invokeFunction == "submit")
@@ -1503,7 +1559,7 @@
 	};
 
 	var EventHandlers = {
-		FieldsMapped: function(event, data) {
+		FieldsMapped: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "FieldsMapped", "(Fields mapped to their respective addresses)", event, data);
 
@@ -1511,13 +1567,13 @@
 			window.loaded ? ui.postMappingOperations() : $(window).load(ui.postMappingOperations);
 		},
 
-		MapInitialized: function(event, data) {
+		MapInitialized: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "MapInitialized", "(Mapped fields have been wired up to the window" +
 					(config.ui ? ", document, and UI" : " and document") + ")", event, data);
 		},
 
-		AddressChanged: function(event, data) {
+		AddressChanged: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "AddressChanged", "(Address changed)", event, data);
 
@@ -1529,7 +1585,7 @@
 			// AND the form, if any, isn't already chewing on an address...
 			// THEN verification has been invoked.
 			if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 ||
-					data.address.isFreeform()) && !data.suppressAutoVerification && data.address.hasDomFields() &&
+				data.address.isFreeform()) && !data.suppressAutoVerification && data.address.hasDomFields() &&
 				data.address.active &&
 				(data.address.form && !data.address.form.processing))
 				trigger("VerificationInvoked", {
@@ -1537,7 +1593,7 @@
 				});
 		},
 
-		VerificationInvoked: function(event, data) {
+		VerificationInvoked: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "VerificationInvoked", "(Address verification invoked)", event, data);
 
@@ -1557,14 +1613,14 @@
 			data.address.verify(data.invoke, data.invokeFn);
 		},
 
-		RequestSubmitted: function(event, data) {
+		RequestSubmitted: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "RequestSubmitted", "(Request submitted to server)", event, data);
 
 			ui.showLoader(data.address);
 		},
 
-		ResponseReceived: function(event, data) {
+		ResponseReceived: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "ResponseReceived",
 					"(Response received from server, but has not been inspected)", event, data);
@@ -1581,7 +1637,7 @@
 				trigger("AddressWasInvalid", data);
 		},
 
-		RequestTimedOut: function(event, data) {
+		RequestTimedOut: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "RequestTimedOut", "(Request timed out)", event, data);
 
@@ -1596,7 +1652,7 @@
 			ui.hideLoader(data.address);
 		},
 
-		AddressWasValid: function(event, data) {
+		AddressWasValid: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "AddressWasValid", "(Response indicates input address was valid)", event, data);
 
@@ -1608,28 +1664,28 @@
 			addr.accept(data);
 		},
 
-		AddressWasAmbiguous: function(event, data) {
+		AddressWasAmbiguous: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "AddressWasAmbiguous", "(Response indiciates input address was ambiguous)", event, data);
 
 			ui.showAmbiguous(data);
 		},
 
-		AddressWasInvalid: function(event, data) {
+		AddressWasInvalid: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "AddressWasInvalid", "(Response indicates input address was invalid)", event, data);
 
 			ui.showInvalid(data);
 		},
 
-		OriginalInputSelected: function(event, data) {
+		OriginalInputSelected: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "OriginalInputSelected", "(User chose to use original input)", event, data);
 
 			data.address.accept(data, false);
 		},
 
-		InvalidAddressRejected: function(event, data) {
+		InvalidAddressRejected: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "InvalidAddressRejected", "(User chose to correct an invalid address)", event, data);
 
@@ -1639,7 +1695,7 @@
 			trigger("Completed", data);
 		},
 
-		AddressAccepted: function(event, data) {
+		AddressAccepted: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "AddressAccepted", "(Address marked accepted)", event, data);
 
@@ -1656,7 +1712,7 @@
 			trigger("Completed", data);
 		},
 
-		Completed: function(event, data) {
+		Completed: function (event, data) {
 			if (config.debug)
 				console.log("EVENT:", "Completed", "(All done)", event, data);
 
@@ -1667,7 +1723,6 @@
 			}
 		}
 	};
-
 
 	/*
 	 *	MISCELLANEOUS
