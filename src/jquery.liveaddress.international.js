@@ -646,14 +646,15 @@
 				return;
 
 			addr.lastStreetInput = input; // Used so that autocomplete only fires on real changes (i.e. not just whitespace)
-
-			trigger('AutocompleteInvoked', {
-				containerUi: containerUi,
-				suggContainer: suggContainer,
-				streetField: streetField,
-				input: input,
-				addr: addr
-			});
+			if (addr.isDomestic()) {
+				trigger('AutocompleteInvoked', {
+					containerUi: containerUi,
+					suggContainer: suggContainer,
+					streetField: streetField,
+					input: input,
+					addr: addr
+				});
+			}
 		}
 
 		this.requestAutocomplete = function (event, data) {
@@ -1653,7 +1654,6 @@
 		this.enoughInput = function () {
 			return (fields.country && fields.country.value) && (
 					(fields.freeform && fields.freeform.value) ||
-					(fields.address1 && fields.address1.value) ||
 					((fields.address1 && fields.address1.value) && (fields.postal_code && fields.postal_code.value)) ||
 					((fields.address1 && fields.address1.value) && (fields.locality && fields.locality.value) && (fields.administrative_area && fields.administrative_area.value))
 				);
