@@ -739,7 +739,7 @@
 				if (domfields['postal_code']) {
 					$(domfields['postal_code']).val("").change();
 				}
-				if (domfields['adress1'])
+				if (domfields['address1'])
 					$(domfields['address1']).val(suggestion.street_line).change();
 				// State filled in before city so autoverify is not invoked without finishing using the suggestion
 				if (domfields['administrative_area']) {
@@ -750,6 +750,7 @@
 					addr.usedAutocomplete = true;
 					$(domfields['locality']).val(suggestion.city).change();
 				}
+				$(domfields['country']).val("USA").change();
 			}
 			trigger("AutocompleteUsed", {
 				address: addr,
