@@ -835,7 +835,7 @@
 				return;
 
 			addr.lastStreetInput = input; // Used so that autocomplete only fires on real changes (i.e. not just whitespace)
-			if (addr.isDomestic()) {
+			if (addr.isDomestic() && (config.target === "US" || config.target === "BOTH")) {
 				trigger('AutocompleteInvoked', {
 					containerUi: containerUi,
 					suggContainer: suggContainer,
@@ -1522,10 +1522,44 @@
 			if (differentVal && !keepState) {
 				ui.unmarkAsValid(self);
 				var uiTag = config.ui ? $('.smarty-ui .smarty-tag.smarty-addr-' + id) : undefined;
-				if (uiTag && !uiTag.is(':visible'))
-					uiTag.show(); // Show checkmark tag if address is in US
-				self.unaccept();
-				trigger("AddressChanged", eventMeta);
+				if (config.target === "US") {
+					if (self.isDomestic()) {
+						if (uiTag && !uiTag.is(':visible'))
+							uiTag.show(); // Show checkmark tag if address is in US
+						self.unaccept();
+						trigger("AddressChanged", eventMeta);
+					} else {
+						if (uiTag && uiTag.is(':visible'))
+							uiTag.hide(); // Hide checkmark tag if address is non-US
+						self.accept({
+							address: self
+						}, false);
+					}
+				} else if (config.target === "INTERNATIONAL") {
+					if (!self.isDomestic()) {
+						if (uiTag && !uiTag.is(':visible'))
+							uiTag.show(); // Show checkmark tag if address is in US
+						self.unaccept();
+						trigger("AddressChanged", eventMeta);
+					} else {
+						if (uiTag && uiTag.is(':visible'))
+							uiTag.hide(); // Hide checkmark tag if address is non-US
+						self.accept({
+							address: self
+						}, false);
+					}
+				} else if (config.target === "BOTH") {
+					if (uiTag && !uiTag.is(':visible'))
+						uiTag.show(); // Show checkmark tag if address is in US
+					self.unaccept();
+					trigger("AddressChanged", eventMeta);
+				} else {
+					if (uiTag && uiTag.is(':visible'))
+						uiTag.hide(); // Hide checkmark tag if address is non-US
+					self.accept({
+						address: self
+					}, false);
+				}
 			}
 
 			return true;
