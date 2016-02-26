@@ -124,7 +124,8 @@
 		if (typeof config.autocomplete === 'number')
 			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
 
-		config.target = config.target.toUpperCase() || defaults.target;
+		config.target = config.target || defaults.target;
+		config.target = config.target.toUpperCase();
 
 		/*
 		 *	EXPOSED (PUBLIC) FUNCTIONS
@@ -552,7 +553,6 @@
 							}
 						}
 					});
-
 				}
 
 				$('body').delegate('.smarty-tag-grayed', 'click', function (e) {
