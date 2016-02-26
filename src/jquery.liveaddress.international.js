@@ -32,7 +32,7 @@
 	var defaults = {
 		candidates: 3, // Number of suggestions to show if ambiguous
 		autocomplete: 10, // Number of autocomplete suggestions; set to 0 or false to disable
-		requestUrlIntl: "https://international-street.api.smartystreets.com/verify", // International API endpoint
+		requestUrlInternational: "https://international-street.api.smartystreets.com/verify", // International API endpoint
 		requestUrlUS: "https://api.smartystreets.com/street-address", // US API endpoint
 		timeout: 5000, // How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium", // Animation speed
@@ -40,7 +40,8 @@
 		invalidMessage: "Address not verified", // Message when address is invalid
 		certifyMessage: "Click here to certify the address is correct",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
-		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last" // Selector to find a likely submit button or submit image (in a form)
+		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last", // Selector to find a likely submit button or submit image (in a form)
+		target: "US"
 	};
 	var config = {}; // Configuration settings as set by the user or just the defaults
 	var forms = []; // List of forms (which hold lists of addresses)
@@ -105,7 +106,7 @@
 		config.certifyMessage = config.certifyMessage || defaults.certifyMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
-		config.requestUrlIntl = config.requestUrlIntl || defaults.requestUrlIntl;
+		config.requestUrlInternational = config.requestUrlInternational || defaults.requestUrlInternational;
 		config.requestUrlUS = config.requestUrlUS || defaults.requestUrlUS;
 		config.autocomplete = typeof config.autocomplete === 'undefined' ? defaults.autocomplete : config.autocomplete;
 		config.cityFilter = typeof config.cityFilter === 'undefined' ? "" : config.cityFilter;
@@ -122,6 +123,8 @@
 
 		if (typeof config.autocomplete === 'number')
 			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
+
+		config.target = config.target.toUpperCase() || defaults.target;
 
 		/*
 		 *	EXPOSED (PUBLIC) FUNCTIONS
@@ -319,7 +322,7 @@
 					return false;
 
 				var previousHandler = this.events[eventType];
-				this.events[eventType] = function(event, data) {
+				this.events[eventType] = function (event, data) {
 					userHandler(event, data, previousHandler);
 				};
 			},
@@ -1294,27 +1297,41 @@
 				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
 				'<div class="smarty-choice-list">';
 
-			for (var i = 0; i < response.raw.length; i++) {
-				var ambigAddr = '';
-				if (response.raw[i].address1) {
-					ambigAddr += response.raw[i].address1;
+			if (addr.isDomestic()) {
+				for (var i = 0; i < response.raw.length; i++) {
+					var line1 = response.raw[i].delivery_line_1,
+						city = response.raw[i].components.city_name,
+						st = response.raw[i].components.state_abbreviation,
+						zip = response.raw[i].components.zipcode + "-" + response.raw[i].components.plus4_code;
+					html += '<a href="javascript:" class="smarty-choice" data-index="' + i + '">' + line1 + '<br>' + city + ', ' + st + ' ' + zip + '</a>';
 				}
-				if (response.raw[i].address2) {
-					ambigAddr = ambigAddr + '<br>' + response.raw[i].address2;
+			} else {
+				var numCandidates = config.candidates;
+				if (response.raw.length < numCandidates) {
+					numCandidates = response.raw.length;
 				}
-				if (response.raw[i].address3) {
-					ambigAddr = ambigAddr + '<br>' + response.raw[i].address3;
+				for (var i = 0; i < numCandidates; i++) {
+					var ambigAddr = '';
+					if (response.raw[i].address1) {
+						ambigAddr += response.raw[i].address1;
+					}
+					if (response.raw[i].address2) {
+						ambigAddr = ambigAddr + '<br>' + response.raw[i].address2;
+					}
+					if (response.raw[i].address3) {
+						ambigAddr = ambigAddr + '<br>' + response.raw[i].address3;
+					}
+					if (response.raw[i].address4) {
+						ambigAddr = ambigAddr + '<br>' + response.raw[i].address4;
+					}
+					if (response.raw[i].address5) {
+						ambigAddr = ambigAddr + '<br>' + response.raw[i].address5;
+					}
+					if (response.raw[i].address6) {
+						ambigAddr = ambigAddr + '<br>' + response.raw[i].address6;
+					}
+					html += '<a href="javascript:" class="smarty-choice" data-index="' + i + '">' + ambigAddr + '</a>';
 				}
-				if (response.raw[i].address4) {
-					ambigAddr = ambigAddr + '<br>' + response.raw[i].address4;
-				}
-				if (response.raw[i].address5) {
-					ambigAddr = ambigAddr + '<br>' + response.raw[i].address5;
-				}
-				if (response.raw[i].address6) {
-					ambigAddr = ambigAddr + '<br>' + response.raw[i].address6;
-				}
-				html += '<a href="javascript:" class="smarty-choice" data-index="' + i + '">' + ambigAddr + '</a>';
 			}
 
 			html += '</div><div class="smarty-choice-alt">';
@@ -1801,7 +1818,7 @@
 			var addrData = self.toRequest();
 			var credentials = config.token ? "auth-id=" + encodeURIComponent(config.key) + "&auth-token=" +
 			encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
-			var requestUrl = config.requestUrlIntl;
+			var requestUrl = config.requestUrlInternational;
 			if (self.isDomestic()) {
 				requestUrl = config.requestUrlUS;
 				addrData = self.toRequestUS();
@@ -1887,6 +1904,7 @@
 			if (fields.freeform && fields.freeform.dom.value) {
 				obj.street = fields.freeform.dom.value;
 			}
+			obj.candidates = config.candidates;
 			return obj;
 		};
 
