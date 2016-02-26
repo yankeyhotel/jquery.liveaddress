@@ -1676,7 +1676,7 @@
 					if (resp.delivery_line_1)
 						self.set("address1", resp.delivery_line_1, updateDomElement, true, e, false);
 					if (resp.delivery_line_2)
-						self.set("address2", resp.delivery_line_2 || "", updateDomElement, true, e, false); // Rarely used; must otherwise be blank.
+						self.set("address2", resp.delivery_line_2, updateDomElement, true, e, false); // Rarely used; must otherwise be blank.
 					if (resp.components.city_name)
 						self.set("locality", resp.components.city_name, updateDomElement, true, e, false);
 					if (resp.components.state_abbreviation)
@@ -1684,6 +1684,8 @@
 					if (resp.components.zipcode && resp.components.plus4_code)
 						self.set("postal_code", resp.components.zipcode + "-" + resp.components.plus4_code, updateDomElement, true, e, false);
 				}
+				self.set("address3", "", updateDomElement, true, e, false);
+				self.set("address4", "", updateDomElement, true, e, false);
 				self.set("country", "USA", updateDomElement, true, e, false);
 			} else { // Sent via international API
 				if (self.isFreeform()) {
@@ -1926,7 +1928,20 @@
 			if (fields.address2 && fields.address2.dom.value) {
 				obj.street2 = fields.address2.dom.value;
 			}
-			if (fields.locality && fields.locality.dom.value) {
+			if(fields.address3 && fields.address3.dom.value) {
+				if(typeof obj.street2 === 'undefined') {
+					obj.street2 = fields.address3.dom.value;
+				} else {
+					obj.street2 = obj.street2 += " " + fields.address3.dom.value;
+				}
+			}
+			if(fields.address4 && fields.address4.dom.value) {
+				if(typeof obj.street2 === 'undefined') {
+					obj.street2 = fields.address4.dom.value;
+				} else {
+					obj.street2 = obj.street2 += " " + fields.address4.dom.value;
+				}
+			}			if (fields.locality && fields.locality.dom.value) {
 				obj.city = fields.locality.dom.value;
 			}
 			if (fields.administrative_area && fields.administrative_area.dom.value) {
