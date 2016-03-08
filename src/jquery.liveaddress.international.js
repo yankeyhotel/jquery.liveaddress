@@ -125,7 +125,7 @@
 			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
 
 		config.target = config.target || defaults.target;
-		config.target = config.target.toUpperCase();
+		config.target = config.target.toUpperCase().replace(/\s+/g, "").split("|");
 
 		/*
 		 *	EXPOSED (PUBLIC) FUNCTIONS
@@ -835,7 +835,7 @@
 				return;
 
 			addr.lastStreetInput = input; // Used so that autocomplete only fires on real changes (i.e. not just whitespace)
-			if (addr.isDomestic() && (config.target === "US" || config.target === "BOTH")) {
+			if (addr.isDomestic() && config.target.includes("US")) {
 				trigger('AutocompleteInvoked', {
 					containerUi: containerUi,
 					suggContainer: suggContainer,
@@ -1522,7 +1522,7 @@
 			if (differentVal && !keepState) {
 				ui.unmarkAsValid(self);
 				var uiTag = config.ui ? $('.smarty-ui .smarty-tag.smarty-addr-' + id) : undefined;
-				if (config.target === "US") {
+				if (config.target.includes("US") && !config.target.includes("INTERNATIONAL")) {
 					if (self.isDomestic()) {
 						if (uiTag && !uiTag.is(':visible'))
 							uiTag.show(); // Show checkmark tag if address is in US
@@ -1535,30 +1535,16 @@
 							address: self
 						}, false);
 					}
-				} else if (config.target === "INTERNATIONAL") {
-					if (!self.isDomestic()) {
-						if (uiTag && !uiTag.is(':visible'))
-							uiTag.show(); // Show checkmark tag if address is in US
-						self.unaccept();
-						trigger("AddressChanged", eventMeta);
-					} else {
-						if (uiTag && uiTag.is(':visible'))
-							uiTag.hide(); // Hide checkmark tag if address is non-US
-						self.accept({
-							address: self
-						}, false);
-					}
-				} else if (config.target === "BOTH") {
+				} else if (config.target.includes("INTERNATIONAL") && !config.target.includes("US")) {
 					if (uiTag && !uiTag.is(':visible'))
 						uiTag.show(); // Show checkmark tag if address is in US
 					self.unaccept();
 					trigger("AddressChanged", eventMeta);
-				} else {
-					if (uiTag && uiTag.is(':visible'))
-						uiTag.hide(); // Hide checkmark tag if address is non-US
-					self.accept({
-						address: self
-					}, false);
+				} else if (config.target.includes("US") && config.target.includes("INTERNATIONAL")) {
+					if (uiTag && !uiTag.is(':visible'))
+						uiTag.show(); // Show checkmark tag if address is in US
+					self.unaccept();
+					trigger("AddressChanged", eventMeta);
 				}
 			}
 
@@ -1855,7 +1841,7 @@
 			var credentials = config.token ? "auth-id=" + encodeURIComponent(config.key) + "&auth-token=" +
 			encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
 			var requestUrl = config.requestUrlInternational;
-			if (self.isDomestic()) {
+			if (self.isDomestic() && config.target.includes("US")) {
 				requestUrl = config.requestUrlUS;
 				addrData = self.toRequestUS();
 			}
@@ -1928,20 +1914,21 @@
 			if (fields.address2 && fields.address2.dom.value) {
 				obj.street2 = fields.address2.dom.value;
 			}
-			if(fields.address3 && fields.address3.dom.value) {
-				if(typeof obj.street2 === 'undefined') {
+			if (fields.address3 && fields.address3.dom.value) {
+				if (typeof obj.street2 === 'undefined') {
 					obj.street2 = fields.address3.dom.value;
 				} else {
 					obj.street2 = obj.street2 += " " + fields.address3.dom.value;
 				}
 			}
-			if(fields.address4 && fields.address4.dom.value) {
-				if(typeof obj.street2 === 'undefined') {
+			if (fields.address4 && fields.address4.dom.value) {
+				if (typeof obj.street2 === 'undefined') {
 					obj.street2 = fields.address4.dom.value;
 				} else {
 					obj.street2 = obj.street2 += " " + fields.address4.dom.value;
 				}
-			}			if (fields.locality && fields.locality.dom.value) {
+			}
+			if (fields.locality && fields.locality.dom.value) {
 				obj.city = fields.locality.dom.value;
 			}
 			if (fields.administrative_area && fields.administrative_area.dom.value) {
