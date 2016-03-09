@@ -121,6 +121,9 @@
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
+		// Parameter used for internal uses. If set to true, freeform will fail. Use with caution
+		config.xIncludeInvalid = typeof config.xIncludeInvalid === 'undefined' ? false : config.xIncludeInvalid;
+
 		if (typeof config.autocomplete === 'number')
 			config.autocomplete = config.autocomplete < 1 ? false : (config.autocomplete > 10 ? 10 : config.autocomplete);
 
@@ -1841,14 +1844,19 @@
 			var credentials = config.token ? "auth-id=" + encodeURIComponent(config.key) + "&auth-token=" +
 			encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
 			var requestUrl = config.requestUrlInternational;
+			var headers = {};
 			if (self.isDomestic() && config.target.includes("US")) {
 				requestUrl = config.requestUrlUS;
 				addrData = self.toRequestUS();
+				headers = {
+					"X-Include-Invalid": config.xIncludeInvalid
+				};
 			}
 			$.ajax({
 					url: requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
 					(config.debug ? "_debug" : ""),
 					contentType: "jsonp",
+					headers: headers,
 					data: addrData,
 					timeout: config.timeout
 				})
@@ -2096,7 +2104,9 @@
 			(this.length == 1 &&
 			(this.raw[0].analysis.verification_status == "None" ||
 			this.raw[0].analysis.verification_status == "Partial" ||
-			this.raw[0].analysis.dpv_match_code == "N")));
+			this.raw[0].analysis.dpv_match_code == "N" ||
+			(typeof this.raw[0].analysis.verification_status === 'undefined' &&
+			typeof this.raw[0].analysis.dpv_match_code === 'undefined'))));
 		};
 
 		this.isAmbiguous = function () {
