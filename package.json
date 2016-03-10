@@ -1,8 +1,8 @@
 {
-  "name": "liveaddress-international",
-  "version": "1.0.0",
-  "title": "LiveAddress International - Address validation",
-  "description": "Free or commercial plug-and-play international address verification and geocoding for website forms, powered by SmartyStreets.",
+  "name": "liveaddress",
+  "version": "3.0.0",
+  "title": "LiveAddress - Address validation",
+  "description": "Free or commercial plug-and-play address verification and geocoding for website forms, powered by SmartyStreets.",
   "keywords": [
     "address",
     "validation",

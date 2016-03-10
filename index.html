@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TEST RUNNER &mdash; jQuery Plugin for LiveAddress International API</title>
+    <title>TEST RUNNER &mdash; jQuery Plugin for LiveAddress API</title>
     <meta charset="utf-8">
     <link href="//fonts.googleapis.com/css?family=Open+Sans:300,400,600" rel="stylesheet" type="text/css">
     <script src="lib/jquery-2_0_2.js"></script>
-    <script src="src/jquery.liveaddress.international.js"></script>
+    <script src="src/jquery.liveaddress.js"></script>
     <script>
 
         /** CONFIGURE **/
@@ -25,7 +25,7 @@
 
         /** INITIALIZE **/
 
-        var liveaddressintl = $.LiveAddressIntl({
+        var liveaddress = $.LiveAddress({
             key: htmlKey,		// An HTML key from your account
             debug: debug,		// Show debug stuff
             addresses: [{
@@ -255,10 +255,10 @@
 <body>
 
 <hgroup>
-    <h1>LiveAddress International API jQuery Plugin</h1>
+    <h1>LiveAddress API jQuery Plugin</h1>
     <h2>Test Runner &mdash; by <a href="http://smartystreets.com/" target="_blank">SmartyStreets</a></h2>
     <span id="revision">Revision: <script>document.write(testRunnerVersion);</script> / Debug mode: <script>document.write(debug ? "on" : "off");</script></span>
-    <span id="version">jQuery version: <script>document.write($.fn.jquery);</script> / Plugin version: <script>document.write(liveaddressintl.version);</script></span>
+    <span id="version">jQuery version: <script>document.write($.fn.jquery);</script> / Plugin version: <script>document.write(liveaddress.version);</script></span>
 </hgroup>
 
 
