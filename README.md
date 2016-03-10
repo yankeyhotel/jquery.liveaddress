@@ -29,7 +29,7 @@ Quick Start
 2. Bring the LiveAddress API jQuery Plugin onto your page:
 ```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.8/jquery.liveaddress.min.js"></script>```
 3. Initialize the plugin with an HTML key from your account:
-```<script type="text/javascript">jQuery.LiveAddressIntl("HtmlKey");</script>```
+```<script type="text/javascript">jQuery.LiveAddress("HtmlKey");</script>```
 
 That's it! Ensure it works before using it on a live site. SmartyStreets
 assumes no responsibility if something goes wrong on your web page. Enable debug mode
@@ -101,7 +101,7 @@ Forks
 -----------------------
 These are user-contributed changes to the plugin that you may find useful. Please note that we cannot support or endorse them, but we do link to them as a courtesy since you may find them helpful.
 
-- [The cerealcable fork](https://github.com/cerealcable/jquery.liveaddress/blob/13185e2b1548fd886f99a0f2822230ea18e90213/src/jquery.liveaddress.international.js) puts secondary data into the second street field, if there is one. (Just be aware that those addresses are no longer in the standardized format.)
+- [The cerealcable fork](https://github.com/cerealcable/jquery.liveaddress/blob/13185e2b1548fd886f99a0f2822230ea18e90213/src/jquery.liveaddress.js) puts secondary data into the second street field, if there is one. (Just be aware that those addresses are no longer in the standardized format.)
 
 
 License (GPLv3)
