@@ -184,7 +184,7 @@
 					// AND the form, if any, isn't already chewing on an address...
 					// THEN verification has been invoked.
 					if (config.autoVerify && data.address.enoughInput() && (data.address.verifyCount == 0 ||
-						data.address.isFreeform() || data.address.usedAutcomplete) && !data.suppressAutoVerification && data.address.hasDomFields() &&
+						data.address.isFreeform() || data.address.usedAutocomplete) && !data.suppressAutoVerification && data.address.hasDomFields() &&
 						data.address.active && !data.address.autocompleteVisible() &&
 						(data.address.form && !data.address.form.processing))
 						trigger("VerificationInvoked", {
@@ -229,6 +229,7 @@
 
 					if (typeof data.invoke === "function")
 						data.invoke(data.response); // User-defined callback function; we're all done here.
+
 					if (data.response.isAmbiguous())
 						trigger("AddressWasAmbiguous", data);
 					else if (config.verifySecondary && data.response.isMissingSecondary())
@@ -237,7 +238,6 @@
 						trigger("AddressWasValid", data);
 					else if (data.response.isInvalid())
 						trigger("AddressWasInvalid", data);
-
 				},
 
 				RequestTimedOut: function (event, data) {
@@ -345,7 +345,6 @@
 			},
 			mapFields: function (map) {
 				var doMap = function (map) {
-
 					if (typeof map === 'object')
 						return ui.mapFields(map, matched);
 					else if (!map && typeof config.addresses === 'object')
@@ -1197,7 +1196,6 @@
 					$(formDom).data(formDataProperty, 1);
 					disableBrowserAutofill(form.dom);
 					formsFound.push(form);
-					formsFound.push(form);
 				} else {
 					// Find the form in our list since we already put it there
 					for (var i = 0; i < formsFound.length; i++) {
@@ -1929,6 +1927,7 @@
 					"X-Include-Invalid": config.xIncludeInvalid
 				};
 			}
+
 			$.ajax({
 					url: requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
 					(config.debug ? "_debug" : ""),
