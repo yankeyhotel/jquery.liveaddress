@@ -38,6 +38,7 @@
 		speed: "medium", // Animation speed
 		ambiguousMessage: "Choose the correct address", // Message when address is ambiguous
 		invalidMessage: "Address not verified", // Message when address is invalid
+		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
 		certifyMessage: "Click here to certify the address is correct",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last", // Selector to find a likely submit button or submit image (in a form)
@@ -103,6 +104,7 @@
 		config.timeout = config.timeout || defaults.timeout;
 		config.ambiguousMessage = config.ambiguousMessage || defaults.ambiguousMessage;
 		config.invalidMessage = config.invalidMessage || defaults.invalidMessage;
+		config.missingSecondaryMessage = config.missingSecondaryMessage || defaults.missingSecondaryMessage;
 		config.certifyMessage = config.certifyMessage || defaults.certifyMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
@@ -229,10 +231,13 @@
 						data.invoke(data.response); // User-defined callback function; we're all done here.
 					if (data.response.isAmbiguous())
 						trigger("AddressWasAmbiguous", data);
+					else if (config.verifySecondary && data.response.isMissingSecondary())
+						trigger("AddressWasMissingSecondary", data);
 					else if (data.response.isValid())
 						trigger("AddressWasValid", data);
 					else if (data.response.isInvalid())
 						trigger("AddressWasInvalid", data);
+
 				},
 
 				RequestTimedOut: function (event, data) {
@@ -274,6 +279,14 @@
 						console.log("EVENT:", "AddressWasInvalid", "(Response indicates input address was invalid)", event, data);
 
 					ui.showInvalid(data);
+				},
+
+				AddressWasMissingSecondary: function (event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressWasMissingSecondary",
+							"(Response indicates input address was missing secondary", event, data);
+
+					ui.showMissingSecondary(data);
 				},
 
 				OriginalInputSelected: function (event, data) {
@@ -1475,6 +1488,70 @@
 			});
 		};
 
+		this.showMissingSecondary = function (data) {
+			if (!config.ui || !data.address.hasDomFields())
+				return;
+			var addr = data.address;
+			var corners = addr.corners();
+			corners.width = Math.max(corners.width, 300);
+			corners.height = Math.max(corners.height, 180);
+			if (config.enforceVerification) {
+				corners.height -= 49;
+			}
+
+			var html = '<div class="smarty-ui" style="top: ' + corners.top + 'px; left: ' + corners.left + 'px; width: ' +
+				corners.width + 'px; height: ' + corners.height + 'px;">' + '<div class="smarty-popup smarty-addr-' +
+				addr.id() + '" style="width: ' + (corners.width - 6) + 'px; height: ' + (corners.height - 3) + 'px;">' +
+				'<div class="smarty-popup-header smarty-popup-missing-secondary-header">' + config.missingSecondaryMessage +
+				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
+				'<div class="smarty-choice-list"><a href="javascript:" ' +
+				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
+				'<div class="smarty-choice-alt">';
+			if (!config.enforceVerification) {
+				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
+					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
+			}
+			html += '</div>' + '</div></div>';
+
+			$(html).hide().appendTo('body').show(defaults.speed);
+
+			data.selectors = {
+				useOriginal: '.smarty-popup.smarty-addr-' + addr.id() + ' .smarty-choice-override ',
+				abort: '.smarty-popup.smarty-addr-' + addr.id() + ' .smarty-abort'
+			};
+
+			// Scroll to it if necessary
+			if ($(document).scrollTop() > corners.top - 100 || $(document).scrollTop() < corners.top - $(window).height() + 100) {
+				$('html, body').stop().animate({
+					scrollTop: $('.smarty-popup.smarty-addr-' + addr.id()).offset().top - 100
+				}, 500);
+			}
+
+			undelegateAllClicks(data.selectors.abort);
+			// User rejects original input and agrees to double-check it
+			$('body').delegate(data.selectors.abort, 'click', data, function (e) {
+				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
+				delete e.data.selectors;
+				trigger("InvalidAddressRejected", e.data);
+			});
+
+			undelegateAllClicks(data.selectors.useOriginal);
+			// User certifies that what they typed is correct
+			$('body').delegate(data.selectors.useOriginal, 'click', data, function (e) {
+				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
+				delete e.data.selectors;
+				trigger("OriginalInputSelected", e.data);
+			});
+
+			// User presses esc key
+			$(document).keyup(data, function (e) {
+				if (e.keyCode == 27) { //Esc
+					undelegateAllClicks(e.data.selectors);
+					$(data.selectors.abort).click();
+					userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
+				}
+			});
+		};
 	}
 
 	/*
@@ -2111,6 +2188,14 @@
 
 		this.isAmbiguous = function () {
 			return this.length > 1;
+		};
+
+		this.isMissingSecondary = function (idx) {
+			idx = maybeDefault(idx);
+			checkBounds(idx);
+			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1 ||
+				this.raw[idx].analysis.dpv_footnotes.indexOf("R1") > -1 ||
+				(this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("H#") > -1);
 		};
 
 		// These next functions are not comprehensive, but helpful for common tasks.
