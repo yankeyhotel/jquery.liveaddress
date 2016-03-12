@@ -118,7 +118,7 @@
 		config.geolocatePrecision = typeof config.geolocatePrecision === 'undefined' ? 'city' : config.geolocatePrecision;
 		config.waitForStreet = typeof config.waitForStreet === 'undefined' ? false : config.waitForStreet;
 		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
-		config.geocode = typeof config.geocode === 'undefined' ? false : config.geolocate;
+		config.geocode = typeof config.geocode === 'undefined' ? false : config.geocode;
 		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
