@@ -105,6 +105,18 @@
                 administrative_area: '#administrativearea13',
                 postal_code: '#postalcode13',
                 country: '#country13'
+            }, {
+                address1: '#street114',
+                locality: '#locality14',
+                administrative_area: '#administrativearea14',
+                postal_code: '#postalcode14',
+                country: '#country14'
+            }, {
+                address1: '#street115',
+                locality: '#locality15',
+                administrative_area: '#administrativearea15',
+                postal_code: '#postalcode15',
+                country: '#country15'
             }],
             waitForStreet: true	// Hides autocomplete suggestions until a street is entered
         });
@@ -677,6 +689,45 @@
         <tr>
             <td>Country:</td>
             <td><input type="text" id="country13"></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="submit" value="Submit Form"></td>
+        </tr>
+    </table>
+</form>
+
+<form id="country">
+    <header>
+        <h3>Country field</h3>
+        <p>Non-US addresses should be allowed to pass thru freely</p>
+    </header>
+    <table>
+        <tr>
+            <td>Street address:</td>
+            <td><input type="text" id="street114"></td>
+        </tr>
+        <tr>
+            <td>Locality (City):</td>
+            <td><input type="text" id="locality14"></td>
+        </tr>
+        <tr>
+            <td>Administrative Area (State):</td>
+            <td><input type="text" id="administrativearea14"></td>
+        </tr>
+        <tr>
+            <td>Postal Code:</td>
+            <td><input type="text" id="postalcode14"></td>
+        </tr>
+        <tr>
+            <td>Country:</td>
+            <td><select size="1" id="country14" required="required" style="width: 85%;">
+                <option selected="selected">Select a Country</option>
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+                <option value="GB">United Kingdom</option>
+            </select>
+            </td>
         </tr>
         <tr>
             <td></td>

@@ -1578,15 +1578,21 @@
 			if (!fields[key])
 				fields[key] = {};
 
-			value = value.replace(/<|>/g, ""); // prevents script injection attacks (< and > aren't in addresses, anyway)
+			if (typeof fields[key] !== "undefined" && fields[key].dom.tagName === "SELECT") {
+				value = fields[key].dom[fields[key].dom.selectedIndex].text.replace(/<|>/g, "");
+			} else {
+				value = value.replace(/<|>/g, ""); // prevents script injection attacks (< and > aren't in addresses, anyway)
+			}
 
 			var differentVal = fields[key].value != value;
 
 			fields[key].undo = fields[key].value || "";
 			fields[key].value = value;
 
-			if (updateDomElement && fields[key].dom) {
-				$(fields[key].dom).val(value);
+			if (fields[key].dom.tagName === "INPUT") {
+				if (updateDomElement && fields[key].dom) {
+					$(fields[key].dom).val(value);
+				}
 			}
 
 			var eventMeta = {
@@ -1847,7 +1853,6 @@
 					}
 					if (resp.components.country_iso_3)
 						self.set("country", resp.components.country_iso_3, updateDomElement, true, e, false);
-
 				}
 			}
 		};
@@ -1915,7 +1920,7 @@
 
 			ui.disableFields(self);
 			self.verifyCount++;
-			var addrData = self.toRequest();
+			var addrData = self.toRequestIntl();
 			var credentials = config.token ? "auth-id=" + encodeURIComponent(config.key) + "&auth-token=" +
 			encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
 			var requestUrl = config.requestUrlInternational;
@@ -1969,7 +1974,7 @@
 				);
 		};
 
-		this.toRequest = function () {
+		this.toRequestIntl = function () {
 			var obj = {};
 			if (fields.hasOwnProperty("freeform") &&
 				fields.hasOwnProperty("address1") &&
@@ -1983,7 +1988,11 @@
 			}
 			for (var key in fields) {
 				var keyval = {};
-				keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
+				if (fields[key].dom.tagName === "SELECT") {
+					keyval[key] = fields[key].dom[fields[key].dom.selectedIndex].text;
+				} else {
+					keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
+				}
 				$.extend(obj, keyval);
 			}
 			obj.geocode = config.geocode;
@@ -2012,8 +2021,12 @@
 					obj.street2 = obj.street2 += " " + fields.address4.dom.value;
 				}
 			}
-			if (fields.locality && fields.locality.dom.value) {
-				obj.city = fields.locality.dom.value;
+			if (fields.locality && fields.locality.dom) {
+				if (fields.locality.dom.tagName === "SELECT") {
+					obj.city = fields.locality.dom[fields.locality.dom.selectedIndex].text;
+				} else {
+					obj.city = fields.locality.dom.value;
+				}
 			}
 			if (fields.administrative_area && fields.administrative_area.dom.value) {
 				obj.state = fields.administrative_area.dom.value;
