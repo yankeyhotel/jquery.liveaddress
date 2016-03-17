@@ -2210,7 +2210,15 @@
 			countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
 			var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
 				"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
-				"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA", "UNITEDSTATESUS"
+				"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA", "UNITEDSTATESUS",
+				"AMERICANSAMOA", "AMERIKASĀMOA", "AMERIKASAMOA", "ASM",
+				"MICRONESIA", "FEDERALSTATESOFMICRONESIA", "FEDERATEDSTATESOFMICRONESIA", "FSM",
+				"GUAM", "GM",
+				"MARSHALLISLANDS", "MHL",
+				"NORTHERNMARIANAISLANDS", "NMP",
+				"PALAU", "REPUBLICOFPALAU", "BELAU", "PLW",
+				"PUERTORICO", "COMMONWEALTHOFPUERTORICO", "PRI",
+				"UNITEDSTATESVIRGINISLANDS", "VIR"
 			]; // 840 is ISO: 3166; and 223 is some shopping carts
 			return arrayContains(usa, countryValue) || fields.country.value == "-1";
 		};
