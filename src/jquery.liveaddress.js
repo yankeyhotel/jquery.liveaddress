@@ -1725,11 +1725,14 @@
 
 			if (typeof domMap === 'object') { // can be an actual map to DOM elements or just field/value data
 				// Find the last field likely to appear on the DOM (used for UI attachments)
-				this.lastField = domMap.country || domMap.freeform || domMap.postal_code || domMap.administrative_area || domMap.locality || domMap.address1;
+				this.lastField = domMap.country;
 
 				var isEmpty = true; // Whether the address has data in it (pre-populated) -- first assume it is empty.
 
 				for (var prop in domMap) {
+					if(domMap[prop].getBoundingClientRect().top > this.lastField.getBoundingClientRect().top) {
+						this.lastField = domMap[prop];
+					}
 					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
 						continue;
 
