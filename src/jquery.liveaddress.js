@@ -2059,7 +2059,6 @@
 		this.enoughInput = function () {
 			return (fields.country && fields.country.value) && (
 					(fields.freeform && fields.freeform.value) ||
-					(fields.address1 && fields.address1.value) ||
 					((fields.address1 && fields.address1.value) && (fields.postal_code && fields.postal_code.value)) ||
 					((fields.address1 && fields.address1.value) && (fields.locality && fields.locality.value) && (fields.administrative_area && fields.administrative_area.value))
 				);
