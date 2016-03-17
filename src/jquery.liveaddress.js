@@ -1808,11 +1808,11 @@
 			// Sent via US api
 			if (typeof resp.candidate_index != 'undefined') {
 				if (self.isFreeform()) {
-					var singleLineAddr = (resp.addressee ? resp.addressee + " " : "") +
-						(resp.delivery_line_1 ? resp.delivery_line_1 + " " : "") +
-						(resp.delivery_line_2 ? resp.delivery_line_2 + " " : "") +
-						(resp.components.urbanization ? resp.components.urbanization + " " : "") +
-						(resp.last_line ? resp.last_line : "");
+					var singleLineAddr = (resp.addressee ? resp.addressee + ", " : "") +
+						(resp.delivery_line_1 ? resp.delivery_line_1 + ", " : "") +
+						(resp.delivery_line_2 ? ", " + resp.delivery_line_2 + ", " : "") +
+						(resp.components.urbanization ? ", " + resp.components.urbanization : "") +
+						(resp.last_line ? ", " + resp.last_line : "");
 					var fieldKey = "freeform";
 					if (fields.address1) {
 						fieldKey = "address1";
@@ -1837,19 +1837,19 @@
 				self.set("country", "USA", updateDomElement, true, e, false);
 			} else { // Sent via international API
 				if (self.isFreeform()) {
-					var singleLineAddr = (resp.organization ? resp.organization + " " : "") +
-						(resp.address1 ? resp.address1 + " " : "") +
-						(resp.address2 ? resp.address2 + " " : "") +
-						(resp.address3 ? resp.address3 + " " : "") +
-						(resp.address4 ? resp.address4 + " " : "") +
-						(resp.address5 ? resp.address5 + " " : "") +
-						(resp.address6 ? resp.address6 + " " : "") +
-						(resp.address7 ? resp.address7 + " " : "") +
-						(resp.address8 ? resp.address8 + " " : "") +
-						(resp.address9 ? resp.address9 + " " : "") +
-						(resp.address10 ? resp.address10 + " " : "") +
-						(resp.address11 ? resp.address11 + " " : "") +
-						(resp.address12 ? resp.address12 + " " : "");
+					var singleLineAddr = (resp.organization ? resp.organization + ", " : "") +
+						(resp.address1 ? resp.address1 : "") +
+						(resp.address2 ? ", " + resp.address2 : "") +
+						(resp.address3 ? ", " + resp.address3 : "") +
+						(resp.address4 ? ", " + resp.address4 : "") +
+						(resp.address5 ? ", " + resp.address5 : "") +
+						(resp.address6 ? ", " + resp.address6 : "") +
+						(resp.address7 ? ", " + resp.address7 : "") +
+						(resp.address8 ? ", " + resp.address8 : "") +
+						(resp.address9 ? ", " + resp.address9 : "") +
+						(resp.address10 ? ", " + resp.address10 : "") +
+						(resp.address11 ? ", " + resp.address11 : "") +
+						(resp.address12 ? ", " + resp.address12 : "");
 					var countryLine = resp.components.country_iso_3 ? resp.components.country_iso_3 : "";
 					self.set("freeform", singleLineAddr, updateDomElement, true, e, false);
 					self.set("country", countryLine, updateDomElement, true, e, false);
@@ -1938,7 +1938,7 @@
 		var addAddressLine = function (fullLine, addressLine, nextAddressLine) {
 			if (addressLine && nextAddressLine) {
 				if (fullLine != "")
-					fullLine += " ";
+					fullLine += ", ";
 				fullLine += addressLine;
 			}
 			return fullLine;
@@ -2078,7 +2078,7 @@
 			}
 			for (var key in fields) {
 				var keyval = {};
-				if (fields[key].dom.tagName === "SELECT") {
+				if (fields[key].dom && fields[key].dom.tagName === "SELECT") {
 					keyval[key] = fields[key].dom[fields[key].dom.selectedIndex].text;
 				} else {
 					keyval[key] = fields[key].value.replace(/\r|\n/g, " "); // Line breaks to spaces
@@ -2091,24 +2091,24 @@
 
 		this.toRequestUS = function () {
 			var obj = {};
-			if (fields.address1 && fields.address1.dom.value) {
+			if (fields.address1 && fields.address1.dom && fields.address1.dom.value) {
 				obj.street = fields.address1.dom.value;
 			}
-			if (fields.address2 && fields.address2.dom.value) {
+			if (fields.address2 && fields.address2.dom && fields.address2.dom.value) {
 				obj.street2 = fields.address2.dom.value;
 			}
-			if (fields.address3 && fields.address3.dom.value) {
+			if (fields.address3 && fields.address3.dom && fields.address3.dom.value) {
 				if (typeof obj.street2 === 'undefined') {
 					obj.street2 = fields.address3.dom.value;
 				} else {
-					obj.street2 = obj.street2 += " " + fields.address3.dom.value;
+					obj.street2 = obj.street2 += ", " + fields.address3.dom.value;
 				}
 			}
-			if (fields.address4 && fields.address4.dom.value) {
+			if (fields.address4 && fields.address4.dom && fields.address4.dom.value) {
 				if (typeof obj.street2 === 'undefined') {
 					obj.street2 = fields.address4.dom.value;
 				} else {
-					obj.street2 = obj.street2 += " " + fields.address4.dom.value;
+					obj.street2 = obj.street2 += ", " + fields.address4.dom.value;
 				}
 			}
 			if (fields.locality && fields.locality.dom) {
@@ -2135,7 +2135,7 @@
 			if (fields.freeform) {
 				return (fields.freeform ? fields.freeform.value + " " : "") + (fields.country ? fields.country.value : "");
 			} else {
-				return (fields.address1 ? fields.address1.value + " " : "") + (fields.locality ? fields.locality.value + " " : "") + (fields.administrative_area ? fields.administrative_area.value + " " : "") + (fields.postal_code ? fields.postal_code.value : "") + (fields.country ? fields.country.value : "");
+				return (fields.address1 ? fields.address1.value + " " : "") + (fields.address2 ? fields.address2.value + " " : "") + (fields.address3 ? fields.address3.value + " " : "") + (fields.address4 ? fields.address4.value + " " : "") + (fields.locality ? fields.locality.value + " " : "") + (fields.administrative_area ? fields.administrative_area.value + " " : "") + (fields.postal_code ? fields.postal_code.value : "") + (fields.country ? fields.country.value : "");
 			}
 		};
 
