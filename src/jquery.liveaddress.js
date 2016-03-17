@@ -1653,7 +1653,7 @@
 			if (!fields[key])
 				fields[key] = {};
 
-			if (typeof fields[key] !== "undefined" && fields[key].dom.tagName === "SELECT") {
+			if (typeof fields[key].dom !== "undefined" && fields[key].dom.tagName === "SELECT") {
 				value = fields[key].dom[fields[key].dom.selectedIndex].text.replace(/<|>/g, "");
 			} else {
 				value = value.replace(/<|>/g, ""); // prevents script injection attacks (< and > aren't in addresses, anyway)
@@ -1664,7 +1664,7 @@
 			fields[key].undo = fields[key].value || "";
 			fields[key].value = value;
 
-			if (fields[key].dom.tagName === "INPUT") {
+			if (fields[key].dom && fields[key].dom.tagName === "INPUT") {
 				if (updateDomElement && fields[key].dom) {
 					$(fields[key].dom).val(value);
 				}
@@ -1730,7 +1730,7 @@
 				var isEmpty = true; // Whether the address has data in it (pre-populated) -- first assume it is empty.
 
 				for (var prop in domMap) {
-					if(domMap[prop].getBoundingClientRect().top > this.lastField.getBoundingClientRect().top) {
+					if (domMap[prop].getBoundingClientRect().top > this.lastField.getBoundingClientRect().top) {
 						this.lastField = domMap[prop];
 					}
 					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
