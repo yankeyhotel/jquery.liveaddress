@@ -312,6 +312,15 @@
 					data.address.accept(data, false);
 				},
 
+				UsedSuggestedAddress: function (event, data) {
+					if (config.debug)
+						console.log("EVENT:", "UsedSuggestedAddress", "(User chose to a suggested address)", event, data);
+
+					data.response.chosen = data.chosenCandidate;
+					data.address.replaceWith(data.chosenCandidate, true, event);
+					data.address.accept(data);
+				},
+
 				InvalidAddressRejected: function (event, data) {
 					if (config.debug)
 						console.log("EVENT:", "InvalidAddressRejected", "(User chose to correct an invalid address)", event, data);
@@ -2126,7 +2135,7 @@
 
 		this.enoughInput = function () {
 			self.missing = "(Missing ";
-			var baseLength = 9;
+			var baseLength = self.missing.length;
 			if (fields.country && !fields.country.value) {
 				if (self.missing.length > baseLength)
 					self.missing += ", ";
