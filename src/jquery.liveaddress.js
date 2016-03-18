@@ -41,6 +41,7 @@
 		invalidCountryMessage: "Country is not valid", // Message when the country is invalid
 		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
 		certifyMessage: "Click here to certify the address is correct",
+		missingInputMessage: "The address does not have enough input to verify",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last", // Selector to find a likely submit button or submit image (in a form)
 		target: "US"
@@ -108,6 +109,7 @@
 		config.invalidCountryMessage = config.invalidCountryMessage || defaults.invalidCountryMessage;
 		config.missingSecondaryMessage = config.missingSecondaryMessage || defaults.missingSecondaryMessage;
 		config.certifyMessage = config.certifyMessage || defaults.certifyMessage;
+		config.missingInputMessage = config.missingInputMessage || defaults.missingInputMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrlInternational = config.requestUrlInternational || defaults.requestUrlInternational;
@@ -285,7 +287,7 @@
 
 				CountryWasInvalid: function (event, data) {
 					if (config.debug)
-						console.log("EVENT:", "CountryWasInvalid", "(Pre-verfication check indicates that the country was invalid)", event, data);
+						console.log("EVENT:", "CountryWasInvalid", "(Pre-verification check indicates that the country was invalid)", event, data);
 					ui.showInvalidCountry(data);
 				},
 
@@ -295,6 +297,12 @@
 							"(Response indicates input address was missing secondary", event, data);
 
 					ui.showMissingSecondary(data);
+				},
+
+				AddressWasMissingInput: function (event, data) {
+					if (config.debug)
+						console.log("EVENT:", "AddressWasMissingInput", "(Pre-verification check indicates that there was not enough input)", event, data);
+					ui.showMissingInput(data);
 				},
 
 				OriginalInputSelected: function (event, data) {
@@ -501,6 +509,7 @@
 			"box-shadow: 0px 10px 35px rgba(0, 0, 0, .8); }" + ".smarty-popup-header { background: #DDD; height: 12px; " +
 			"text-transform: uppercase; font: bold 12px/1em 'Arial Black', sans-serif; padding: 12px; }" +
 			".smarty-popup-ambiguous-header { color: #333; }" + ".smarty-popup-invalid-header { color: #CC0000; }" +
+			".smarty-popup-missing-input-header { color: #CC0000; height: 48px; }" +
 			".smarty-popup-close { color: #CC0000 !important; text-decoration: none !important; position: absolute; " +
 			"right: 15px; top: 10px; display: block; padding: 4px 6px; text-transform: uppercase; }" +
 			".smarty-popup-close:hover { color: #FFF !important; background: #CC0000; }" +
@@ -1625,6 +1634,75 @@
 				}
 			});
 		};
+
+		this.showMissingInput = function (data) {
+			if (!config.ui || !data.address.hasDomFields())
+				return;
+
+			var addr = data.address;
+			var missing = data.address.missing;
+			var response = data.response;
+			var corners = addr.corners();
+			corners.width = Math.max(corners.width, 300); // minimum width
+			corners.height = Math.max(corners.height, 180); // minimum height
+			if (config.enforceVerification) {
+				corners.height -= 49;
+			}
+
+			var html = '<div class="smarty-ui" style="top: ' + corners.top + 'px; left: ' + corners.left + 'px; width: ' +
+				corners.width + 'px; height: ' + corners.height + 'px;">' + '<div class="smarty-popup smarty-addr-' +
+				addr.id() + '" style="width: ' + (corners.width - 6) + 'px; height: ' + (corners.height - 3) + 'px;">' +
+				'<div class="smarty-popup-header smarty-popup-missing-input-header">' + config.missingInputMessage + "\n" + missing +
+				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
+				'<div class="smarty-choice-list"><a href="javascript:" ' +
+				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
+				'<div class="smarty-choice-alt">';
+			if (!config.enforceVerification) {
+				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
+					config.certifyMessage + '<br>(' + addr.toString() + ')</a>';
+			}
+			html += '</div></div></div>';
+
+			$(html).hide().appendTo('body').show(defaults.speed);
+
+			data.selectors = {
+				useOriginal: '.smarty-popup.smarty-addr-' + addr.id() + ' .smarty-choice-override ',
+				abort: '.smarty-popup.smarty-addr-' + addr.id() + ' .smarty-abort'
+			};
+
+			// Scroll to it if necessary
+			if ($(document).scrollTop() > corners.top - 100 || $(document).scrollTop() < corners.top - $(window).height() + 100) {
+				$('html, body').stop().animate({
+					scrollTop: $('.smarty-popup.smarty-addr-' + addr.id()).offset().top - 100
+				}, 500);
+			}
+
+			undelegateAllClicks(data.selectors.abort);
+			// User rejects original input and agrees to double-check it
+			$('body').delegate(data.selectors.abort, 'click', data, function (e) {
+				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
+				delete e.data.selectors;
+				trigger("InvalidAddressRejected", e.data);
+			});
+
+			undelegateAllClicks(data.selectors.useOriginal);
+			// User certifies that what they typed is correct
+			$('body').delegate(data.selectors.useOriginal, 'click', data, function (e) {
+				userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
+				delete e.data.selectors;
+				trigger("OriginalInputSelected", e.data);
+			});
+
+			// User presses esc key
+			$(document).keyup(data, function (e) {
+				if (e.keyCode == 27) { //Esc
+					undelegateAllClicks(e.data.selectors);
+					$(data.selectors.abort).click();
+					userAborted('.smarty-popup.smarty-addr-' + e.data.address.id(), e);
+				}
+			});
+		};
+
 	}
 
 	/*
@@ -1977,24 +2055,14 @@
 
 		this.verify = function (invoke, invokeFn) {
 			// Invoke contains the element to "click" on once we're all done, or is a user-defined callback function (may also be undefined)
-			if (!invoke && !self.enoughInput()) {
-				if (config.debug)
-					console.log("NOTICE: The address does not have enough input to verify. Since no callback is specified, there is nothing to do.");
-				return trigger("Completed", {
+			if (!self.enoughInput()) {
+				return trigger("AddressWasMissingInput", {
 					address: self,
 					invoke: invoke,
 					invokeFn: invokeFn,
 					response: new Response([])
 				});
 			}
-
-			if (!self.enoughInput())
-				return trigger("AddressWasInvalid", {
-					address: self,
-					response: new Response([]),
-					invoke: invoke,
-					invokeFn: invokeFn
-				});
 
 			ui.disableFields(self);
 			self.verifyCount++;
@@ -2057,11 +2125,46 @@
 		};
 
 		this.enoughInput = function () {
-			return (fields.country && fields.country.value) && (
-					(fields.freeform && fields.freeform.value) ||
-					((fields.address1 && fields.address1.value) && (fields.postal_code && fields.postal_code.value)) ||
-					((fields.address1 && fields.address1.value) && (fields.locality && fields.locality.value) && (fields.administrative_area && fields.administrative_area.value))
-				);
+			self.missing = "(Missing ";
+			var baseLength = 9;
+			if (fields.country && !fields.country.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "country";
+			}
+			if (fields.freeform && !fields.freeform.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "freeform";
+			}
+			if (fields.address1 && !fields.address1.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "address1";
+			}
+			if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && !fields.locality.value && !fields.administrative_area.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "postal code or locality and administrative area";
+			} else if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && fields.locality.value && !fields.administrative_area.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "postal code or administrative area";
+			} else if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && !fields.locality.value && fields.administrative_area.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "postal code or locality";
+			} else if (fields.postal_code && !fields.locality && !fields.administrative_area && !fields.postal_code.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "postal code";
+			} else if (!fields.postal_code && fields.locality && fields.administrative_area && !fields.locality.value && !fields.administrative_area.value) {
+				if (self.missing.length > baseLength)
+					self.missing += ", ";
+				self.missing += "locality and administrative area";
+			}
+			self.missing += ")";
+			return (self.missing.length === baseLength + 1);
 		};
 
 		this.toRequestIntl = function () {
@@ -2135,7 +2238,7 @@
 			if (fields.freeform) {
 				return (fields.freeform ? fields.freeform.value + " " : "") + (fields.country ? fields.country.value : "");
 			} else {
-				return (fields.address1 ? fields.address1.value + " " : "") + (fields.address2 ? fields.address2.value + " " : "") + (fields.address3 ? fields.address3.value + " " : "") + (fields.address4 ? fields.address4.value + " " : "") + (fields.locality ? fields.locality.value + " " : "") + (fields.administrative_area ? fields.administrative_area.value + " " : "") + (fields.postal_code ? fields.postal_code.value : "") + (fields.country ? fields.country.value : "");
+				return (fields.address1 ? fields.address1.value + " " : "") + (fields.address2 ? fields.address2.value + " " : "") + (fields.address3 ? fields.address3.value + " " : "") + (fields.address4 ? fields.address4.value + " " : "") + (fields.locality ? fields.locality.value + " " : "") + (fields.administrative_area ? fields.administrative_area.value + " " : "") + (fields.postal_code ? fields.postal_code.value + " " : "") + (fields.country ? fields.country.value : "");
 			}
 		};
 
