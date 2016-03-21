@@ -41,7 +41,7 @@
 		invalidCountryMessage: "Country is not valid", // Message when the country is invalid
 		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
 		certifyMessage: "Click here to certify the address is correct",
-		missingInputMessage: "The address does not have enough input to verify",
+		missingInputMessage: "The address does not have enough input to verify<br>",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last", // Selector to find a likely submit button or submit image (in a form)
 		target: "US"
@@ -518,7 +518,7 @@
 			"box-shadow: 0px 10px 35px rgba(0, 0, 0, .8); }" + ".smarty-popup-header { background: #DDD; height: 12px; " +
 			"text-transform: uppercase; font: bold 12px/1em 'Arial Black', sans-serif; padding: 12px; }" +
 			".smarty-popup-ambiguous-header { color: #333; }" + ".smarty-popup-invalid-header { color: #CC0000; }" +
-			".smarty-popup-missing-input-header { color: #CC0000; height: 48px; }" +
+			".smarty-popup-missing-input-header { color: #CC0000; height: 58px; }" +
 			".smarty-popup-close { color: #CC0000 !important; text-decoration: none !important; position: absolute; " +
 			"right: 15px; top: 10px; display: block; padding: 4px 6px; text-transform: uppercase; }" +
 			".smarty-popup-close:hover { color: #FFF !important; background: #CC0000; }" +
@@ -1661,7 +1661,7 @@
 			var html = '<div class="smarty-ui" style="top: ' + corners.top + 'px; left: ' + corners.left + 'px; width: ' +
 				corners.width + 'px; height: ' + corners.height + 'px;">' + '<div class="smarty-popup smarty-addr-' +
 				addr.id() + '" style="width: ' + (corners.width - 6) + 'px; height: ' + (corners.height - 3) + 'px;">' +
-				'<div class="smarty-popup-header smarty-popup-missing-input-header">' + config.missingInputMessage + "\n" + missing +
+				'<div class="smarty-popup-header smarty-popup-missing-input-header">' + config.missingInputMessage + missing +
 				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
 				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
