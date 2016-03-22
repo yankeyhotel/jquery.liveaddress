@@ -973,7 +973,18 @@
 					$(domfields['address1']).val(suggestion.street_line).change();
 				// State filled in before city so autoverify is not invoked without finishing using the suggestion
 				if (domfields['administrative_area']) {
-					$(domfields['administrative_area']).val(suggestion.state).change();
+					if (domfields['administrative_area'].options) { // Checks for dropdown
+						for (var i = 0; i < domfields['administrative_area'].options.length; i++) {
+							// Checks for abbreviation match and maps full state name to abbreviation
+							if (domfields['administrative_area'].options[i].text.toUpperCase() === suggestion.state || allStatesByName[domfields['administrative_area'].options[i].text.toUpperCase()] === suggestion.state) {
+								$(domfields['administrative_area'])[0].selectedIndex = i;
+								$(domfields['administrative_area']).change();
+								break;
+							}
+						}
+					} else {
+						$(domfields['administrative_area']).val(suggestion.state).change();
+					}
 				}
 				if (domfields['locality']) {
 					$(domfields['locality']).val("").change();
@@ -1163,6 +1174,19 @@
 			}
 		}
 
+		function addDefaultToStateDropdown(dom) {
+			if (dom.getElementsByTagName("option").length > 0) {
+				if (arrayContains(stateNames, dom.getElementsByTagName("option")[0].text.toUpperCase()) ||
+					arrayContains(stateAbbreviations, dom.getElementsByTagName("option")[0].text.toUpperCase())) {
+					var option = document.createElement("OPTION");
+					option.innerText = "Pick a state";
+					option.selected = true;
+					$(dom.getElementsByTagName("select")[0]).prepend(option);
+					$(dom).change();
+				}
+			}
+		}
+
 		// ** MANUAL MAPPING ** //
 		this.mapFields = function (map, context) {
 			// "map" should be an array of objects mapping field types
@@ -1221,6 +1245,7 @@
 					// Mark the form as mapped then add it to our list
 					$(formDom).data(formDataProperty, 1);
 					disableBrowserAutofill(form.dom);
+					addDefaultToStateDropdown(form.dom);
 					formsFound.push(form);
 				} else {
 					// Find the form in our list since we already put it there
@@ -1714,6 +1739,94 @@
 
 	}
 
+	var allStatesByName = {
+		"ALABAMA": "AL",
+		"ALASKA": "AK",
+		"AMERICAN SAMOA": "AS",
+		"ARIZONA": "AZ",
+		"ARKANSAS": "AR",
+		"CALIFORNIA": "CA",
+		"COLORADO": "CO",
+		"CONNECTICUT": "CT",
+		"DELAWARE": "DE",
+		"DISTRICT OF COLUMBIA": "DC",
+		"FEDERATED STATES OF MICRONESIA": "FM",
+		"FLORIDA": "FL",
+		"GEORGIA": "GA",
+		"GUAM": "GU",
+		"HAWAII": "HI",
+		"IDAHO": "ID",
+		"ILLINOIS": "IL",
+		"INDIANA": "IN",
+		"IOWA": "IA",
+		"KANSAS": "KS",
+		"KENTUCKY": "KY",
+		"LOUISIANA": "LA",
+		"MAINE": "ME",
+		"MARSHALL ISLANDS": "MH",
+		"MARYLAND": "MD",
+		"MASSACHUSETTS": "MA",
+		"MICHIGAN": "MI",
+		"MINNESOTA": "MN",
+		"MISSISSIPPI": "MS",
+		"MISSOURI": "MO",
+		"MONTANA": "MT",
+		"NEBRASKA": "NE",
+		"NEVADA": "NV",
+		"NEW HAMPSHIRE": "NH",
+		"NEW JERSEY": "NJ",
+		"NEW MEXICO": "NM",
+		"NEW YORK": "NY",
+		"NORTH CAROLINA": "NC",
+		"NORTH DAKOTA": "ND",
+		"NORTHERN MARIANA ISLANDS": "MP",
+		"OHIO": "OH",
+		"OKLAHOMA": "OK",
+		"OREGON": "OR",
+		"PALAU": "PW",
+		"PENNSYLVANIA": "PA",
+		"PUERTO RICO": "PR",
+		"RHODE ISLAND": "RI",
+		"SOUTH CAROLINA": "SC",
+		"SOUTH DAKOTA": "SD",
+		"TENNESSEE": "TN",
+		"TEXAS": "TX",
+		"UTAH": "UT",
+		"VERMONT": "VT",
+		"VIRGIN ISLANDS": "VI",
+		"VIRGINIA": "VA",
+		"WASHINGTON": "WA",
+		"WEST VIRGINIA": "WV",
+		"WISCONSIN": "WI",
+		"WYOMING": "WY",
+		"ARMED FORCES EUROPE, THE MIDDLE EAST, AND CANADA": "AE",
+		"ARMED FORCES CANADA": "AE",
+		"ARMED FORCES THE MIDDLE EAST": "AE",
+		"ARMED FORCES EUROPE": "AE",
+		"ARMED FORCES PACIFIC": "AP",
+		"ARMED FORCES AMERICAS (EXCEPT CANADA)": "AA",
+		"ARMED FORCES AMERICAS": "AA"
+	};
+	// this listing of stateNames has West Virginia before Virginia and the Virgin Islands (most specific to least specific)
+	var stateNames = [
+		"ALABAMA", "ALASKA", "AMERICAN SAMOA", "ARIZONA", "ARKANSAS", "CALIFORNIA", "COLORADO", "CONNECTICUT", "DELAWARE",
+		"DISTRICT OF COLUMBIA", "FEDERATED STATES OF MICRONESIA", "FLORIDA", "GEORGIA", "GUAM", "HAWAII", "IDAHO",
+		"ILLINOIS", "INDIANA", "IOWA", "KANSAS", "KENTUCKY", "LOUISIANA", "MAINE", "MARSHALL ISLANDS", "MARYLAND",
+		"MASSACHUSETTS", "MICHIGAN", "MINNESOTA", "MISSISSIPPI", "MISSOURI", "MONTANA", "NEBRASKA", "NEVADA",
+		"NEW HAMPSHIRE", "NEW JERSEY", "NEW MEXICO", "NEW YORK", "NORTH CAROLINA", "NORTH DAKOTA",
+		"NORTHERN MARIANA ISLANDS", "OHIO", "OKLAHOMA", "OREGON", "PALAU", "PENNSYLVANIA", "PUERTO RICO", "RHODE ISLAND",
+		"SOUTH CAROLINA", "SOUTH DAKOTA", "TENNESSEE", "TEXAS", "UTAH", "VERMONT", "WEST VIRGINIA", "VIRGINIA",
+		"VIRGIN ISLANDS", "WASHINGTON", "WISCONSIN", "WYOMING", "ARMED FORCES EUROPE, THE MIDDLE EAST, AND CANADA",
+		"ARMED FORCES CANADA", "ARMED FORCES THE MIDDLE EAST", "ARMED FORCES EUROPE", "ARMED FORCES PACIFIC",
+		"ARMED FORCES AMERICAS (EXCEPT CANADA)", "ARMED FORCES AMERICAS"
+	];
+	var stateAbbreviations = [
+		"AL", "AK", "AS", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FM", "FL", "GA", "GU", "HI", "ID", "IL", "IN", "IA",
+		"KS", "KY", "LA", "ME", "MH", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC",
+		"ND", "MP", "OH", "OK", "OR", "PW", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VI", "VA", "WA", "WV",
+		"WI", "WY", "AE", "AP", "AA"
+	];
+
 	/*
 	 Represents an address inputted by the user, whether it has been verified yet or not.
 	 formObj must be a Form OBJECT, not a <form> tag... and the addressID is optional.
@@ -1740,7 +1853,7 @@
 			if (!fields[key])
 				fields[key] = {};
 
-			if (typeof fields[key].dom !== "undefined" && fields[key].dom.tagName === "SELECT") {
+			if (typeof fields[key].dom !== "undefined" && fields[key].dom.tagName === "SELECT" && key !== "administrative_area") {
 				value = fields[key].dom[fields[key].dom.selectedIndex].text.replace(/<|>/g, "");
 			} else {
 				value = value.replace(/<|>/g, ""); // prevents script injection attacks (< and > aren't in addresses, anyway)
@@ -1751,9 +1864,22 @@
 			fields[key].undo = fields[key].value || "";
 			fields[key].value = value;
 
-			if (fields[key].dom && fields[key].dom.tagName === "INPUT") {
-				if (updateDomElement && fields[key].dom) {
+			if (fields[key].dom && updateDomElement) {
+				if (fields[key].dom.tagName === "INPUT") {
 					$(fields[key].dom).val(value);
+				} else if (fields[key].dom.tagName === "SELECT" && key === "administrative_area" && self.isDomestic()) {
+					$(fields[key].dom).find("option").filter(function () {
+						if ($(this).text().toUpperCase() === value) {
+							return true;
+						} else {
+							for (state in allStatesByName) {
+								if (allStatesByName[state] === value && state === $(this).text().toUpperCase()) {
+									return true;
+								}
+							}
+							return false;
+						}
+					}).attr('selected', true);
 				}
 			}
 
@@ -2134,6 +2260,18 @@
 		};
 
 		this.enoughInput = function () {
+			// Checks for state dropdown
+			var stateText;
+			if (fields.administrative_area) {
+				stateText = fields.administrative_area.value;
+				if (fields.administrative_area.dom !== undefined && fields.administrative_area.dom.length !== undefined) {
+					if (fields.administrative_area.dom.selectedIndex < 1)
+						stateText = "";
+					else
+						stateText = fields.administrative_area.dom.options[fields.administrative_area.dom.selectedIndex].text;
+				}
+			}
+
 			self.missing = "(Missing ";
 			var baseLength = self.missing.length;
 			if (fields.country && !fields.country.value) {
@@ -2151,15 +2289,15 @@
 					self.missing += ", ";
 				self.missing += "address1";
 			}
-			if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && !fields.locality.value && !fields.administrative_area.value) {
+			if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && !fields.locality.value && !(stateText.length > 0)) {
 				if (self.missing.length > baseLength)
 					self.missing += ", ";
 				self.missing += "postal code or locality and administrative area";
-			} else if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && fields.locality.value && !fields.administrative_area.value) {
+			} else if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && fields.locality.value && !(stateText.length > 0)) {
 				if (self.missing.length > baseLength)
 					self.missing += ", ";
 				self.missing += "postal code or administrative area";
-			} else if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && !fields.locality.value && fields.administrative_area.value) {
+			} else if (fields.postal_code && fields.locality && fields.administrative_area && !fields.postal_code.value && !fields.locality.value && stateText.length > 0) {
 				if (self.missing.length > baseLength)
 					self.missing += ", ";
 				self.missing += "postal code or locality";
@@ -2167,7 +2305,7 @@
 				if (self.missing.length > baseLength)
 					self.missing += ", ";
 				self.missing += "postal code";
-			} else if (!fields.postal_code && fields.locality && fields.administrative_area && !fields.locality.value && !fields.administrative_area.value) {
+			} else if (!fields.postal_code && fields.locality && fields.administrative_area && (!fields.locality.value || !(stateText.length > 0))) {
 				if (self.missing.length > baseLength)
 					self.missing += ", ";
 				self.missing += "locality and administrative area";
