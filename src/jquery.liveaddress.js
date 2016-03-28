@@ -234,14 +234,14 @@
 					if (typeof data.invoke === "function")
 						data.invoke(data.response); // User-defined callback function; we're all done here.
 
-					if (data.response.isAmbiguous())
+					if (data.response.isInvalid())
+						trigger("AddressWasInvalid", data);
+					else if (data.response.isAmbiguous())
 						trigger("AddressWasAmbiguous", data);
 					else if (config.verifySecondary && data.response.isMissingSecondary())
 						trigger("AddressWasMissingSecondary", data);
 					else if (data.response.isValid())
 						trigger("AddressWasValid", data);
-					else if (data.response.isInvalid())
-						trigger("AddressWasInvalid", data);
 				},
 
 				RequestTimedOut: function (event, data) {
@@ -3741,14 +3741,6 @@
 			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1 ||
 				this.raw[idx].analysis.dpv_footnotes.indexOf("R1") > -1 ||
 				(this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("H#") > -1);
-		};
-
-		// These next functions are not comprehensive, but helpful for common tasks.
-
-		this.isExactMatch = function (idx) {
-			idx = maybeDefault(idx);
-			checkBounds(idx);
-			return this.raw[idx].analysis.address_precision == "DeliveryPoint";
 		};
 	}
 
