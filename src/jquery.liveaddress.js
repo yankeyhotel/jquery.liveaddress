@@ -1943,11 +1943,11 @@
 				var isEmpty = true; // Whether the address has data in it (pre-populated) -- first assume it is empty.
 
 				for (var prop in domMap) {
+					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
+						continue;
 					if (domMap[prop].getBoundingClientRect().top > this.lastField.getBoundingClientRect().top) {
 						this.lastField = domMap[prop];
 					}
-					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
-						continue;
 
 					var elem, val, elemArray, isData;
 					try {
