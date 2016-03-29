@@ -1204,7 +1204,7 @@
 			for (var addrIdx in map) {
 				var address = map[addrIdx];
 
-				if (!address.country)
+				if (!address.country && config.target.includes("INTERNATIONAL"))
 					continue;
 
 				// Convert selectors into actual DOM references
@@ -1229,15 +1229,22 @@
 							address[fieldType] = matched[0];
 					}
 				}
-
-				if (!((address.country && address.freeform) || (address.address1 && address.postal_code) || (address.address1 && address.locality && address.administrative_area))) {
-					if (config.debug)
-						console.log("NOTICE: Address map (index " + addrIdx + ") was not mapped to a complete street address. Skipping...");
-					continue;
+				if (config.target.includes("INTERNATIONAL")) {
+					if (!((address.country && address.freeform) || (address.country && address.address1 && address.postal_code) || (address.country && address.address1 && address.locality && address.administrative_area))) {
+						if (config.debug)
+							console.log("NOTICE: Address map (index " + addrIdx + ") was not mapped to a complete street address. Skipping...");
+						continue;
+					}
+				} else {
+					if (!((address.freeform) || (address.address1 && address.postal_code) || (address.address1 && address.locality && address.administrative_area))) {
+						if (config.debug)
+							console.log("NOTICE: Address map (index " + addrIdx + ") was not mapped to a complete street address. Skipping...");
+						continue;
+					}
 				}
-
-				// Acquire the form based on the country address field (the required field)
-				var formDom = $(address.country).parents('form')[0];
+				
+				// Acquire the form based on the first member
+				var formDom = $(address[Object.keys(address)[0]]).parents('form')[0];
 				var form = new Form(formDom);
 
 				// Persist a reference to the form if it wasn't acquired before
@@ -1938,7 +1945,7 @@
 
 			if (typeof domMap === 'object') { // can be an actual map to DOM elements or just field/value data
 				// Find the last field likely to appear on the DOM (used for UI attachments)
-				this.lastField = domMap.country;
+				this.lastField = domMap[Object.keys(domMap)[Object.keys(domMap).length - 1]];
 
 				var isEmpty = true; // Whether the address has data in it (pre-populated) -- first assume it is empty.
 
@@ -2453,1207 +2460,1215 @@
 		};
 
 		this.isDomestic = function () {
-			var countryValue = fields.country.dom.value;
-			if (fields.country.dom.selectedOptions)
-				countryValue = fields.country.dom.selectedOptions[0].text;
-			countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
-			var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
-				"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
-				"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA", "UNITEDSTATESUS",
-				"AMERICANSAMOA", "AMERIKASĀMOA", "AMERIKASAMOA", "ASM",
-				"MICRONESIA", "FEDERALSTATESOFMICRONESIA", "FEDERATEDSTATESOFMICRONESIA", "FSM",
-				"GUAM", "GM",
-				"MARSHALLISLANDS", "MHL",
-				"NORTHERNMARIANAISLANDS", "NMP",
-				"PALAU", "REPUBLICOFPALAU", "BELAU", "PLW",
-				"PUERTORICO", "COMMONWEALTHOFPUERTORICO", "PRI",
-				"UNITEDSTATESVIRGINISLANDS", "VIR"
-			]; // 840 is ISO: 3166; and 223 is some shopping carts
-			return arrayContains(usa, countryValue) || fields.country.value == "-1";
+			if (config.target.includes("INTERNATIONAL")) {
+				var countryValue = fields.country.dom.value;
+				if (fields.country.dom.selectedOptions)
+					countryValue = fields.country.dom.selectedOptions[0].text;
+				countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
+				var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
+					"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
+					"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA", "UNITEDSTATESUS",
+					"AMERICANSAMOA", "AMERIKASĀMOA", "AMERIKASAMOA", "ASM",
+					"MICRONESIA", "FEDERALSTATESOFMICRONESIA", "FEDERATEDSTATESOFMICRONESIA", "FSM",
+					"GUAM", "GM",
+					"MARSHALLISLANDS", "MHL",
+					"NORTHERNMARIANAISLANDS", "NMP",
+					"PALAU", "REPUBLICOFPALAU", "BELAU", "PLW",
+					"PUERTORICO", "COMMONWEALTHOFPUERTORICO", "PRI",
+					"UNITEDSTATESVIRGINISLANDS", "VIR"
+				]; // 840 is ISO: 3166; and 223 is some shopping carts
+				return arrayContains(usa, countryValue) || fields.country.value == "-1";
+			} else {
+				return (config.target.includes("US") && !config.target.includes("INTERNATIONAL"));
+			}
 		};
 
 		this.countryISO = function () {
-			var countryValue = fields.country.dom.value;
-			if (fields.country.dom.selectedOptions)
-				countryValue = fields.country.dom.selectedOptions[0].text;
-			countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-|\'|\"|\,|ʻ|\&/g, "");
-			var validCountries = {
-				"AFGHANISTAN": "AFG",
-				"AFGHANESTAN": "AFG",
-				"ISLAMICREPUBLICOFAFGHANISTAN": "AFG",
-				"AFG": "AFG",
-
-				"ÅLANDISLANDS": "ALA",
-				"ALANDISLANDS": "ALA",
-				"AALAND": "ALA",
-				"ALAND": "ALA",
-				"ALA": "ALA",
-
-				"ALBANIA": "ALB",
-				"REPUBLICOFALBANIA": "ALB",
-				"REPUBLIKAESHQIPËRISË": "ALB",
-				"REPUBLIKAESHQIPERISE": "ALB",
-				"SHQIPËRIA": "ALB",
-				"SHQIPERIA": "ALB",
-				"ALB": "ALB",
-
-				"ALGERIA": "DZA",
-				"PEOPLESDEMOCRATICREPUBLICOFALGERIA": "DZA",
-				"ALJAZAIR": "DZA",
-				"DZAYER": "DZA",
-				"DZA": "DZA",
-
-				"AMERICANSAMOA": "ASM",
-				"AMERIKASĀMOA": "ASM",
-				"AMERIKASAMOA": "ASM",
-				"ASM": "ASM",
-
-				"ANDORRA": "AND",
-				"AND": "AND",
-
-				"ANGOLA": "AGO",
-				"AGO": "AGO",
-
-				"ANGUILLA": "AIA",
-				"AIA": "AIA",
-
-				"ANTARCTICA": "ATA",
-				"ATA": "ATA",
-
-				"ANTIGUABARBUDA": "ATG",
-				"ANTIQUA": "ATG",
-				"BARBUDA": "ATG",
-				"ANTIQUAANDBARBUDA": "ATG",
-				"ATG": "ATG",
-
-				"ARGENTINA": "ARG",
-				"ARGENTINEREPUBLIC": "ARG",
-				"LAARGENTINA": "ARG",
-				"ARG": "ARG",
-
-				"ARMENIA": "ARM",
-				"HAYASTAN": "ARM",
-				"HAYASDAN": "ARM",
-				"HAÏASDAN": "ARM",
-				"HAIASDAN": "ARM",
-				"REPUBLICOFARMENIA": "ARM",
-				"ARM": "ARM",
-
-				"ARUBA": "ABW",
-				"ABW": "ABW",
-
-				"AUSTRALIA": "AUS",
-				"COMMONWEALTHOFAUSTRALIA": "AUS",
-				"AUS": "AUS",
-
-				"AUSTRIA": "AUT",
-				"OSTERREICH": "AUT",
-				"OESTERREICH": "AUT",
-				"ÖSTERREICH": "AUT",
-				"REPUBLICOFAUSTRIA": "AUT",
-				"AUT": "AUT",
-
-				"AZERBAIJAN": "AZE",
-				"REPUBLICOFAZERBAIJAN": "AZE",
-				"AZƏRBAYCANRESPUBLIKASI": "AZE",
-				"AZERBAIJANREPUBLIC": "AZE",
-				"AZARBAYCAN": "AZE",
-				"AZƏRBAYCAN": "AZE",
-				"AZERBAYCAN": "AZE",
-				"AZE": "AZE",
-
-				"BAHAMAS": "BHS",
-				"BHS": "BHS",
-
-				"BAHRAIN": "BHR",
-				"KINGDOMOFBAHRAIN": "BHR",
-				"MAMLAKATALBAḤRAYN": "BHR",
-				"MAMLAKATALBAHRAYN": "BHR",
-				"ALBAḤRAYN": "BHR",
-				"BHR": "BHR",
-
-				"BANGLADESH": "BGD",
-				"PEOPLESREPUBLICOFBANGLADESH": "BGD",
-				"BGD": "BGD",
-
-				"BARBADOS": "BRB",
-				"BRB": "BRB",
-
-				"BELARUS": "BLR",
-				"REPUBLICOFBELARUS": "BLR",
-				"GUDIJA": "BLR",
-				"BYELARUS": "BLR",
-				"BIELARUŚ": "BLR",
-				"BIELARUS": "BLR",
-				"BLR": "BLR",
-
-				"BELGIUM": "BEL",
-				"BELGIQUE": "BEL",
-				"BELGIEN": "BEL",
-				"BELGIE": "BEL",
-				"BELGIË": "BEL",
-				"BEL": "BEL",
-
-				"BELIZE": "BLZ",
-				"BLZ": "BLZ",
-
-				"BENIN": "BEN",
-				"REPUBLICOFBENIN": "BEN",
-				"RÉPUBLIQUEDUBÉNIN": "BEN",
-				"REPUBLIQUEDEBENIN": "BEN",
-				"BÉNIN": "BEN",
-				"BEN": "BEN",
-
-				"BERMUDA": "BMU",
-				"BMU": "BMU",
-
-				"BHUTAN": "BTN",
-				"DRUKYUL": "BTN",
-				"BTN": "BTN",
-
-				"BOLIVIA": "BOL",
-				"BULIWYA": "BOL",
-				"WULIWYA": "BOL",
-				"VOLÍVIA": "BOL",
-				"VOLIVIA": "BOL",
-				"BOL": "BOL",
-
-				"BONAIRESINTEUSTATIUSANDSABA": "BES",
-				"BONAIRESINTEUSTATIUSSABA": "BES",
-				"BONAIRE": "BES",
-				"SINTEUSTATIUS": "BES",
-				"SABA": "BES",
-				"SINTEUSTATIUSANDSABA": "BES",
-				"BES": "BES",
-
-				"BOSNIAHERZEGOVINA": "BIH",
-				"BOSNIA": "BIH",
-				"HERZEGOVINA": "BIH",
-				"BOSNAIHERCEGOVINA": "BIH",
-				"BIH": "BIH",
-
-				"BOTSWANA": "BWA",
-				"REPUBLICOFBOTSWANA": "BWA",
-				"BWA": "BWA",
-
-				"BRAZIL": "BRA",
-				"FEDERATIVEREPUBLICOFBRAZIL": "BRA",
-				"BRASIL": "BRA",
-				"BRA": "BRA",
-
-				"BRITISHINDIANOCEANTERRITORY": "IOT",
-				"IOT": "IOT",
-
-				"BRITISHVIRGINISLANDS": "VGV",
-				"VGV": "VGV",
-
-				"BRUNEIDARUSSALAM": "BRN",
-				"NEGARABRUNEIDARUSSALAM": "BRN",
-				"BRN": "BRN",
-
-				"BULGARIA": "BGR",
-				"BULGARIYA": "BGR",
-				"BĂLGARIJA": "BGR",
-				"BALGARIJA": "BGR",
-				"BGR": "BGR",
-
-				"BURKINAFASO": "BFA",
-				"BFA": "BFA",
-
-				"BURUNDI": "BDI",
-				"BDI": "BDI",
-
-				"CAMBODIA": "KHM",
-				"KINGDOMOFCAMBODIA": "KHM",
-				"ROYAUMEDUCAMBODGE": "KHM",
-				"KAMPUCHEA": "KHM",
-				"KHM": "KHM",
-
-				"CAMEROON": "CMR",
-				"CAMEROUN": "CMR",
-				"CMR": "CMR",
-
-				"CANADA": "CAN",
-				"CAN": "CAN",
-
-				"CAPEVERDEISLANDS": "CPV",
-				"CAPEVERDE": "CPV",
-				"CABOVERDE": "CPV",
-				"CPV": "CPV",
-
-				"CAYMANISLANDS": "CYM",
-				"CYM": "CYM",
-
-				"CENTRALAFRICANREPUBLIC": "CAF",
-				"UBANGISHARI": "CAF",
-				"RÉPUBLIQUECENTRAFRICAINE": "CAF",
-				"REPUBLIQUECENTRAFRICAINE": "CAF",
-				"CENTRALAFRICANEMPIRE": "CAF",
-				"KÖDÖRÖSÊSETÎBÊAFRÎKA": "CAF",
-				"KODOROSESETIBEAFRIKA": "CAF",
-				"CAF": "CAF",
-
-				"CHAD": "TCD",
-				"TCHAD": "TCD",
-				"TŠĀD": "TCD",
-				"TSAD": "TCD",
-				"TCD": "TCD",
-
-				"CHILE": "CHL",
-				"CHL": "CHL",
-
-				"CHINA": "CHN",
-				"PEOPLESREPUBLICOFCHINA": "CHN",
-				"ZHONGHUAPEOPLESREPUBLIC": "CHN",
-				"ZHONGGUO": "CHN",
-				"ZHONGHUA": "CHN",
-				"ZHŌNGGUÓ": "CHN",
-				"CHN": "CHN",
-
-				"CHRISTMASISLAND": "CXR",
-				"CXR": "CXR",
-
-				"COCOSKEELINGISLANDS": "CCK",
-				"COCOSISALNDS": "CCK",
-				"COCOSISLAND": "CCK",
-				"KEELINGISLANDS": "CCK",
-				"KEELINGSISLAND": "CCK",
-				"CCK": "CCK",
-
-				"COLOMBIA": "COL",
-				"COLÓMBIA": "COL",
-				"COL": "COL",
-
-				"COMOROS": "COM",
-				"COMORES": "COM",
-				"KOMORI": "COM",
-				"JUZURALQAMAR": "COM",
-				"COM": "COM",
-
-				"CONGO": "COD",
-				"RÉPUBLIQUEDÉMOCRATIQUEDUCONGO": "COD",
-				"REPUBLIQUEDEMOCRATIQUEDUCONGO": "COD",
-				"THEDEMOCRATICREPUBLICOFCONGO": "COD",
-				"THEDEMOCRATICREPUBLICOFTHECONGO": "COD",
-				"REPUBLICOFCONGO": "COD",
-				"REPUBLICOFTHECONGO": "COD",
-				"RÉPUBLIQUEDUCONGO": "COD",
-				"REPUBLIQUEDUCONGO": "COD",
-				"COD": "COD",
-
-				"COOKISLANDS": "COK",
-				"COK": "COK",
-
-				"COSTARICA": "CRI",
-				"CRI": "CRI",
-
-				"CROATIA": "HRV",
-				"HRVATSKA": "HRV",
-				"HRVAŠKA": "HRV",
-				"HRVASKA": "HRV",
-				"HRV": "HRV",
-
-				"CUBA": "CUB",
-				"CUB": "CUB",
-
-				"CURACAO": "CUW",
-				"CUW": "CUW",
-
-				"CYPRUS": "CYP",
-				"REPUBLICOFCYPRUS": "CYP",
-				"ΚΎΠΡΟΣ": "CYP",
-				"KIBRIS": "CYP",
-				"CYP": "CYP",
-
-				"CZECH REPUBLIC": "CZE",
-				"ČESKÁREPUBLIKA": "CZE",
-				"CESKAREPUBLIKA": "CZE",
-				"ČESKO": "CZE",
-				"CESKO": "CZE",
-				"CZE": "CZE",
-
-				"DENMARK": "DNK",
-				"KINGDOMOFDENMARK": "DNK",
-				"KONGERIGETDANMARK": "DNK",
-				"DANMARK": "DNK",
-				"DNK": "DNK",
-
-				"DJIBOUTI": "DGI",
-				"REPUBLICOFDJIBOUTI": "DGI",
-				"RÉPUBLIQUEDEDJIBOUTI": "DGI",
-				"REPUBLIQUEDEDJIBOUTI": "DGI",
-				"DGI": "DGI",
-
-				"DOMINICA": "DMA",
-				"DMA": "DMA",
-
-				"DOMINICAN REPUBLIC": "DOM",
-				"REPÚBLICADOMINICANA": "DOM",
-				"REPUBLICADOMINICANA": "DOM",
-				"DOM": "DOM",
-
-				"ECUADOR": "ECU",
-				"ECU": "ECU",
-
-				"EGYPT": "EGY",
-				"ARABREPUBLICOFEGYPT": "EGY",
-				"MIṢR": "EGY",
-				"MISR": "EGY",
-				"MEṢR": "EGY",
-				"MESR": "EGY",
-				"KĪMI": "EGY",
-				"KIMI": "EGY",
-				"EGY": "EGY",
-
-				"ELSALVADOR": "SLV",
-				"SLV": "SLV",
-
-				"EQUITORIALGUINEA": "GNQ",
-				"GUINEAECUATORIAL": "GNQ",
-				"GNQ": "GNQ",
-
-				"ERITREA": "ERI",
-				"HAGEREERTRA": "ERI",
-				"ERI": "ERI",
-
-				"ESTONIA": "EST",
-				"EESTI": "EST",
-				"EESTIVABARIIK": "EST",
-				"ESTLAND": "EST",
-				"IGAUNIJA": "EST",
-				"VIRO": "EST",
-				"EST": "EST",
-
-				"ETHIOPIA": "ETH",
-				"FEDERALDEMOCRATICREPUBLICOFETHIOPIA": "ETH",
-				"ITYOPIYA": "ETH",
-				"ETH": "ETH",
-
-				"FALKLANDISLANDS": "FLK",
-				"ISLASMALVINAS": "FLK",
-				"FLK": "FLK",
-
-				"FAROEISLANDS": "FRO",
-				"FØROYAR": "FRO",
-				"FOROYAR": "FRO",
-				"FÆRØERNE": "FRO",
-				"FAEROERNE": "FRO",
-				"FRO": "FRO",
-
-				"FIJI": "FJI",
-				"FJI": "FJI",
-
-				"FINLAND": "FIN",
-				"REPUBLICOFFINLAND": "FIN",
-				"SUOMI": "FIN",
-				"SUOMENTASAVALTA": "FIN",
-				"FIN": "FIN",
-
-				"FRANCE": "FRA",
-				"RÉPUBLIQUEFRANÇAISE": "FRA",
-				"REPUBLIQUEFRANCAISE": "FRA",
-				"FRENCHREPUBLIC": "FRA",
-				"LAFRANCE": "FRA",
-				"FRA": "FRA",
-
-				"FRENCHGUIANA": "GUF",
-				"GUYANE": "GUF",
-				"GUF": "GUF",
-
-				"FRENCHPOLYNESIA": "PYF",
-				"POLYNÉSIEFRANÇAISE": "PYF",
-				"POLYNESIEFRANCAISE": "PYF",
-				"PYF": "PYF",
-
-				"FRENCHSOUTHERNTERRITORIES": "ATF",
-				"TERRESAUSTRALESETANTARCTIQUESFRANÇAISES": "ATF",
-				"TERRESAUSTRALESETANTARCTIQUESFRANCAISES": "ATF",
-				"ATF": "ATF",
-
-				"GABON": "GAB",
-				"GAB": "GAB",
-
-				"GAMBIA": "GMB",
-				"GMB": "GMB",
-
-				"GEORGIA": "GEO",
-				"SAKARTVELO": "GEO",
-				"SAKARTVELO": "GEO",
-				"GEO": "GEO",
-
-				"GERMANY": "DEU",
-				"FEDERALREPUBLICOFGERMANY": "DEU",
-				"UNDESREPUBLIKDEUTSCHLAND": "DEU",
-				"DEUTSCHLAND": "DEU",
-				"BRD": "DEU",
-				"DEU": "DEU",
-
-				"GHANA": "GHA",
-				"GHA": "GHA",
-
-				"GIBRALTAR": "GIB",
-				"GIB": "GIB",
-
-				"GREECE": "GRC",
-				"ELLENICREPUBLIC": "GRC",
-				"ELLAS": "GRC",
-				"ΕΛΛΆΔΑ": "GRC",
-				"ELLADA": "GRC",
-				"GRC": "GRC",
-
-				"GREENLAND": "GRL",
-				"GRØNLAND": "GRL",
-				"GRONLAND": "GRL",
-				"KALAALLITNUNAAT": "GRL",
-				"GRL": "GRL",
-
-				"GRENADA": "GRD",
-				"GRD": "GRD",
-
-				"GUADELOUPE": "GLP",
-				"GLP": "GLP",
-
-				"GUAM": "GUM",
-				"GUM": "GUM",
-
-				"GUATEMALA": "GTM",
-				"GTM": "GTM",
-
-				"GUERNSEY": "GGY",
-				"GGY": "GGY",
-
-				"GUINEA": "GIN",
-				"REPUBLICOFGUINEA": "GIN",
-				"GUINEE": "GIN",
-				"GIN": "GIN",
-
-				"GUINEABISSAU": "GNB",
-				"REPUBLICOFGUINEABISSAU": "GNB",
-				"GUINEBISSAU": "GNB",
-				"GNB": "GNB",
-
-				"GUYANA": "GUY",
-				"GUY": "GUY",
-
-				"HAITI": "HTI",
-				"HTI": "HTI",
-
-				"HOLYSEE": "VAT",
-				"STATUSCIVITATISVATICANÆ": "VAT",
-				"THEVATICAN": "VAT",
-				"VATICANCITYSTATE": "VAT",
-				"VATICANCITY": "VAT",
-				"VATICAN": "VAT",
-				"VAT": "VAT",
-
-				"HONDURAS": "HND",
-				"HND": "HND",
-
-				"HONGKONG": "HKG",
-				"XIANGGANG": "HKG",
-				"HKG": "HKG",
-
-				"HUNGARY": "HUN",
-				"REPUBLICOFHUNGARY": "HUN",
-				"MAGYARORSZÁG": "HUN",
-				"MAGYARORSZAG": "HUN",
-				"HUN": "HUN",
-
-				"ICELAND": "ISL",
-				"REPUBLICOFICELAND": "ISL",
-				"ÍSLAND": "ISL",
-				"ISLAND": "ISL",
-				"LYOVELDIOISLAND": "ISL",
-				"ISL": "ISL",
-
-				"INDIA": "IND",
-				"REPUBLICOFINDIA": "IND",
-				"BHĀRAT": "IND",
-				"BHARAT": "IND",
-				"BHĀRATGAṆARĀJYA": "IND",
-				"BHARATGANARAJYA": "IND",
-				"IND": "IND",
-
-				"INDONESIA": "IDN",
-				"INDONESIË": "IDN",
-				"INDONESIE": "IDN",
-				"IDN": "IDN",
-
-				"IRAN": "IRN",
-				"ISLAMICREPUBLICOFIRAN": "IRN",
-				"IRN": "IRN",
-
-				"IRAQ": "IRG",
-				"IRQ": "IRG",
-
-				"IRELAND": "IRL",
-				"REPUBLICOFIRELAND": "IRL",
-				"ÉIRE": "IRL",
-				"EIRE": "IRL",
-				"IRL": "IRL",
-
-				"ISLEOFMAN": "IMN",
-				"IMN": "IMN",
-
-				"ISRAEL": "ISR",
-				"STATEOFISRAEL": "ISR",
-				"מדינת ישראל": "ISR",
-				"DAWLATALHAYAWANAT": "ISR",
-				"DAWLATISRAIL": "ISR",
-				"YISRAEL": "ISR",
-				"ISR": "ISR",
-
-				"ITALY": "ITA",
-				"REPUBBLICAITALIANA": "ITA",
-				"ITALIA": "ITA",
-				"ITA": "ITA",
-
-				"IVORYCOAST": "CIV",
-				"CÔTEDIVOIRE": "CIV",
-				"COTEDIVOIRE": "CIV",
-				"REPUBLICOFCÔTEDIVOIRE": "CIV",
-				"REPUBLICOFCOTEDIVOIRE": "CIV",
-				"CIV": "CIV",
-
-				"JAMAICA": "JAM",
-				"XAMAYCA": "JAM",
-				"JAM": "JAM",
-
-				"JAPAN": "JPN",
-				"NIPPON": "JPN",
-				"JPN": "JPN",
-
-				"JERSEY": "JEY",
-				"JEY": "JEY",
-
-				"JORDAN": "JOR",
-				"HASHEMITEKINGDOMOFJORDAN": "JOR",
-				"ALURDUNN": "JOR",
-				"JOR": "JOR",
-
-				"KAZAKHSTAN": "KAZ",
-				"REPUBLICOFKAZAKHSTAN": "KAZ",
-				"ҚАЗАҚСТАНРЕСПУБЛИКАСЫ": "KAZ",
-				"ҚАЗАҚСТАНQAZAQSTAN": "KAZ",
-				"KAZ": "KAZ",
-
-				"KENYA": "KEN",
-				"REPUBLICOFKENYA": "KEN",
-				"JAMHURIYAKENYA": "KEN",
-				"KEN": "KEN",
-
-				"KIRIBATI": "KIR",
-				"REPUBLICOFKIRIBATI": "KIR",
-				"KIR": "KIR",
-
-				"KOREAREPUBLICOF": "KOR",
-				"SOUTHKOREA": "KOR",
-				"REPUBLICOFKOREA": "KOR",
-				"DAEHANMINGUK": "KOR",
-				"KOR": "KOR",
-
-				"KUWAIT": "KWT",
-				"ALKUWAYT": "KWT",
-				"STATEOFKUWAIT": "KWT",
-				"KWT": "KWT",
-
-				"KYRGYZSTAN": "KGZ",
-				"KYRGYZRESPUBLIKASY": "KGZ",
-				"KGZ": "KGZ",
-
-				"LAOS": "LAO",
-				"LAO": "LAO",
-
-				"LATVIA": "LVA",
-				"LATVIJA": "LVA",
-				"LETTLAND": "LVA",
-				"LETLAND": "LVA",
-				"LVA": "LVA",
-
-				"LEBANON": "LBN",
-				"THELEBANESEREPUBLIC": "LBN",
-				"ALJUMHURIYYAALLUBNANIYYA": "LBN",
-				"LEBNAN": "LBN",
-				"LUBNAN": "LBN",
-				"LBN": "LBN",
-
-				"LESOTHO": "LSO",
-				"KINGDOMOFLESOTHO": "LSO",
-				"LSO": "LSO",
-
-				"LIBERIA": "LBR",
-				"LBR": "LBR",
-
-				"LIBYA": "LBY",
-				"LIBIYAH": "LBY",
-				"LBY": "LBY",
-
-				"LIECHTENSTEIN": "LIE",
-				"LIE": "LIE",
-
-				"LITHUANIA": "LTU",
-				"LIETUVA": "LTU",
-				"ЛИТВА": "LTU",
-				"LTU": "LTU",
-
-				"LUXEMBOURG": "LUX",
-				"LETZEBUERG": "LUX",
-				"LUX": "LUX",
-
-				"MACAO": "MAC",
-				"MACAU": "MAC",
-				"AOMEN": "MAC",
-				"MAC": "MAC",
-
-				"MACEDONIA": "MKD",
-				"МАКЕДОНИЈА": "MKD",
-				"MAKEDONIJA": "MKD",
-				"MKD": "MKD",
-
-				"MADAGASCAR": "MDG",
-				"MDG": "MDG",
-
-				"MALAWI": "MWI",
-				"REPUBLICOFMALAWI": "MWI",
-				"MWI": "MWI",
-
-				"MALAYSIA": "MYS",
-				"PERSEKUTUANMALAYSIA": "MYS",
-				"FEDERATIONOFMALAYSIA": "MYS",
-				"MYS": "MYS",
-
-				"MALDIVES": "MDV",
-				"DHIVEHIRAAJJE": "MDV",
-				"REPUBLICOFMALDIVES": "MDV",
-				"MDV": "MDV",
-
-				"MALI": "MLI",
-				"MLI": "MLI",
-
-				"MALTA": "MLT",
-				"MLT": "MLT",
-
-				"MARSHALLISLANDS": "MHL",
-				"MHL": "MHL",
-
-				"MARTINIQUE": "MTQ",
-				"MTQ": "MTQ",
-
-				"MAURITANIA": "MRT",
-				"ISLAMICREPUBLICOFMAURITANIA": "MRT",
-				"MURITANIYAH": "MRT",
-				"MRT": "MRT",
-
-				"MAURITIUS": "MUS",
-				"MUS": "MUS",
-
-				"MAYOTTE": "MYT",
-				"MYT": "MYT",
-
-				"MEXICO": "MEX",
-				"ESTADOSUNIDOSMEXICANOS": "MEX",
-				"MÉXICO": "MEX",
-				"MEX": "MEX",
-
-				"MICRONESIA": "FSM",
-				"FEDERALSTATESOFMICRONESIA": "FSM",
-				"FSM": "FSM",
-
-				"MOLDOVA": "MDA",
-				"REPUBLICOFMOLDOVA": "MDA",
-				"REPUBLICAMOLDOVA": "MDA",
-				"MDA": "MDA",
-
-				"MONACO": "MCO",
-				"MCO": "MCO",
-
-				"MONGOLIA": "MNG",
-				"MONGOLULS": "MNG",
-				"MNG": "MNG",
-
-				"MONTENEGRO": "MNE",
-				"CRNAGORA": "MNE",
-				"MNE": "MNE",
-
-				"MONTSERRAT": "MSR",
-				"MSR": "MSR",
-
-				"MOROCCO": "MAR",
-				"KINGDOMOFMOROCCO": "MAR",
-				"ALMAMLAKAALMAGHRIBIYA": "MAR",
-				"MAGHREB": "MAR",
-				"ALMAĠRIB": "MAR",
-				"ALMAGRIB": "MAR",
-				"MAR": "MAR",
-
-				"MOZAMBIQUE": "MOZ",
-				"MOCAMBIQUE": "MOZ",
-				"MOZ": "MOZ",
-
-				"MYANMAR": "MMR",
-				"REPUBLICOFTHEUNIONOFMYANMAR": "MMR",
-				"MYANMANAINGNGANDAW": "MMR",
-				"MYANMA": "MMR",
-				"BURMA": "MMR",
-				"MMR": "MMR",
-
-				"NAMIBIA": "NAM",
-				"NAM": "NAM",
-
-				"NAURU": "NRU",
-				"NRU": "NRU",
-
-				"NEPAL": "NPL",
-				"NĒPĀLA": "NPL",
-				"NEPALA": "NPL",
-				"NPL": "NPL",
-
-				"NETHERLANDSANTILLES": "ANT",
-				"NEDERLANDSEANTILLEN": "ANT",
-				"ANT": "ANT",
-
-				"NETHERLANDS": "NLD",
-				"THENETHERLANDS": "NLD",
-				"HOLLAND": "NLD",
-				"NEDERLAND": "NLD",
-				"NLD": "NLD",
-
-				"NEWCALEDONIA": "NCL",
-				"CALEDONIA": "NCL",
-				"NOUVELLECALÉDONIE": "NCL",
-				"NOUVELLECALEDONIE": "NCL",
-				"NCL": "NCL",
-
-				"NEWZEALAND": "NZL",
-				"AOTEAROA": "NZL",
-				"NZL": "NZL",
-
-				"NICARAGUA": "NIC",
-				"NIC": "NIC",
-
-				"NIGER": "NER",
-				"NER": "NER",
-
-				"NIGERIA": "NGA",
-				"NGA": "NGA",
-
-				"NIUE": "NIU",
-				"NIU": "NIU",
-
-				"NORFOLKISLAND": "NFK",
-				"NFK": "NFK",
-
-				"NORTHKOREA": "PRK",
-				"DEMOCRATICPEOPLESREPUBLICOFKOREA": "PRK",
-				"CHOSONMINJUJUUIINMINKONGHWAGUK": "PRK",
-				"PRK": "PRK",
-
-				"NORTHERNMARIANAISLANDS": "NMP",
-				"NMP": "NMP",
-
-				"NORWAY": "NOR",
-				"NORGE": "NOR",
-				"NOREG": "NOR",
-				"NOR": "NOR",
-
-				"OMAN": "OMN",
-				"SALṬANATUMĀN": "OMN",
-				"SALTANATUMAN": "OMN",
-				"OMN": "OMN",
-
-				"PAKISTAN": "PAK",
-				"ISLAMICREPUBLICOFPAKISTAN": "PAK",
-				"PAK": "PAK",
-
-				"PALAU": "PLW",
-				"REPUBLICOFPALAU": "PLW",
-				"BELAU": "PLW",
-				"PLW": "PLW",
-
-				"PALESTINIANTERRITORY": "PSE",
-				"FILASTIN": "PSE",
-				"PSE": "PSE",
-
-				"PANAMA": "PAN",
-				"PAN": "PAN",
-
-				"PAPUANEWGUINEA": "PNG",
-				"PAPUANIUGINI": "PNG",
-				"PNG": "PNG",
-
-				"PARAGUAY": "PRY",
-				"PRY": "PRY",
-
-				"PERU": "PER",
-				"REPUBLICOFPERU": "PER",
-				"PERUVIANREPUBLIC": "PER",
-				"REPÚBLICADELPERÚ": "PER",
-				"REPuBLICADELPERu": "PER",
-				"PERÚ": "PER",
-				"PER": "PER",
-
-				"PHILIPPINES": "PHL",
-				"REPUBLICOFTHEPHILIPPINES": "PHL",
-				"REPÚBLIKANGPILIPINAS": "PHL",
-				"REPUBLIKANGPILIPINAS": "PHL",
-				"PILIPINAS": "PHL",
-				"FILIPINAS": "PHL",
-				"PHL": "PHL",
-
-				"PITCAIRNISLAND": "PCN",
-				"PCN": "PCN",
-
-				"POLAND": "POL",
-				"REPUBLICOFPOLAND": "POL",
-				"RZECZPOSPOLITAPOLSKA": "POL",
-				"POLSKA": "POL",
-				"POL": "POL",
-
-				"PORTUGAL": "PRT",
-				"PORTUGUESEREPUBLIC": "PRT",
-				"LUSITANIA": "PRT",
-				"PRT": "PRT",
-
-				"PUERTORICO": "PRI",
-				"COMMONWEALTHOFPUERTORICO": "PRI",
-				"PRI": "PRI",
-
-				"QATAR": "QAT",
-				"DAWLATQAṬAR": "QAT",
-				"DAWLATQATAR": "QAT",
-				"QAṬAR": "QAT",
-				"QAT": "QAT",
-
-				"RÉUNION": "REU",
-				"REUNIONISLAND": "REU",
-				"ILEDELARÉUNION": "REU",
-				"ILEDELAREUNION": "REU",
-				"REU": "REU",
-
-				"ROMANIA": "ROU",
-				"ROMÂNIA": "ROU",
-				"ROU": "ROU",
-
-				"RUSSIA": "RUS",
-				"RUSSIANFEDERATION": "RUS",
-				"РОССИЯ": "RUS",
-				"ROSSIYA": "RUS",
-				"RUS": "RUS",
-
-				"RWANDA": "RWA",
-				"REPUBLICOFRWANDA": "RWA",
-				"RWA": "RWA",
-
-				"SAINTBARTHÉLEMY": "BLM",
-				"SAINTBARTHELEMY": "BLM",
-				"BLM": "BLM",
-
-				"SAINTHELENA": "SHN",
-				"SHN": "SHN",
-
-				"SAINTKITTSANDNEVIS": "KNA",
-				"SAINTKITTSNEVIS": "KNA",
-				"FEDERATIONOFSAINTKITTSANDNEVIS": "KNA",
-				"FEDERATIONOFSAINTKITTSNEVIS": "KNA",
-				"SAINTCHRISTOPHERANDNEVIS": "KNA",
-				"SAINTCHRISTOPHERNEVIS": "KNA",
-				"KNA": "KNA",
-
-				"SAINTLUCIA": "LCA",
-				"LCA": "LCA",
-
-				"SAINTMARTIN": "MAF",
-				"MAF": "MAF",
-
-				"SAINTPIERREANDMIQUELON": "SPM",
-				"SAINTPIERREMIQUELON": "SPM",
-				"SPM": "SPM",
-
-				"SAINTVINCENTANDTHEGRENADINES": "VCT",
-				"SAINTVINCENTTHEGRENADINES": "VCT",
-				"VCT": "VCT",
-
-				"SAMOA": "WSM",
-				"WSM": "WSM",
-
-				"SANMARINO": "SMR",
-				"SMR": "SMR",
-
-				"SAOTOMEANDPRINCIPE": "STP",
-				"SAOTOMEPRINCIPE": "STP",
-				"SÃOTOMÉANDPRÍNCIPE": "STP",
-				"SÃOTOMÉPRÍNCIPE": "STP",
-				"DEMOCRATICREPUBLICOFSÃOTOMÉANDPRÍNCIPE": "STP",
-				"DEMOCRATICREPUBLICOFSAOTOMEANDPRINCIPE": "STP",
-				"DEMOCRATICREPUBLICOFSÃOTOMÉPRÍNCIPE": "STP",
-				"DEMOCRATICREPUBLICOFSAOTOMEPRINCIPE": "STP",
-				"STP": "STP",
-
-				"SAUDIARABIA": "SAU",
-				"KINGDOMOFSAUDIARABIA": "SAU",
-				"SAUDIA": "SAU",
-				"ALARABIYAHASSUUDIYAH": "SAU",
-				"SAU": "SAU",
-
-				"SENEGAL": "SEN",
-				"SEN": "SEN",
-
-				"SERBIA": "SRB",
-				"REPUBLICOFSERVIA": "SRB",
-				"YUGOSLAVIA": "SRB",
-				"SRBIJA": "SRB",
-				"SRB": "SRB",
-
-				"SEYCHELLES": "SYC",
-				"SYC": "SYC",
-
-				"SIERRALEONE": "SLE",
-				"SLE": "SLE",
-
-				"SINGAPORE": "SGP",
-				"REPUBLICOFSINGAPORE": "SGP",
-				"SINGAPURA": "SGP",
-				"SGP": "SGP",
-
-				"SINTMAARTENDUTCH": "SXM",
-				"SINTMAARTEN": "SXM",
-				"SXM": "SXM",
-
-				"SLOVAKIA": "SVK",
-				"SLOVAKREPUBLIC": "SVK",
-				"SLOVENSKO": "SVK",
-				"SVK": "SVK",
-
-				"SLOVENIA": "SVN",
-				"SLOVENIJA": "SVN",
-				"SVN": "SVN",
-
-				"SOLOMONISLANDS": "SLB",
-				"SLB": "SLB",
-
-				"SOMALIA": "SOM",
-				"SOM": "SOM",
-
-				"SOUTHAFRICA": "ZAF",
-				"SUIDAFRIKA": "ZAF",
-				"ZAF": "ZAF",
-
-				"SOUTHGEORGIAANDTHESOUTHSANDWICHISLANDS": "SGS",
-				"SOUTHGEORGIATHESOUTHSANDWICHISLANDS": "SGS",
-				"SGS": "SGS",
-
-				"SOUTHSUDAN": "SSD",
-				"SSD": "SSD",
-
-				"SPAIN": "ESP",
-				"ESPAÑA": "ESP",
-				"ESPANA": "ESP",
-				"ESP": "ESP",
-
-				"SRILANKA": "LKA",
-				"CEYLON": "LKA",
-				"DEMOCRATICSOCIALISTREPUBLICOFSRILANKA": "LKA",
-				"LKA": "LKA",
-
-				"SUDAN": "SDN",
-				"REPUBLICOFTHESUDAN": "SDN",
-				"THESUDAN": "SDN",
-				"SDN": "SDN",
-
-				"SURINAME": "SUR",
-				"DUTCHGUIANA": "SUR",
-				"REPUBLICOFSURINAME": "SUR",
-				"SUR": "SUR",
-
-				"SVALBARDANDJANMAYENISLANDS": "SJM",
-				"SVALBARDJANMAYENISLANDS": "SJM",
-				"SJM": "SJM",
-
-				"SWAZILAND": "SWZ",
-				"SWZ": "SWZ",
-
-				"SWEDEN": "SWE",
-				"SVERIGE": "SWE",
-				"KINGDOMOFSWEDEN": "SWE",
-				"SWE": "SWE",
-
-				"SWITZERLAND": "CHE",
-				"SWISSCONFEDERATION": "CHE",
-				"SCHWEIZ": "CHE",
-				"SUISSE": "CHE",
-				"SVIZZERA": "CHE",
-				"SVIZRA": "CHE",
-				"CHE": "CHE",
-
-				"SYRIA": "SYR",
-				"SŪRIYĀ": "SYR",
-				"SURIYA": "SYR",
-				"SŪRĪYAH": "SYR",
-				"SURIYAH": "SYR",
-				"SYR": "SYR",
-
-				"TAIWAN": "TWN",
-				"REPUBLICOFCHINA": "TWN",
-				"FORMOSA": "TWN",
-				"TAIPEI": "TWN",
-				"中華民國": "TWN",
-				"臺灣": "TWN",
-				"TWN": "TWN",
-
-				"TAJIKISTAN": "TJK",
-				"TJK": "TJK",
-
-				"TANZANIA": "TZA",
-				"UNITEDREPUBLICOFTANZANIA": "TZA",
-				"TANGANYIKAANDZANZIBAR": "TZA",
-				"TANGANYIKAZANZIBAR": "TZA",
-				"TZA": "TZA",
-
-				"THAILAND": "THA",
-				"SIAM": "THA",
-				"KINGDOMOFTHAILAND": "THA",
-				"ประเทศไทย": "THA",
-				"PRATHETTHAI": "THA",
-				"THA": "THA",
-
-				"TIMORLESTE": "TLP",
-				"TIMOR": "TLP",
-				"TLP": "TLP",
-
-				"TOGO": "TGO",
-				"TOGOLESEREPUBLIC": "TGO",
-				"RÉPUBLIQUETOGOLAISE": "TGO",
-				"REPUBLIQUETOGOLAISE": "TGO",
-				"TGO": "TGO",
-
-				"TOKELAU": "TKL",
-				"TKL": "TKL",
-
-				"TONGA": "TON",
-				"TON": "TON",
-
-				"TRINIDADANDTOBAGO": "TTO",
-				"TRINIDADTOBAGO": "TTO",
-				"REPUBLICOFTRINIDADANDTOBAGO": "TTO",
-				"REPUBLICOFTRINIDADTOBAGO": "TTO",
-				"TRINBAGO": "TTO",
-				"TRINIDAD": "TTO",
-				"TOBAGO": "TTO",
-				"TTO": "TTO",
-
-				"TUNISIA": "TUN",
-				"REPUBLICOFTUNISIA": "TUN",
-				"الجمهورية التونسية": "TUN",
-				"TŪNIS": "TUN",
-				"TUN": "TUN",
-
-				"TURKEY": "TUR",
-				"TÜRKIYE": "TUR",
-				"TURKIYE": "TUR",
-				"REPUBLICOFTURKEY": "TUR",
-				"TUR": "TUR",
-
-				"TURKMENISTAN": "TKM",
-				"TKM": "TKM",
-
-				"TURKSANDCAICOSISLANDS": "TCA",
-				"TURKSCAICOSISLANDS": "TCA",
-				"TCA": "TCA",
-
-				"TUVALU": "TUV",
-				"ELLICEISLANDS": "TUV",
-				"TUV": "TUV",
-
-				"UGANDA": "UGA",
-				"REPUBLICOFUGANDA": "UGA",
-				"UGA": "UGA",
-
-				"UKRAINE": "UKR",
-				"UKRAINA": "UKR",
-				"УКРАЇНА": "UKR",
-				"YКРАIНА": "UKR",
-				"UKR": "UKR",
-
-				"UNITEDARABEMIRATES": "ARE",
-				"DAWLATALIMĀRĀTALARABĪYAHALMUTTAḤIDAH": "ARE",
-				"DAWLATALIMARATALARABIYAHALMUTTAHIDAH": "ARE",
-				"UAE": "ARE",
-				"EMIRATES": "ARE",
-				"ARE": "ARE",
-
-				"UNITEDKINGDOM": "GBR",
-				"GREATBRITAIN": "GBR",
-				"ENGLAND": "GBR",
-				"UK": "GBR",
-				"WALES": "GBR",
-				"SCOTLAND": "GBR",
-				"NORTHERNIRELAND": "GBR",
-				"BRITAIN": "GBR",
-				"GBR": "GBR",
-
-				"UNITEDSTATESMINOROUTLYINGISLANDS": "UMI",
-				"UMI": "UMI",
-
-				"UNITEDSTATESVIRGINISLANDS": "VIR",
-				"VIR": "VIR",
-
-				"UNITEDSTATES": "USA",
-				"THEUNITEDSTATES": "USA",
-				"UNITEDSTATESOFAMERICA": "USA",
-				"AMERICA": "USA",
-				"THECOLONIES": "USA",
-				"USA": "USA",
-
-				"URUGUAY": "URY",
-				"EASTERNREPUBLICOFURUGUAY": "URY",
-				"REPÚBLICAORIENTALDELURUGUAY": "URY",
-				"REPUBLICAORIENTALDELURUGUAY": "URY",
-				"URY": "URY",
-
-				"UZBEKISTAN": "UZB",
-				"REPUBLICOFUZBEKISTAN": "UZB",
-				"OZBEKISTONRESPUBLIKASI": "UZB",
-				"UZB": "UZB",
-
-				"VANUATU": "VUT",
-				"VUT": "VUT",
-
-				"VENEZUELA": "VEN",
-				"VEN": "VEN",
-
-				"VIETNAM": "VNM",
-				"SOCIALISTREPUBLICOFVIETNAM": "VNM",
-				"VIỆTNAM": "VNM",
-				"VNM": "VNM",
-
-				"WALLISANDFUTUNAISLANDS": "WLF",
-				"WALLISFUTUNAISLANDS": "WLF",
-				"WALLISETFUTUNA": "WLF",
-				"WLF": "WLF",
-
-				"WESTERNSAHARA": "ESH",
-				"AṢṢAḤRĀALGHARBĪYAH": "ESH",
-				"ASSAHRAALGHARBIYAH": "ESH",
-				"ESH": "ESH",
-
-				"YEMEN": "YEM",
-				"REPUBLICOFYEMEN": "YEM",
-				"ALYAMAN": "YEM",
-				"YEM": "YEM",
-
-				"ZAMBIA": "ZMB",
-				"NORTHERNRHODESIA": "ZMB",
-				"REPUBLICOFZAMBIA": "ZMB",
-				"ZMB": "ZMB",
-
-				"ZIMBABWE": "ZWE",
-				"RHODESIA": "ZWE",
-				"REPUBLICOFRHODESIA": "ZWE",
-				"REPUBLICOFZIMBABWE": "ZWE",
-				"SOUTHERNRHODESIA": "ZWE",
-				"ZWE": "ZWE"
-			};
-			return validCountries[countryValue];
+			if (config.target.includes("INTERNATIONAL")) {
+				var countryValue = fields.country.dom.value;
+				if (fields.country.dom.selectedOptions)
+					countryValue = fields.country.dom.selectedOptions[0].text;
+				countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-|\'|\"|\,|ʻ|\&/g, "");
+				var validCountries = {
+					"AFGHANISTAN": "AFG",
+					"AFGHANESTAN": "AFG",
+					"ISLAMICREPUBLICOFAFGHANISTAN": "AFG",
+					"AFG": "AFG",
+
+					"ÅLANDISLANDS": "ALA",
+					"ALANDISLANDS": "ALA",
+					"AALAND": "ALA",
+					"ALAND": "ALA",
+					"ALA": "ALA",
+
+					"ALBANIA": "ALB",
+					"REPUBLICOFALBANIA": "ALB",
+					"REPUBLIKAESHQIPËRISË": "ALB",
+					"REPUBLIKAESHQIPERISE": "ALB",
+					"SHQIPËRIA": "ALB",
+					"SHQIPERIA": "ALB",
+					"ALB": "ALB",
+
+					"ALGERIA": "DZA",
+					"PEOPLESDEMOCRATICREPUBLICOFALGERIA": "DZA",
+					"ALJAZAIR": "DZA",
+					"DZAYER": "DZA",
+					"DZA": "DZA",
+
+					"AMERICANSAMOA": "ASM",
+					"AMERIKASĀMOA": "ASM",
+					"AMERIKASAMOA": "ASM",
+					"ASM": "ASM",
+
+					"ANDORRA": "AND",
+					"AND": "AND",
+
+					"ANGOLA": "AGO",
+					"AGO": "AGO",
+
+					"ANGUILLA": "AIA",
+					"AIA": "AIA",
+
+					"ANTARCTICA": "ATA",
+					"ATA": "ATA",
+
+					"ANTIGUABARBUDA": "ATG",
+					"ANTIQUA": "ATG",
+					"BARBUDA": "ATG",
+					"ANTIQUAANDBARBUDA": "ATG",
+					"ATG": "ATG",
+
+					"ARGENTINA": "ARG",
+					"ARGENTINEREPUBLIC": "ARG",
+					"LAARGENTINA": "ARG",
+					"ARG": "ARG",
+
+					"ARMENIA": "ARM",
+					"HAYASTAN": "ARM",
+					"HAYASDAN": "ARM",
+					"HAÏASDAN": "ARM",
+					"HAIASDAN": "ARM",
+					"REPUBLICOFARMENIA": "ARM",
+					"ARM": "ARM",
+
+					"ARUBA": "ABW",
+					"ABW": "ABW",
+
+					"AUSTRALIA": "AUS",
+					"COMMONWEALTHOFAUSTRALIA": "AUS",
+					"AUS": "AUS",
+
+					"AUSTRIA": "AUT",
+					"OSTERREICH": "AUT",
+					"OESTERREICH": "AUT",
+					"ÖSTERREICH": "AUT",
+					"REPUBLICOFAUSTRIA": "AUT",
+					"AUT": "AUT",
+
+					"AZERBAIJAN": "AZE",
+					"REPUBLICOFAZERBAIJAN": "AZE",
+					"AZƏRBAYCANRESPUBLIKASI": "AZE",
+					"AZERBAIJANREPUBLIC": "AZE",
+					"AZARBAYCAN": "AZE",
+					"AZƏRBAYCAN": "AZE",
+					"AZERBAYCAN": "AZE",
+					"AZE": "AZE",
+
+					"BAHAMAS": "BHS",
+					"BHS": "BHS",
+
+					"BAHRAIN": "BHR",
+					"KINGDOMOFBAHRAIN": "BHR",
+					"MAMLAKATALBAḤRAYN": "BHR",
+					"MAMLAKATALBAHRAYN": "BHR",
+					"ALBAḤRAYN": "BHR",
+					"BHR": "BHR",
+
+					"BANGLADESH": "BGD",
+					"PEOPLESREPUBLICOFBANGLADESH": "BGD",
+					"BGD": "BGD",
+
+					"BARBADOS": "BRB",
+					"BRB": "BRB",
+
+					"BELARUS": "BLR",
+					"REPUBLICOFBELARUS": "BLR",
+					"GUDIJA": "BLR",
+					"BYELARUS": "BLR",
+					"BIELARUŚ": "BLR",
+					"BIELARUS": "BLR",
+					"BLR": "BLR",
+
+					"BELGIUM": "BEL",
+					"BELGIQUE": "BEL",
+					"BELGIEN": "BEL",
+					"BELGIE": "BEL",
+					"BELGIË": "BEL",
+					"BEL": "BEL",
+
+					"BELIZE": "BLZ",
+					"BLZ": "BLZ",
+
+					"BENIN": "BEN",
+					"REPUBLICOFBENIN": "BEN",
+					"RÉPUBLIQUEDUBÉNIN": "BEN",
+					"REPUBLIQUEDEBENIN": "BEN",
+					"BÉNIN": "BEN",
+					"BEN": "BEN",
+
+					"BERMUDA": "BMU",
+					"BMU": "BMU",
+
+					"BHUTAN": "BTN",
+					"DRUKYUL": "BTN",
+					"BTN": "BTN",
+
+					"BOLIVIA": "BOL",
+					"BULIWYA": "BOL",
+					"WULIWYA": "BOL",
+					"VOLÍVIA": "BOL",
+					"VOLIVIA": "BOL",
+					"BOL": "BOL",
+
+					"BONAIRESINTEUSTATIUSANDSABA": "BES",
+					"BONAIRESINTEUSTATIUSSABA": "BES",
+					"BONAIRE": "BES",
+					"SINTEUSTATIUS": "BES",
+					"SABA": "BES",
+					"SINTEUSTATIUSANDSABA": "BES",
+					"BES": "BES",
+
+					"BOSNIAHERZEGOVINA": "BIH",
+					"BOSNIA": "BIH",
+					"HERZEGOVINA": "BIH",
+					"BOSNAIHERCEGOVINA": "BIH",
+					"BIH": "BIH",
+
+					"BOTSWANA": "BWA",
+					"REPUBLICOFBOTSWANA": "BWA",
+					"BWA": "BWA",
+
+					"BRAZIL": "BRA",
+					"FEDERATIVEREPUBLICOFBRAZIL": "BRA",
+					"BRASIL": "BRA",
+					"BRA": "BRA",
+
+					"BRITISHINDIANOCEANTERRITORY": "IOT",
+					"IOT": "IOT",
+
+					"BRITISHVIRGINISLANDS": "VGV",
+					"VGV": "VGV",
+
+					"BRUNEIDARUSSALAM": "BRN",
+					"NEGARABRUNEIDARUSSALAM": "BRN",
+					"BRN": "BRN",
+
+					"BULGARIA": "BGR",
+					"BULGARIYA": "BGR",
+					"BĂLGARIJA": "BGR",
+					"BALGARIJA": "BGR",
+					"BGR": "BGR",
+
+					"BURKINAFASO": "BFA",
+					"BFA": "BFA",
+
+					"BURUNDI": "BDI",
+					"BDI": "BDI",
+
+					"CAMBODIA": "KHM",
+					"KINGDOMOFCAMBODIA": "KHM",
+					"ROYAUMEDUCAMBODGE": "KHM",
+					"KAMPUCHEA": "KHM",
+					"KHM": "KHM",
+
+					"CAMEROON": "CMR",
+					"CAMEROUN": "CMR",
+					"CMR": "CMR",
+
+					"CANADA": "CAN",
+					"CAN": "CAN",
+
+					"CAPEVERDEISLANDS": "CPV",
+					"CAPEVERDE": "CPV",
+					"CABOVERDE": "CPV",
+					"CPV": "CPV",
+
+					"CAYMANISLANDS": "CYM",
+					"CYM": "CYM",
+
+					"CENTRALAFRICANREPUBLIC": "CAF",
+					"UBANGISHARI": "CAF",
+					"RÉPUBLIQUECENTRAFRICAINE": "CAF",
+					"REPUBLIQUECENTRAFRICAINE": "CAF",
+					"CENTRALAFRICANEMPIRE": "CAF",
+					"KÖDÖRÖSÊSETÎBÊAFRÎKA": "CAF",
+					"KODOROSESETIBEAFRIKA": "CAF",
+					"CAF": "CAF",
+
+					"CHAD": "TCD",
+					"TCHAD": "TCD",
+					"TŠĀD": "TCD",
+					"TSAD": "TCD",
+					"TCD": "TCD",
+
+					"CHILE": "CHL",
+					"CHL": "CHL",
+
+					"CHINA": "CHN",
+					"PEOPLESREPUBLICOFCHINA": "CHN",
+					"ZHONGHUAPEOPLESREPUBLIC": "CHN",
+					"ZHONGGUO": "CHN",
+					"ZHONGHUA": "CHN",
+					"ZHŌNGGUÓ": "CHN",
+					"CHN": "CHN",
+
+					"CHRISTMASISLAND": "CXR",
+					"CXR": "CXR",
+
+					"COCOSKEELINGISLANDS": "CCK",
+					"COCOSISALNDS": "CCK",
+					"COCOSISLAND": "CCK",
+					"KEELINGISLANDS": "CCK",
+					"KEELINGSISLAND": "CCK",
+					"CCK": "CCK",
+
+					"COLOMBIA": "COL",
+					"COLÓMBIA": "COL",
+					"COL": "COL",
+
+					"COMOROS": "COM",
+					"COMORES": "COM",
+					"KOMORI": "COM",
+					"JUZURALQAMAR": "COM",
+					"COM": "COM",
+
+					"CONGO": "COD",
+					"RÉPUBLIQUEDÉMOCRATIQUEDUCONGO": "COD",
+					"REPUBLIQUEDEMOCRATIQUEDUCONGO": "COD",
+					"THEDEMOCRATICREPUBLICOFCONGO": "COD",
+					"THEDEMOCRATICREPUBLICOFTHECONGO": "COD",
+					"REPUBLICOFCONGO": "COD",
+					"REPUBLICOFTHECONGO": "COD",
+					"RÉPUBLIQUEDUCONGO": "COD",
+					"REPUBLIQUEDUCONGO": "COD",
+					"COD": "COD",
+
+					"COOKISLANDS": "COK",
+					"COK": "COK",
+
+					"COSTARICA": "CRI",
+					"CRI": "CRI",
+
+					"CROATIA": "HRV",
+					"HRVATSKA": "HRV",
+					"HRVAŠKA": "HRV",
+					"HRVASKA": "HRV",
+					"HRV": "HRV",
+
+					"CUBA": "CUB",
+					"CUB": "CUB",
+
+					"CURACAO": "CUW",
+					"CUW": "CUW",
+
+					"CYPRUS": "CYP",
+					"REPUBLICOFCYPRUS": "CYP",
+					"ΚΎΠΡΟΣ": "CYP",
+					"KIBRIS": "CYP",
+					"CYP": "CYP",
+
+					"CZECH REPUBLIC": "CZE",
+					"ČESKÁREPUBLIKA": "CZE",
+					"CESKAREPUBLIKA": "CZE",
+					"ČESKO": "CZE",
+					"CESKO": "CZE",
+					"CZE": "CZE",
+
+					"DENMARK": "DNK",
+					"KINGDOMOFDENMARK": "DNK",
+					"KONGERIGETDANMARK": "DNK",
+					"DANMARK": "DNK",
+					"DNK": "DNK",
+
+					"DJIBOUTI": "DGI",
+					"REPUBLICOFDJIBOUTI": "DGI",
+					"RÉPUBLIQUEDEDJIBOUTI": "DGI",
+					"REPUBLIQUEDEDJIBOUTI": "DGI",
+					"DGI": "DGI",
+
+					"DOMINICA": "DMA",
+					"DMA": "DMA",
+
+					"DOMINICAN REPUBLIC": "DOM",
+					"REPÚBLICADOMINICANA": "DOM",
+					"REPUBLICADOMINICANA": "DOM",
+					"DOM": "DOM",
+
+					"ECUADOR": "ECU",
+					"ECU": "ECU",
+
+					"EGYPT": "EGY",
+					"ARABREPUBLICOFEGYPT": "EGY",
+					"MIṢR": "EGY",
+					"MISR": "EGY",
+					"MEṢR": "EGY",
+					"MESR": "EGY",
+					"KĪMI": "EGY",
+					"KIMI": "EGY",
+					"EGY": "EGY",
+
+					"ELSALVADOR": "SLV",
+					"SLV": "SLV",
+
+					"EQUITORIALGUINEA": "GNQ",
+					"GUINEAECUATORIAL": "GNQ",
+					"GNQ": "GNQ",
+
+					"ERITREA": "ERI",
+					"HAGEREERTRA": "ERI",
+					"ERI": "ERI",
+
+					"ESTONIA": "EST",
+					"EESTI": "EST",
+					"EESTIVABARIIK": "EST",
+					"ESTLAND": "EST",
+					"IGAUNIJA": "EST",
+					"VIRO": "EST",
+					"EST": "EST",
+
+					"ETHIOPIA": "ETH",
+					"FEDERALDEMOCRATICREPUBLICOFETHIOPIA": "ETH",
+					"ITYOPIYA": "ETH",
+					"ETH": "ETH",
+
+					"FALKLANDISLANDS": "FLK",
+					"ISLASMALVINAS": "FLK",
+					"FLK": "FLK",
+
+					"FAROEISLANDS": "FRO",
+					"FØROYAR": "FRO",
+					"FOROYAR": "FRO",
+					"FÆRØERNE": "FRO",
+					"FAEROERNE": "FRO",
+					"FRO": "FRO",
+
+					"FIJI": "FJI",
+					"FJI": "FJI",
+
+					"FINLAND": "FIN",
+					"REPUBLICOFFINLAND": "FIN",
+					"SUOMI": "FIN",
+					"SUOMENTASAVALTA": "FIN",
+					"FIN": "FIN",
+
+					"FRANCE": "FRA",
+					"RÉPUBLIQUEFRANÇAISE": "FRA",
+					"REPUBLIQUEFRANCAISE": "FRA",
+					"FRENCHREPUBLIC": "FRA",
+					"LAFRANCE": "FRA",
+					"FRA": "FRA",
+
+					"FRENCHGUIANA": "GUF",
+					"GUYANE": "GUF",
+					"GUF": "GUF",
+
+					"FRENCHPOLYNESIA": "PYF",
+					"POLYNÉSIEFRANÇAISE": "PYF",
+					"POLYNESIEFRANCAISE": "PYF",
+					"PYF": "PYF",
+
+					"FRENCHSOUTHERNTERRITORIES": "ATF",
+					"TERRESAUSTRALESETANTARCTIQUESFRANÇAISES": "ATF",
+					"TERRESAUSTRALESETANTARCTIQUESFRANCAISES": "ATF",
+					"ATF": "ATF",
+
+					"GABON": "GAB",
+					"GAB": "GAB",
+
+					"GAMBIA": "GMB",
+					"GMB": "GMB",
+
+					"GEORGIA": "GEO",
+					"SAKARTVELO": "GEO",
+					"SAKARTVELO": "GEO",
+					"GEO": "GEO",
+
+					"GERMANY": "DEU",
+					"FEDERALREPUBLICOFGERMANY": "DEU",
+					"UNDESREPUBLIKDEUTSCHLAND": "DEU",
+					"DEUTSCHLAND": "DEU",
+					"BRD": "DEU",
+					"DEU": "DEU",
+
+					"GHANA": "GHA",
+					"GHA": "GHA",
+
+					"GIBRALTAR": "GIB",
+					"GIB": "GIB",
+
+					"GREECE": "GRC",
+					"ELLENICREPUBLIC": "GRC",
+					"ELLAS": "GRC",
+					"ΕΛΛΆΔΑ": "GRC",
+					"ELLADA": "GRC",
+					"GRC": "GRC",
+
+					"GREENLAND": "GRL",
+					"GRØNLAND": "GRL",
+					"GRONLAND": "GRL",
+					"KALAALLITNUNAAT": "GRL",
+					"GRL": "GRL",
+
+					"GRENADA": "GRD",
+					"GRD": "GRD",
+
+					"GUADELOUPE": "GLP",
+					"GLP": "GLP",
+
+					"GUAM": "GUM",
+					"GUM": "GUM",
+
+					"GUATEMALA": "GTM",
+					"GTM": "GTM",
+
+					"GUERNSEY": "GGY",
+					"GGY": "GGY",
+
+					"GUINEA": "GIN",
+					"REPUBLICOFGUINEA": "GIN",
+					"GUINEE": "GIN",
+					"GIN": "GIN",
+
+					"GUINEABISSAU": "GNB",
+					"REPUBLICOFGUINEABISSAU": "GNB",
+					"GUINEBISSAU": "GNB",
+					"GNB": "GNB",
+
+					"GUYANA": "GUY",
+					"GUY": "GUY",
+
+					"HAITI": "HTI",
+					"HTI": "HTI",
+
+					"HOLYSEE": "VAT",
+					"STATUSCIVITATISVATICANÆ": "VAT",
+					"THEVATICAN": "VAT",
+					"VATICANCITYSTATE": "VAT",
+					"VATICANCITY": "VAT",
+					"VATICAN": "VAT",
+					"VAT": "VAT",
+
+					"HONDURAS": "HND",
+					"HND": "HND",
+
+					"HONGKONG": "HKG",
+					"XIANGGANG": "HKG",
+					"HKG": "HKG",
+
+					"HUNGARY": "HUN",
+					"REPUBLICOFHUNGARY": "HUN",
+					"MAGYARORSZÁG": "HUN",
+					"MAGYARORSZAG": "HUN",
+					"HUN": "HUN",
+
+					"ICELAND": "ISL",
+					"REPUBLICOFICELAND": "ISL",
+					"ÍSLAND": "ISL",
+					"ISLAND": "ISL",
+					"LYOVELDIOISLAND": "ISL",
+					"ISL": "ISL",
+
+					"INDIA": "IND",
+					"REPUBLICOFINDIA": "IND",
+					"BHĀRAT": "IND",
+					"BHARAT": "IND",
+					"BHĀRATGAṆARĀJYA": "IND",
+					"BHARATGANARAJYA": "IND",
+					"IND": "IND",
+
+					"INDONESIA": "IDN",
+					"INDONESIË": "IDN",
+					"INDONESIE": "IDN",
+					"IDN": "IDN",
+
+					"IRAN": "IRN",
+					"ISLAMICREPUBLICOFIRAN": "IRN",
+					"IRN": "IRN",
+
+					"IRAQ": "IRG",
+					"IRQ": "IRG",
+
+					"IRELAND": "IRL",
+					"REPUBLICOFIRELAND": "IRL",
+					"ÉIRE": "IRL",
+					"EIRE": "IRL",
+					"IRL": "IRL",
+
+					"ISLEOFMAN": "IMN",
+					"IMN": "IMN",
+
+					"ISRAEL": "ISR",
+					"STATEOFISRAEL": "ISR",
+					"מדינת ישראל": "ISR",
+					"DAWLATALHAYAWANAT": "ISR",
+					"DAWLATISRAIL": "ISR",
+					"YISRAEL": "ISR",
+					"ISR": "ISR",
+
+					"ITALY": "ITA",
+					"REPUBBLICAITALIANA": "ITA",
+					"ITALIA": "ITA",
+					"ITA": "ITA",
+
+					"IVORYCOAST": "CIV",
+					"CÔTEDIVOIRE": "CIV",
+					"COTEDIVOIRE": "CIV",
+					"REPUBLICOFCÔTEDIVOIRE": "CIV",
+					"REPUBLICOFCOTEDIVOIRE": "CIV",
+					"CIV": "CIV",
+
+					"JAMAICA": "JAM",
+					"XAMAYCA": "JAM",
+					"JAM": "JAM",
+
+					"JAPAN": "JPN",
+					"NIPPON": "JPN",
+					"JPN": "JPN",
+
+					"JERSEY": "JEY",
+					"JEY": "JEY",
+
+					"JORDAN": "JOR",
+					"HASHEMITEKINGDOMOFJORDAN": "JOR",
+					"ALURDUNN": "JOR",
+					"JOR": "JOR",
+
+					"KAZAKHSTAN": "KAZ",
+					"REPUBLICOFKAZAKHSTAN": "KAZ",
+					"ҚАЗАҚСТАНРЕСПУБЛИКАСЫ": "KAZ",
+					"ҚАЗАҚСТАНQAZAQSTAN": "KAZ",
+					"KAZ": "KAZ",
+
+					"KENYA": "KEN",
+					"REPUBLICOFKENYA": "KEN",
+					"JAMHURIYAKENYA": "KEN",
+					"KEN": "KEN",
+
+					"KIRIBATI": "KIR",
+					"REPUBLICOFKIRIBATI": "KIR",
+					"KIR": "KIR",
+
+					"KOREAREPUBLICOF": "KOR",
+					"SOUTHKOREA": "KOR",
+					"REPUBLICOFKOREA": "KOR",
+					"DAEHANMINGUK": "KOR",
+					"KOR": "KOR",
+
+					"KUWAIT": "KWT",
+					"ALKUWAYT": "KWT",
+					"STATEOFKUWAIT": "KWT",
+					"KWT": "KWT",
+
+					"KYRGYZSTAN": "KGZ",
+					"KYRGYZRESPUBLIKASY": "KGZ",
+					"KGZ": "KGZ",
+
+					"LAOS": "LAO",
+					"LAO": "LAO",
+
+					"LATVIA": "LVA",
+					"LATVIJA": "LVA",
+					"LETTLAND": "LVA",
+					"LETLAND": "LVA",
+					"LVA": "LVA",
+
+					"LEBANON": "LBN",
+					"THELEBANESEREPUBLIC": "LBN",
+					"ALJUMHURIYYAALLUBNANIYYA": "LBN",
+					"LEBNAN": "LBN",
+					"LUBNAN": "LBN",
+					"LBN": "LBN",
+
+					"LESOTHO": "LSO",
+					"KINGDOMOFLESOTHO": "LSO",
+					"LSO": "LSO",
+
+					"LIBERIA": "LBR",
+					"LBR": "LBR",
+
+					"LIBYA": "LBY",
+					"LIBIYAH": "LBY",
+					"LBY": "LBY",
+
+					"LIECHTENSTEIN": "LIE",
+					"LIE": "LIE",
+
+					"LITHUANIA": "LTU",
+					"LIETUVA": "LTU",
+					"ЛИТВА": "LTU",
+					"LTU": "LTU",
+
+					"LUXEMBOURG": "LUX",
+					"LETZEBUERG": "LUX",
+					"LUX": "LUX",
+
+					"MACAO": "MAC",
+					"MACAU": "MAC",
+					"AOMEN": "MAC",
+					"MAC": "MAC",
+
+					"MACEDONIA": "MKD",
+					"МАКЕДОНИЈА": "MKD",
+					"MAKEDONIJA": "MKD",
+					"MKD": "MKD",
+
+					"MADAGASCAR": "MDG",
+					"MDG": "MDG",
+
+					"MALAWI": "MWI",
+					"REPUBLICOFMALAWI": "MWI",
+					"MWI": "MWI",
+
+					"MALAYSIA": "MYS",
+					"PERSEKUTUANMALAYSIA": "MYS",
+					"FEDERATIONOFMALAYSIA": "MYS",
+					"MYS": "MYS",
+
+					"MALDIVES": "MDV",
+					"DHIVEHIRAAJJE": "MDV",
+					"REPUBLICOFMALDIVES": "MDV",
+					"MDV": "MDV",
+
+					"MALI": "MLI",
+					"MLI": "MLI",
+
+					"MALTA": "MLT",
+					"MLT": "MLT",
+
+					"MARSHALLISLANDS": "MHL",
+					"MHL": "MHL",
+
+					"MARTINIQUE": "MTQ",
+					"MTQ": "MTQ",
+
+					"MAURITANIA": "MRT",
+					"ISLAMICREPUBLICOFMAURITANIA": "MRT",
+					"MURITANIYAH": "MRT",
+					"MRT": "MRT",
+
+					"MAURITIUS": "MUS",
+					"MUS": "MUS",
+
+					"MAYOTTE": "MYT",
+					"MYT": "MYT",
+
+					"MEXICO": "MEX",
+					"ESTADOSUNIDOSMEXICANOS": "MEX",
+					"MÉXICO": "MEX",
+					"MEX": "MEX",
+
+					"MICRONESIA": "FSM",
+					"FEDERALSTATESOFMICRONESIA": "FSM",
+					"FSM": "FSM",
+
+					"MOLDOVA": "MDA",
+					"REPUBLICOFMOLDOVA": "MDA",
+					"REPUBLICAMOLDOVA": "MDA",
+					"MDA": "MDA",
+
+					"MONACO": "MCO",
+					"MCO": "MCO",
+
+					"MONGOLIA": "MNG",
+					"MONGOLULS": "MNG",
+					"MNG": "MNG",
+
+					"MONTENEGRO": "MNE",
+					"CRNAGORA": "MNE",
+					"MNE": "MNE",
+
+					"MONTSERRAT": "MSR",
+					"MSR": "MSR",
+
+					"MOROCCO": "MAR",
+					"KINGDOMOFMOROCCO": "MAR",
+					"ALMAMLAKAALMAGHRIBIYA": "MAR",
+					"MAGHREB": "MAR",
+					"ALMAĠRIB": "MAR",
+					"ALMAGRIB": "MAR",
+					"MAR": "MAR",
+
+					"MOZAMBIQUE": "MOZ",
+					"MOCAMBIQUE": "MOZ",
+					"MOZ": "MOZ",
+
+					"MYANMAR": "MMR",
+					"REPUBLICOFTHEUNIONOFMYANMAR": "MMR",
+					"MYANMANAINGNGANDAW": "MMR",
+					"MYANMA": "MMR",
+					"BURMA": "MMR",
+					"MMR": "MMR",
+
+					"NAMIBIA": "NAM",
+					"NAM": "NAM",
+
+					"NAURU": "NRU",
+					"NRU": "NRU",
+
+					"NEPAL": "NPL",
+					"NĒPĀLA": "NPL",
+					"NEPALA": "NPL",
+					"NPL": "NPL",
+
+					"NETHERLANDSANTILLES": "ANT",
+					"NEDERLANDSEANTILLEN": "ANT",
+					"ANT": "ANT",
+
+					"NETHERLANDS": "NLD",
+					"THENETHERLANDS": "NLD",
+					"HOLLAND": "NLD",
+					"NEDERLAND": "NLD",
+					"NLD": "NLD",
+
+					"NEWCALEDONIA": "NCL",
+					"CALEDONIA": "NCL",
+					"NOUVELLECALÉDONIE": "NCL",
+					"NOUVELLECALEDONIE": "NCL",
+					"NCL": "NCL",
+
+					"NEWZEALAND": "NZL",
+					"AOTEAROA": "NZL",
+					"NZL": "NZL",
+
+					"NICARAGUA": "NIC",
+					"NIC": "NIC",
+
+					"NIGER": "NER",
+					"NER": "NER",
+
+					"NIGERIA": "NGA",
+					"NGA": "NGA",
+
+					"NIUE": "NIU",
+					"NIU": "NIU",
+
+					"NORFOLKISLAND": "NFK",
+					"NFK": "NFK",
+
+					"NORTHKOREA": "PRK",
+					"DEMOCRATICPEOPLESREPUBLICOFKOREA": "PRK",
+					"CHOSONMINJUJUUIINMINKONGHWAGUK": "PRK",
+					"PRK": "PRK",
+
+					"NORTHERNMARIANAISLANDS": "NMP",
+					"NMP": "NMP",
+
+					"NORWAY": "NOR",
+					"NORGE": "NOR",
+					"NOREG": "NOR",
+					"NOR": "NOR",
+
+					"OMAN": "OMN",
+					"SALṬANATUMĀN": "OMN",
+					"SALTANATUMAN": "OMN",
+					"OMN": "OMN",
+
+					"PAKISTAN": "PAK",
+					"ISLAMICREPUBLICOFPAKISTAN": "PAK",
+					"PAK": "PAK",
+
+					"PALAU": "PLW",
+					"REPUBLICOFPALAU": "PLW",
+					"BELAU": "PLW",
+					"PLW": "PLW",
+
+					"PALESTINIANTERRITORY": "PSE",
+					"FILASTIN": "PSE",
+					"PSE": "PSE",
+
+					"PANAMA": "PAN",
+					"PAN": "PAN",
+
+					"PAPUANEWGUINEA": "PNG",
+					"PAPUANIUGINI": "PNG",
+					"PNG": "PNG",
+
+					"PARAGUAY": "PRY",
+					"PRY": "PRY",
+
+					"PERU": "PER",
+					"REPUBLICOFPERU": "PER",
+					"PERUVIANREPUBLIC": "PER",
+					"REPÚBLICADELPERÚ": "PER",
+					"REPuBLICADELPERu": "PER",
+					"PERÚ": "PER",
+					"PER": "PER",
+
+					"PHILIPPINES": "PHL",
+					"REPUBLICOFTHEPHILIPPINES": "PHL",
+					"REPÚBLIKANGPILIPINAS": "PHL",
+					"REPUBLIKANGPILIPINAS": "PHL",
+					"PILIPINAS": "PHL",
+					"FILIPINAS": "PHL",
+					"PHL": "PHL",
+
+					"PITCAIRNISLAND": "PCN",
+					"PCN": "PCN",
+
+					"POLAND": "POL",
+					"REPUBLICOFPOLAND": "POL",
+					"RZECZPOSPOLITAPOLSKA": "POL",
+					"POLSKA": "POL",
+					"POL": "POL",
+
+					"PORTUGAL": "PRT",
+					"PORTUGUESEREPUBLIC": "PRT",
+					"LUSITANIA": "PRT",
+					"PRT": "PRT",
+
+					"PUERTORICO": "PRI",
+					"COMMONWEALTHOFPUERTORICO": "PRI",
+					"PRI": "PRI",
+
+					"QATAR": "QAT",
+					"DAWLATQAṬAR": "QAT",
+					"DAWLATQATAR": "QAT",
+					"QAṬAR": "QAT",
+					"QAT": "QAT",
+
+					"RÉUNION": "REU",
+					"REUNIONISLAND": "REU",
+					"ILEDELARÉUNION": "REU",
+					"ILEDELAREUNION": "REU",
+					"REU": "REU",
+
+					"ROMANIA": "ROU",
+					"ROMÂNIA": "ROU",
+					"ROU": "ROU",
+
+					"RUSSIA": "RUS",
+					"RUSSIANFEDERATION": "RUS",
+					"РОССИЯ": "RUS",
+					"ROSSIYA": "RUS",
+					"RUS": "RUS",
+
+					"RWANDA": "RWA",
+					"REPUBLICOFRWANDA": "RWA",
+					"RWA": "RWA",
+
+					"SAINTBARTHÉLEMY": "BLM",
+					"SAINTBARTHELEMY": "BLM",
+					"BLM": "BLM",
+
+					"SAINTHELENA": "SHN",
+					"SHN": "SHN",
+
+					"SAINTKITTSANDNEVIS": "KNA",
+					"SAINTKITTSNEVIS": "KNA",
+					"FEDERATIONOFSAINTKITTSANDNEVIS": "KNA",
+					"FEDERATIONOFSAINTKITTSNEVIS": "KNA",
+					"SAINTCHRISTOPHERANDNEVIS": "KNA",
+					"SAINTCHRISTOPHERNEVIS": "KNA",
+					"KNA": "KNA",
+
+					"SAINTLUCIA": "LCA",
+					"LCA": "LCA",
+
+					"SAINTMARTIN": "MAF",
+					"MAF": "MAF",
+
+					"SAINTPIERREANDMIQUELON": "SPM",
+					"SAINTPIERREMIQUELON": "SPM",
+					"SPM": "SPM",
+
+					"SAINTVINCENTANDTHEGRENADINES": "VCT",
+					"SAINTVINCENTTHEGRENADINES": "VCT",
+					"VCT": "VCT",
+
+					"SAMOA": "WSM",
+					"WSM": "WSM",
+
+					"SANMARINO": "SMR",
+					"SMR": "SMR",
+
+					"SAOTOMEANDPRINCIPE": "STP",
+					"SAOTOMEPRINCIPE": "STP",
+					"SÃOTOMÉANDPRÍNCIPE": "STP",
+					"SÃOTOMÉPRÍNCIPE": "STP",
+					"DEMOCRATICREPUBLICOFSÃOTOMÉANDPRÍNCIPE": "STP",
+					"DEMOCRATICREPUBLICOFSAOTOMEANDPRINCIPE": "STP",
+					"DEMOCRATICREPUBLICOFSÃOTOMÉPRÍNCIPE": "STP",
+					"DEMOCRATICREPUBLICOFSAOTOMEPRINCIPE": "STP",
+					"STP": "STP",
+
+					"SAUDIARABIA": "SAU",
+					"KINGDOMOFSAUDIARABIA": "SAU",
+					"SAUDIA": "SAU",
+					"ALARABIYAHASSUUDIYAH": "SAU",
+					"SAU": "SAU",
+
+					"SENEGAL": "SEN",
+					"SEN": "SEN",
+
+					"SERBIA": "SRB",
+					"REPUBLICOFSERVIA": "SRB",
+					"YUGOSLAVIA": "SRB",
+					"SRBIJA": "SRB",
+					"SRB": "SRB",
+
+					"SEYCHELLES": "SYC",
+					"SYC": "SYC",
+
+					"SIERRALEONE": "SLE",
+					"SLE": "SLE",
+
+					"SINGAPORE": "SGP",
+					"REPUBLICOFSINGAPORE": "SGP",
+					"SINGAPURA": "SGP",
+					"SGP": "SGP",
+
+					"SINTMAARTENDUTCH": "SXM",
+					"SINTMAARTEN": "SXM",
+					"SXM": "SXM",
+
+					"SLOVAKIA": "SVK",
+					"SLOVAKREPUBLIC": "SVK",
+					"SLOVENSKO": "SVK",
+					"SVK": "SVK",
+
+					"SLOVENIA": "SVN",
+					"SLOVENIJA": "SVN",
+					"SVN": "SVN",
+
+					"SOLOMONISLANDS": "SLB",
+					"SLB": "SLB",
+
+					"SOMALIA": "SOM",
+					"SOM": "SOM",
+
+					"SOUTHAFRICA": "ZAF",
+					"SUIDAFRIKA": "ZAF",
+					"ZAF": "ZAF",
+
+					"SOUTHGEORGIAANDTHESOUTHSANDWICHISLANDS": "SGS",
+					"SOUTHGEORGIATHESOUTHSANDWICHISLANDS": "SGS",
+					"SGS": "SGS",
+
+					"SOUTHSUDAN": "SSD",
+					"SSD": "SSD",
+
+					"SPAIN": "ESP",
+					"ESPAÑA": "ESP",
+					"ESPANA": "ESP",
+					"ESP": "ESP",
+
+					"SRILANKA": "LKA",
+					"CEYLON": "LKA",
+					"DEMOCRATICSOCIALISTREPUBLICOFSRILANKA": "LKA",
+					"LKA": "LKA",
+
+					"SUDAN": "SDN",
+					"REPUBLICOFTHESUDAN": "SDN",
+					"THESUDAN": "SDN",
+					"SDN": "SDN",
+
+					"SURINAME": "SUR",
+					"DUTCHGUIANA": "SUR",
+					"REPUBLICOFSURINAME": "SUR",
+					"SUR": "SUR",
+
+					"SVALBARDANDJANMAYENISLANDS": "SJM",
+					"SVALBARDJANMAYENISLANDS": "SJM",
+					"SJM": "SJM",
+
+					"SWAZILAND": "SWZ",
+					"SWZ": "SWZ",
+
+					"SWEDEN": "SWE",
+					"SVERIGE": "SWE",
+					"KINGDOMOFSWEDEN": "SWE",
+					"SWE": "SWE",
+
+					"SWITZERLAND": "CHE",
+					"SWISSCONFEDERATION": "CHE",
+					"SCHWEIZ": "CHE",
+					"SUISSE": "CHE",
+					"SVIZZERA": "CHE",
+					"SVIZRA": "CHE",
+					"CHE": "CHE",
+
+					"SYRIA": "SYR",
+					"SŪRIYĀ": "SYR",
+					"SURIYA": "SYR",
+					"SŪRĪYAH": "SYR",
+					"SURIYAH": "SYR",
+					"SYR": "SYR",
+
+					"TAIWAN": "TWN",
+					"REPUBLICOFCHINA": "TWN",
+					"FORMOSA": "TWN",
+					"TAIPEI": "TWN",
+					"中華民國": "TWN",
+					"臺灣": "TWN",
+					"TWN": "TWN",
+
+					"TAJIKISTAN": "TJK",
+					"TJK": "TJK",
+
+					"TANZANIA": "TZA",
+					"UNITEDREPUBLICOFTANZANIA": "TZA",
+					"TANGANYIKAANDZANZIBAR": "TZA",
+					"TANGANYIKAZANZIBAR": "TZA",
+					"TZA": "TZA",
+
+					"THAILAND": "THA",
+					"SIAM": "THA",
+					"KINGDOMOFTHAILAND": "THA",
+					"ประเทศไทย": "THA",
+					"PRATHETTHAI": "THA",
+					"THA": "THA",
+
+					"TIMORLESTE": "TLP",
+					"TIMOR": "TLP",
+					"TLP": "TLP",
+
+					"TOGO": "TGO",
+					"TOGOLESEREPUBLIC": "TGO",
+					"RÉPUBLIQUETOGOLAISE": "TGO",
+					"REPUBLIQUETOGOLAISE": "TGO",
+					"TGO": "TGO",
+
+					"TOKELAU": "TKL",
+					"TKL": "TKL",
+
+					"TONGA": "TON",
+					"TON": "TON",
+
+					"TRINIDADANDTOBAGO": "TTO",
+					"TRINIDADTOBAGO": "TTO",
+					"REPUBLICOFTRINIDADANDTOBAGO": "TTO",
+					"REPUBLICOFTRINIDADTOBAGO": "TTO",
+					"TRINBAGO": "TTO",
+					"TRINIDAD": "TTO",
+					"TOBAGO": "TTO",
+					"TTO": "TTO",
+
+					"TUNISIA": "TUN",
+					"REPUBLICOFTUNISIA": "TUN",
+					"الجمهورية التونسية": "TUN",
+					"TŪNIS": "TUN",
+					"TUN": "TUN",
+
+					"TURKEY": "TUR",
+					"TÜRKIYE": "TUR",
+					"TURKIYE": "TUR",
+					"REPUBLICOFTURKEY": "TUR",
+					"TUR": "TUR",
+
+					"TURKMENISTAN": "TKM",
+					"TKM": "TKM",
+
+					"TURKSANDCAICOSISLANDS": "TCA",
+					"TURKSCAICOSISLANDS": "TCA",
+					"TCA": "TCA",
+
+					"TUVALU": "TUV",
+					"ELLICEISLANDS": "TUV",
+					"TUV": "TUV",
+
+					"UGANDA": "UGA",
+					"REPUBLICOFUGANDA": "UGA",
+					"UGA": "UGA",
+
+					"UKRAINE": "UKR",
+					"UKRAINA": "UKR",
+					"УКРАЇНА": "UKR",
+					"YКРАIНА": "UKR",
+					"UKR": "UKR",
+
+					"UNITEDARABEMIRATES": "ARE",
+					"DAWLATALIMĀRĀTALARABĪYAHALMUTTAḤIDAH": "ARE",
+					"DAWLATALIMARATALARABIYAHALMUTTAHIDAH": "ARE",
+					"UAE": "ARE",
+					"EMIRATES": "ARE",
+					"ARE": "ARE",
+
+					"UNITEDKINGDOM": "GBR",
+					"GREATBRITAIN": "GBR",
+					"ENGLAND": "GBR",
+					"UK": "GBR",
+					"WALES": "GBR",
+					"SCOTLAND": "GBR",
+					"NORTHERNIRELAND": "GBR",
+					"BRITAIN": "GBR",
+					"GBR": "GBR",
+
+					"UNITEDSTATESMINOROUTLYINGISLANDS": "UMI",
+					"UMI": "UMI",
+
+					"UNITEDSTATESVIRGINISLANDS": "VIR",
+					"VIR": "VIR",
+
+					"UNITEDSTATES": "USA",
+					"THEUNITEDSTATES": "USA",
+					"UNITEDSTATESOFAMERICA": "USA",
+					"AMERICA": "USA",
+					"THECOLONIES": "USA",
+					"USA": "USA",
+
+					"URUGUAY": "URY",
+					"EASTERNREPUBLICOFURUGUAY": "URY",
+					"REPÚBLICAORIENTALDELURUGUAY": "URY",
+					"REPUBLICAORIENTALDELURUGUAY": "URY",
+					"URY": "URY",
+
+					"UZBEKISTAN": "UZB",
+					"REPUBLICOFUZBEKISTAN": "UZB",
+					"OZBEKISTONRESPUBLIKASI": "UZB",
+					"UZB": "UZB",
+
+					"VANUATU": "VUT",
+					"VUT": "VUT",
+
+					"VENEZUELA": "VEN",
+					"VEN": "VEN",
+
+					"VIETNAM": "VNM",
+					"SOCIALISTREPUBLICOFVIETNAM": "VNM",
+					"VIỆTNAM": "VNM",
+					"VNM": "VNM",
+
+					"WALLISANDFUTUNAISLANDS": "WLF",
+					"WALLISFUTUNAISLANDS": "WLF",
+					"WALLISETFUTUNA": "WLF",
+					"WLF": "WLF",
+
+					"WESTERNSAHARA": "ESH",
+					"AṢṢAḤRĀALGHARBĪYAH": "ESH",
+					"ASSAHRAALGHARBIYAH": "ESH",
+					"ESH": "ESH",
+
+					"YEMEN": "YEM",
+					"REPUBLICOFYEMEN": "YEM",
+					"ALYAMAN": "YEM",
+					"YEM": "YEM",
+
+					"ZAMBIA": "ZMB",
+					"NORTHERNRHODESIA": "ZMB",
+					"REPUBLICOFZAMBIA": "ZMB",
+					"ZMB": "ZMB",
+
+					"ZIMBABWE": "ZWE",
+					"RHODESIA": "ZWE",
+					"REPUBLICOFRHODESIA": "ZWE",
+					"REPUBLICOFZIMBABWE": "ZWE",
+					"SOUTHERNRHODESIA": "ZWE",
+					"ZWE": "ZWE"
+				};
+				return validCountries[countryValue];
+			} else {
+				return "USA";
+			}
 		};
 
 		this.autocompleteVisible = function () {
