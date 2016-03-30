@@ -1242,9 +1242,12 @@
 						continue;
 					}
 				}
-				
+
 				// Acquire the form based on the first member
-				var formDom = $(address[Object.keys(address)[0]]).parents('form')[0];
+				var formDom = $(address.address1).parents('form')[0];
+				if (!formDom) {
+					formDom = $(address.freeform).parents('form')[0];
+				}
 				var form = new Form(formDom);
 
 				// Persist a reference to the form if it wasn't acquired before
