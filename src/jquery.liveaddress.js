@@ -124,6 +124,7 @@
 		config.verifySecondary = typeof config.verifySecondary === 'undefined' ? false : config.verifySecondary;
 		config.geocode = typeof config.geocode === 'undefined' ? false : config.geocode;
 		config.enforceVerification = typeof config.enforceVerification === 'undefined' ? false : config.enforceVerification;
+		config.agent = typeof config.agent === 'undefined' ? "" : config.agent;
 
 		config.candidates = config.candidates < 1 ? 0 : (config.candidates > 10 ? 10 : config.candidates);
 
@@ -945,7 +946,8 @@
 				prefer: config.cityStatePreference,
 				suggestions: config.autocomplete,
 				geolocate: config.geolocate,
-				geolocate_precision: config.geolocatePrecision
+				geolocate_precision: config.geolocatePrecision,
+				agent: "plugin:jquery@" + instance.version + "\|" + config.agent
 			}, function (json) {
 				trigger("AutocompleteReceived", $.extend(data, {
 					json: json,
@@ -2237,7 +2239,8 @@
 			}
 
 			$.ajax({
-					url: requestUrl + "?" + credentials + "&plugin=" + encodeURIComponent(instance.version) +
+					url: requestUrl + "?" + credentials +
+					"&agent=" + encodeURIComponent("plugin:jquery@" + instance.version + "\|" + config.agent) +
 					(config.debug ? "_debug" : ""),
 					contentType: "jsonp",
 					headers: headers,
