@@ -587,10 +587,16 @@
 						if (config.autocomplete) { // Position of autocomplete boxes
 							var containerUi = $('.smarty-autocomplete.smarty-addr-' + addr.id()).closest('.smarty-ui');
 							var domFields = addr.getDomFields();
+							var mainInput = '';
 							if (domFields['address1']) {
+								mainInput = 'address1';
+							} else if (domFields['freeform']) {
+								mainInput = 'freeform';
+							}
+							if (mainInput !== '') {
 								containerUi.css({
-									"left": $(domFields['address1']).offset().left + "px",
-									"top": ($(domFields['address1']).offset().top + $(domFields['address1']).outerHeight(false)) + "px"
+									"left": $(domFields[mainInput]).offset().left + "px",
+									"top": ($(domFields[mainInput]).offset().top + $(domFields[mainInput]).outerHeight(false)) + "px"
 								});
 							}
 						}
@@ -622,9 +628,14 @@
 						for (var j = 0; j < f.addresses.length; j++) {
 							var addr = f.addresses[j];
 							var domFields = addr.getDomFields();
-
+							var mainInput = '';
 							if (domFields['address1']) {
-								var strField = $(domFields['address1']);
+								mainInput = 'address1';
+							} else if (domFields['freeform']) {
+								mainInput = 'freeform';
+							}
+							if (mainInput !== '') {
+								var strField = $(domFields[mainInput]);
 								var containerUi = $('<div class="smarty-ui"></div>');
 								var autoUi = $('<div class="smarty-autocomplete"></div>');
 
@@ -682,7 +693,7 @@
 											if (domFields['zipcode'])
 												$(domFields['zipcode']).focus();
 											else
-												$(domFields['address1']).blur();
+												$(domFields[mainInput]).blur();
 											useAutocompleteSuggestion(event.data.addr, autocompleteResponse.suggestions[currentChoice.data("suggIndex")], event.data.containerUi);
 											return addr.isFreeform() ? true : suppress(event);
 										} else
@@ -966,7 +977,7 @@
 			containerUi.hide(); // It's important that the suggestions are hidden before AddressChanged event fires
 
 			if (addr.isFreeform())
-				$(domfields['address1']).val(suggestion.text).change();
+				$(domfields['freeform']).val(suggestion.text).change();
 			else {
 				if (domfields['postal_code']) {
 					$(domfields['postal_code']).val("").change();
@@ -993,8 +1004,8 @@
 					addr.usedAutocomplete = true;
 					$(domfields['locality']).val(suggestion.city).change();
 				}
-				$(domfields['country']).val("USA").change();
 			}
+			$(domfields['country']).val("USA").change();
 			trigger("AutocompleteUsed", {
 				address: addr,
 				suggestion: suggestion
@@ -1143,6 +1154,8 @@
 					}
 					if (doms['address1'])
 						$(doms['address1']).unbind('keyup').unbind('keydown').unbind('blur');
+					else if (doms['freeform'])
+						$(doms['freeform']).unbind('keyup').unbind('keydown').unbind('blur');
 				}
 
 				// Unbind our form submit and submit-button click handlers
@@ -2035,9 +2048,9 @@
 				if (self.isFreeform()) {
 					var singleLineAddr = (resp.addressee ? resp.addressee + ", " : "") +
 						(resp.delivery_line_1 ? resp.delivery_line_1 + ", " : "") +
-						(resp.delivery_line_2 ? ", " + resp.delivery_line_2 + ", " : "") +
-						(resp.components.urbanization ? ", " + resp.components.urbanization : "") +
-						(resp.last_line ? ", " + resp.last_line : "");
+						(resp.delivery_line_2 ? resp.delivery_line_2 + ", " : "") +
+						(resp.components.urbanization ? resp.components.urbanization + ", " : "") +
+						(resp.last_line ? resp.last_line : "");
 					var fieldKey = "freeform";
 					if (fields.address1) {
 						fieldKey = "address1";
@@ -2412,7 +2425,7 @@
 
 		// Based on the properties in "fields," determines if this is a single-line address
 		this.isFreeform = function () {
-			return fields.freeform && fields.country;
+			return fields.freeform;
 		};
 
 		this.get = function (key) {
