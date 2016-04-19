@@ -888,7 +888,7 @@
 				return;
 
 			addr.lastStreetInput = input; // Used so that autocomplete only fires on real changes (i.e. not just whitespace)
-			if (addr.isDomestic() && config.target.includes("US")) {
+			if (addr.isDomestic() && config.target.indexOf("US") >= 0) {
 				trigger('AutocompleteInvoked', {
 					containerUi: containerUi,
 					suggContainer: suggContainer,
@@ -1219,7 +1219,7 @@
 			for (var addrIdx in map) {
 				var address = map[addrIdx];
 
-				if (!address.country && config.target.includes("INTERNATIONAL"))
+				if (!address.country && config.target.indexOf("INTERNATIONAL") >= 0)
 					continue;
 
 				// Convert selectors into actual DOM references
@@ -1244,7 +1244,7 @@
 							address[fieldType] = matched[0];
 					}
 				}
-				if (config.target.includes("INTERNATIONAL")) {
+				if (config.target.indexOf("INTERNATIONAL") >= 0) {
 					if (!((address.country && address.freeform) || (address.country && address.address1 && address.postal_code) || (address.country && address.address1 && address.locality && address.administrative_area))) {
 						if (config.debug)
 							console.log("NOTICE: Address map (index " + addrIdx + ") was not mapped to a complete street address. Skipping...");
@@ -1919,7 +1919,7 @@
 			if (differentVal && !keepState) {
 				ui.unmarkAsValid(self);
 				var uiTag = config.ui ? $('.smarty-ui .smarty-tag.smarty-addr-' + id) : undefined;
-				if (config.target.includes("US") && !config.target.includes("INTERNATIONAL")) {
+				if (config.target.indexOf("US") >= 0 && config.target.indexOf("INTERNATIONAL") < 0) {
 					if (self.isDomestic()) {
 						if (uiTag && !uiTag.is(':visible'))
 							uiTag.show(); // Show checkmark tag if address is in US
@@ -1932,12 +1932,12 @@
 							address: self
 						}, false);
 					}
-				} else if (config.target.includes("INTERNATIONAL") && !config.target.includes("US")) {
+				} else if (config.target.indexOf("INTERNATIONAL") >= 0 && config.target.indexOf("US") < 0) {
 					if (uiTag && !uiTag.is(':visible'))
 						uiTag.show(); // Show checkmark tag if address is in US
 					self.unaccept();
 					trigger("AddressChanged", eventMeta);
-				} else if (config.target.includes("US") && config.target.includes("INTERNATIONAL")) {
+				} else if (config.target.indexOf("US") >= 0 && config.target.indexOf("INTERNATIONAL") >= 0) {
 					if (uiTag && !uiTag.is(':visible'))
 						uiTag.show(); // Show checkmark tag if address is in US
 					self.unaccept();
@@ -2233,7 +2233,7 @@
 			encodeURIComponent(config.token) : "auth-id=" + encodeURIComponent(config.key);
 			var requestUrl = config.requestUrlInternational;
 			var headers = {};
-			if (self.isDomestic() && config.target.includes("US")) {
+			if (self.isDomestic() && config.target.indexOf("US") >= 0) {
 				requestUrl = config.requestUrlUS;
 				addrData = self.toRequestUS();
 				headers = {
@@ -2481,31 +2481,27 @@
 		};
 
 		this.isDomestic = function () {
-			if (config.target.includes("INTERNATIONAL")) {
-				var countryValue = fields.country.dom.value;
-				if (fields.country.dom.selectedOptions)
-					countryValue = fields.country.dom.selectedOptions[0].text;
-				countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
-				var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
-					"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
-					"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA", "UNITEDSTATESUS",
-					"AMERICANSAMOA", "AMERIKASĀMOA", "AMERIKASAMOA", "ASM",
-					"MICRONESIA", "FEDERALSTATESOFMICRONESIA", "FEDERATEDSTATESOFMICRONESIA", "FSM",
-					"GUAM", "GM",
-					"MARSHALLISLANDS", "MHL",
-					"NORTHERNMARIANAISLANDS", "NMP",
-					"PALAU", "REPUBLICOFPALAU", "BELAU", "PLW",
-					"PUERTORICO", "COMMONWEALTHOFPUERTORICO", "PRI",
-					"UNITEDSTATESVIRGINISLANDS", "VIR"
-				]; // 840 is ISO: 3166; and 223 is some shopping carts
-				return arrayContains(usa, countryValue) || fields.country.value == "-1";
-			} else {
-				return (config.target.includes("US") && !config.target.includes("INTERNATIONAL"));
-			}
+			var countryValue = fields.country.dom.value;
+			if (fields.country.dom.selectedOptions)
+				countryValue = fields.country.dom.selectedOptions[0].text;
+			countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
+			var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
+				"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
+				"840", "223", "AMERICAUNITEDSTATES", "AMERICAUS", "AMERICAUSA", "UNITEDSTATESUS",
+				"AMERICANSAMOA", "AMERIKASĀMOA", "AMERIKASAMOA", "ASM",
+				"MICRONESIA", "FEDERALSTATESOFMICRONESIA", "FEDERATEDSTATESOFMICRONESIA", "FSM",
+				"GUAM", "GM",
+				"MARSHALLISLANDS", "MHL",
+				"NORTHERNMARIANAISLANDS", "NMP",
+				"PALAU", "REPUBLICOFPALAU", "BELAU", "PLW",
+				"PUERTORICO", "COMMONWEALTHOFPUERTORICO", "PRI",
+				"UNITEDSTATESVIRGINISLANDS", "VIR"
+			]; // 840 is ISO: 3166; and 223 is some shopping carts
+			return arrayContains(usa, countryValue) || fields.country.value == "-1";
 		};
 
 		this.countryISO = function () {
-			if (config.target.includes("INTERNATIONAL")) {
+			if (config.target.indexOf("INTERNATIONAL") >= 0) {
 				var countryValue = fields.country.dom.value;
 				if (fields.country.dom.selectedOptions)
 					countryValue = fields.country.dom.selectedOptions[0].text;
