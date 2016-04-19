@@ -2907,7 +2907,6 @@
 
 					"GEORGIA": "GEO",
 					"SAKARTVELO": "GEO",
-					"SAKARTVELO": "GEO",
 					"GEO": "GEO",
 
 					"GERMANY": "DEU",
