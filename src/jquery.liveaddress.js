@@ -2063,6 +2063,8 @@
 						self.set("address1", resp.delivery_line_1, updateDomElement, true, e, false);
 					if (resp.delivery_line_2)
 						self.set("address2", resp.delivery_line_2, updateDomElement, true, e, false); // Rarely used; must otherwise be blank.
+					else
+						self.set("address2", "", updateDomElement, true, e, false);
 					if (resp.components.city_name)
 						self.set("locality", resp.components.city_name, updateDomElement, true, e, false);
 					if (resp.components.state_abbreviation)
