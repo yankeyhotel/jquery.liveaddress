@@ -469,7 +469,11 @@
 		}
 
 		// Map the fields
-		instance.mapFields();
+		if (config.target.indexOf("US") >= 0 || config.target.indexOf("INTERNATIONAL") >= 0) {
+			instance.mapFields();
+		} else if (config.debug) {
+			console.log("Proper target not set in configuration. Please use 'US' or 'INTERNATIONAL'.");
+		}
 
 		return instance;
 	};
@@ -1219,7 +1223,7 @@
 			for (var addrIdx in map) {
 				var address = map[addrIdx];
 
-				if (!address.country && config.target.indexOf("INTERNATIONAL") >= 0)
+				if (!address.country && config.target.indexOf("US") < 0)
 					continue;
 
 				// Convert selectors into actual DOM references
@@ -2481,9 +2485,12 @@
 		};
 
 		this.isDomestic = function () {
-			var countryValue = fields.country.dom.value;
-			if (fields.country.dom.selectedOptions)
-				countryValue = fields.country.dom.selectedOptions[0].text;
+			var countryValue = "";
+			if (fields.country && fields.country.dom) {
+				countryValue = fields.country.dom.value;
+				if (fields.country.dom.selectedOptions)
+					countryValue = fields.country.dom.selectedOptions[0].text;
+			}
 			countryValue = countryValue.toUpperCase().replace(/\.|\s|\(|\)|\\|\/|-/g, "");
 			var usa = ["", "0", "1", "US", "USA", "USOFA", "USOFAMERICA", "AMERICAN", // 1 is AmeriCommerce
 				"UNITEDSTATES", "UNITEDSTATESAMERICA", "UNITEDSTATESOFAMERICA", "AMERICA",
