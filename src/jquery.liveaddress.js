@@ -1009,7 +1009,9 @@
 					$(domfields['locality']).val(suggestion.city).change();
 				}
 			}
-			$(domfields['country']).val("USA").change();
+			if (!domfields['country'].options) {
+				$(domfields['country']).val("USA").change();
+			}
 			trigger("AutocompleteUsed", {
 				address: addr,
 				suggestion: suggestion
