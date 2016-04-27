@@ -2803,7 +2803,7 @@
 					"KIBRIS": "CYP",
 					"CYP": "CYP",
 
-					"CZECH REPUBLIC": "CZE",
+					"CZECHREPUBLIC": "CZE",
 					"ČESKÁREPUBLIKA": "CZE",
 					"CESKAREPUBLIKA": "CZE",
 					"ČESKO": "CZE",
