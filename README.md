@@ -14,7 +14,11 @@ our customers have used before that you can copy+paste into your page, then twea
 
 Full documentation
 -----------------------
-http://smartystreets.com/kb/liveaddress-api/website-forms
+https://smartystreets.com/docs/plugin
+
+Working Examples
+-----------------------
+http://smartystreets.github.io/jquery.liveaddress/
 
 
 Quick Start
@@ -23,9 +27,9 @@ Quick Start
 1. Be sure jQuery is brought into your page early on. If you don't already have it, something like this should do the trick:
 ```<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>```
 2. Bring the LiveAddress API jQuery Plugin onto your page:
-```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/2.4/jquery.liveaddress.min.js"></script>```
-3. Initialize the plugin with an HTML key from your account:
-```<script type="text/javascript">jQuery.LiveAddress("HtmlKey");</script>```
+```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/3.0/jquery.liveaddress.min.js"></script>```
+3. Initialize the plugin with an HTML key from your account and proper mapping to the address fields in your form:
+```<script type="text/javascript">jQuery.LiveAddress(key: "HtmlKey", addresses: [{address1: "#street", locality: "#locality", administrative_area: "#administrativearea", postal_code: "#postalcode", country: "#country"});</script>```
 
 That's it! Ensure it works before using it on a live site. SmartyStreets
 assumes no responsibility if something goes wrong on your web page. Enable debug mode
@@ -33,9 +37,14 @@ to help you find problems, and if necessary, map the fields manually. See the
 [full documentation](http://smartystreets.com/kb/liveaddress-api/website-forms) for details.
 
 
+Node.js
+-----------------------
+If you prefer a local copy via Node.js, ```npm install liveaddress```
+
+
 Troubleshooting
 -----------------------
-http://smartystreets.com/kb/liveaddress-api/plugin/troubleshooting
+https://smartystreets.com/docs/plugin/troubleshooting
 
 
 
@@ -98,9 +107,10 @@ These are user-contributed changes to the plugin that you may find useful. Pleas
 License (GPLv3)
 -----------------------
 
-All source code, resources, and other contents herein are copyright (c) 2012-2013 SmartyStreets and are distributed
+All source code, resources, and other contents herein are copyright (c) 2012-2016 SmartyStreets and are distributed
 under [Version 3 of the GNU General Public License](http://opensource.org/licenses/GPL-3.0).
 
+If you require alternative licensing to embed this code into your product, please contact us to discuss your requirements.
 
 Disclaimer
 -----------------------
@@ -115,4 +125,4 @@ We encourage anyone to contribute to the project and improve upon it.
 We are happy to fix bugs, so follow the instructions contained in this file to troubleshoot, then
 submit a proper bug report. Only the latest production version is actively maintained. Only modern browsers are supported.
 By using this plugin, you assume full responsibility for the behavior and functionality of your web page and agree to the
-other terms described in this repository and on [the SmartyStreets web site](http://smartystreets.com/kb/liveaddress-api/website-forms).
+other terms described in this repository and on [the SmartyStreets web site](https://smartystreets.com/docs/plugin).
