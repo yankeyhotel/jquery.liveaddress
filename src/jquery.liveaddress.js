@@ -2403,7 +2403,11 @@
 				}
 			}
 			if (fields.administrative_area && fields.administrative_area.dom.value) {
-				obj.state = fields.administrative_area.dom.value;
+				if (fields.administrative_area.dom.tagName === "SELECT") {
+					obj.state = fields.administrative_area.dom[fields.administrative_area.dom.selectedIndex].text;
+				} else {
+					obj.state = fields.administrative_area.dom.value;
+				}
 			}
 			if (fields.postal_code && fields.postal_code.dom.value) {
 				obj.zipcode = fields.postal_code.dom.value;
