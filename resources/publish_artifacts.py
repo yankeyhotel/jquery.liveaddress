@@ -12,12 +12,13 @@ from utils import get_mime_type
 
 
 def main():
-    connection = connect()
-    bucket = Bucket(connection, S3_BUCKET)
-    publish(bucket)
+    cloudfront_connection = boto.connect_cloudfront('aws_access_key_id', 'aws_secret_access_key')
+    s3_connection = connect_to_s3()
+    bucket = Bucket(s3_connection, S3_BUCKET)
+    publish(bucket, cloudfront_connection)
 
 
-def connect():
+def connect_to_s3():
     """
     Workaround for '.' in bucket names when calling from Python 2.9+:
         https://github.com/boto/boto/issues/2836#issuecomment-77283169
@@ -27,14 +28,26 @@ def connect():
     else:
         return S3Connection()
 
-def publish(bucket):
+
+def publish(bucket, cloudfront):
     if 'branch' not in os.environ:
         os.environ['branch'] = raw_input('Enter the major.minor version: ')
 
+    resources = []
+    
     for root, dirs, files in os.walk(WORKING_DIRECTORY):
         for f in files:
             if f not in EXCLUDES:
-                upload_to_s3(path.join(root, f), bucket)
+                local_path := path.join(root, f)
+                resource_path = upload_to_s3(local_path, bucket)
+                resources.append(resource_path)
+    
+    distribution = os.environ['cloudfront_distribution_id'] or raw_input('Enter the cloudfront distribution id: ')
+    distribution = distribution.strip()
+    if distribution:
+        print "Creating cloudfront invalidation for all uploaded resources..."
+        cloudfront.create_invalidation_request(distribution, resources)
+
 
 
 def upload_to_s3(resource, bucket):
@@ -45,6 +58,7 @@ def upload_to_s3(resource, bucket):
 
     print 'Publishing {0} to {1}...'.format(resource, entry.key)
     entry.set_contents_from_filename(resource)
+    return entry.key
 
 
 EXCLUDES = ['.DS_Store']
