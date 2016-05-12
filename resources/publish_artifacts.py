@@ -6,16 +6,13 @@ This script is used by SmartyStreets when deploying a new version of the jquery.
 import os.path as path
 import os
 import boto
-import logging
 from boto.s3.bucket import Bucket
 from boto.s3.connection import S3Connection, OrdinaryCallingFormat
 from boto.s3.key import Key
 from utils import get_mime_type
 
-logging.basicConfig(level=logging.DEBUG)
-
 def main():
-    cloudfront_connection = boto.connect_cloudfront('aws_access_key_id', 'aws_secret_access_key')
+    cloudfront_connection = boto.connect_cloudfront()
     s3_connection = connect_to_s3()
     bucket = Bucket(s3_connection, S3_BUCKET)
     publish(bucket, cloudfront_connection)
@@ -45,7 +42,7 @@ def publish(bucket, cloudfront):
                 resource_path = upload_to_s3(local_path, bucket)
                 resources.append(resource_path)
     
-    distribution = os.environ['cloudfront_distribution_id'] or raw_input('Enter the cloudfront distribution id: ')
+    distribution = os.environ.get('cloudfront_distribution_id') or raw_input('Enter the cloudfront distribution id: ')
     distribution = distribution.strip()
     if distribution:
         print "Creating cloudfront invalidation for all uploaded resources..."
