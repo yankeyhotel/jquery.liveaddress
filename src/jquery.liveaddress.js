@@ -2423,7 +2423,18 @@
 			if (fields.freeform) {
 				return (fields.freeform ? fields.freeform.value + " " : "") + (fields.country ? fields.country.value : "");
 			} else {
-				return (fields.address1 ? fields.address1.value + " " : "") + (fields.address2 ? fields.address2.value + " " : "") + (fields.address3 ? fields.address3.value + " " : "") + (fields.address4 ? fields.address4.value + " " : "") + (fields.locality ? fields.locality.value + " " : "") + (fields.administrative_area ? fields.administrative_area.value + " " : "") + (fields.postal_code ? fields.postal_code.value + " " : "") + (fields.country ? fields.country.value : "");
+				var addrString = (fields.address1 ? fields.address1.value + " " : "") + (fields.address2 ? fields.address2.value + " " : "") +
+				(fields.address3 ? fields.address3.value + " " : "") + (fields.address4 ? fields.address4.value + " " : "") +
+				(fields.locality ? fields.locality.value + " " : "");
+				if (fields.administrative_area) {
+					if (fields.administrative_area.dom && fields.administrative_area.dom.tagName === "SELECT") {
+						addrString += fields.administrative_area.dom[fields.administrative_area.dom.selectedIndex].text + " ";
+					} else {
+						addrString  += fields.administrative_area.dom.value + " ";
+					}
+				}
+				addrString += (fields.postal_code ? fields.postal_code.value + " " : "") + (fields.country ? fields.country.value : "");
+				return addrString;
 			}
 		};
 
