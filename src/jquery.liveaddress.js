@@ -1009,7 +1009,7 @@
 					$(domfields['locality']).val(suggestion.city).change();
 				}
 			}
-			if (!domfields['country'].options) {
+			if (domfields['country'] && !domfields['country'].options) {
 				$(domfields['country']).val("USA").change();
 			}
 			trigger("AutocompleteUsed", {
