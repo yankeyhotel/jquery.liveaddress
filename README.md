@@ -29,7 +29,7 @@ Quick Start
 2. Bring the LiveAddress API jQuery Plugin onto your page:
 ```<script type="text/javascript" src="//d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/3.0/jquery.liveaddress.min.js"></script>```
 3. Initialize the plugin with an HTML key from your account and proper mapping to the address fields in your form:
-```<script type="text/javascript">jQuery.LiveAddress(key: "HtmlKey", addresses: [{address1: "#street", locality: "#locality", administrative_area: "#administrativearea", postal_code: "#postalcode", country: "#country"});</script>```
+```<script type="text/javascript">jQuery.LiveAddress({ key: "HtmlKey", addresses: [{address1: "#street", locality: "#locality", administrative_area: "#administrativearea", postal_code: "#postalcode", country: "#country"}] });</script>```
 
 That's it! Ensure it works before using it on a live site. SmartyStreets
 assumes no responsibility if something goes wrong on your web page. Enable debug mode
