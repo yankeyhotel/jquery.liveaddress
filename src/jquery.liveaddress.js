@@ -390,7 +390,7 @@
 			makeAddress: function (addressData) {
 				if (typeof addressData !== "object")
 					return instance.getMappedAddressByID(addressData) || new Address({
-							street: addressData
+							address1: addressData
 						});
 				else
 					return new Address(addressData);
@@ -1976,9 +1976,6 @@
 				for (var prop in domMap) {
 					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
 						continue;
-					if (domMap[prop].getBoundingClientRect().top > this.lastField.getBoundingClientRect().top) {
-						this.lastField = domMap[prop];
-					}
 
 					var elem, val, elemArray, isData;
 					try {
@@ -2377,6 +2374,8 @@
 			var obj = {};
 			if (fields.address1 && fields.address1.dom && fields.address1.dom.value) {
 				obj.street = fields.address1.dom.value;
+			} else if(fields.address1 && fields.address1.value) { // Covers a special case where the user calls .verify on the instance
+				obj.street = fields.address1.value;
 			}
 			if (fields.address2 && fields.address2.dom && fields.address2.dom.value) {
 				obj.street2 = fields.address2.dom.value;
