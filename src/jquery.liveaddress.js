@@ -1977,6 +1977,10 @@
 					if (!arrayContains(acceptableFields, prop)) // Skip "id" and any other unacceptable field
 						continue;
 
+					if (typeof domMap[prop] == "object" && domMap[prop].getBoundingClientRect().top > this.lastField.getBoundingClientRect().top) {
+						this.lastField = domMap[prop];
+					}
+
 					var elem, val, elemArray, isData;
 					try {
 						elem = $(domMap[prop]);
