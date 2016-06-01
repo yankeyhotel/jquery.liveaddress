@@ -42,6 +42,7 @@
 		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
 		certifyMessage: "Click here to certify the address is correct",
 		missingInputMessage: "The address does not have enough input to verify<br>",
+		changeMessage: "Click here to change your address",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last", // Selector to find a likely submit button or submit image (in a form)
 		target: "US"
@@ -110,6 +111,7 @@
 		config.missingSecondaryMessage = config.missingSecondaryMessage || defaults.missingSecondaryMessage;
 		config.certifyMessage = config.certifyMessage || defaults.certifyMessage;
 		config.missingInputMessage = config.missingInputMessage || defaults.missingInputMessage;
+		config.changeMessage = config.changeMessage || defaults.changeMessage;
 		config.fieldSelector = config.fieldSelector || defaults.fieldSelector;
 		config.submitSelector = config.submitSelector || defaults.submitSelector;
 		config.requestUrlInternational = config.requestUrlInternational || defaults.requestUrlInternational;
@@ -1431,7 +1433,7 @@
 			}
 
 			html += '</div><div class="smarty-choice-alt">';
-			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a>';
+			html += '<a href="javascript:" class="smarty-choice smarty-choice-abort smarty-abort">' + config.changeMessage + '</a>';
 			if (!config.enforceVerification) {
 				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' + config.certifyMessage + '<br>(' +
 					addr.toString() + ')</a>';
@@ -1520,7 +1522,7 @@
 				'<div class="smarty-popup-header smarty-popup-invalid-header">' + config.invalidMessage +
 				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
-				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
+				'class="smarty-choice smarty-choice-abort smarty-abort">' + config.changeMessage + '</a></div>' +
 				'<div class="smarty-choice-alt">';
 			if (!config.enforceVerification) {
 				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
@@ -1587,7 +1589,7 @@
 				'<div class="smarty-popup-header smarty-popup-invalid-header">' + config.invalidCountryMessage +
 				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
-				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
+				'class="smarty-choice smarty-choice-abort smarty-abort">' + config.changeMessage + '</a></div>' +
 				'<div class="smarty-choice-alt">';
 			if (!config.enforceVerification) {
 				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
@@ -1652,7 +1654,7 @@
 				'<div class="smarty-popup-header smarty-popup-missing-secondary-header">' + config.missingSecondaryMessage +
 				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
-				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
+				'class="smarty-choice smarty-choice-abort smarty-abort">' + config.changeMessage + '</a></div>' +
 				'<div class="smarty-choice-alt">';
 			if (!config.enforceVerification) {
 				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
@@ -1720,7 +1722,7 @@
 				'<div class="smarty-popup-header smarty-popup-missing-input-header">' + config.missingInputMessage + missing +
 				'<a href="javascript:" class="smarty-popup-close smarty-abort" title="Cancel">x</a></div>' +
 				'<div class="smarty-choice-list"><a href="javascript:" ' +
-				'class="smarty-choice smarty-choice-abort smarty-abort">Click here to change your address</a></div>' +
+				'class="smarty-choice smarty-choice-abort smarty-abort">' + config.changeMessage + '</a></div>' +
 				'<div class="smarty-choice-alt">';
 			if (!config.enforceVerification) {
 				html += '<a href="javascript:" class="smarty-choice smarty-choice-override">' +
