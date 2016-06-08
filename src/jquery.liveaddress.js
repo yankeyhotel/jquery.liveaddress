@@ -36,13 +36,13 @@
 		requestUrlUS: "https://api.smartystreets.com/street-address", // US API endpoint
 		timeout: 5000, // How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium", // Animation speed
-		ambiguousMessage: "Choose the correct address", // Message when address is ambiguous
-		invalidMessage: "Address not verified", // Message when address is invalid
-		invalidCountryMessage: "Country is not valid", // Message when the country is invalid
-		missingSecondaryMessage: "Missing secondary number <br>(e.g., apartment number)", // Message when address is missing a secondary number
-		certifyMessage: "Click here to certify the address is correct",
-		missingInputMessage: "The address does not have enough input to verify<br>",
-		changeMessage: "Click here to change your address",
+		ambiguousMessage: "Which address did you mean?", // Message when address is ambiguous
+		invalidMessage: "You entered an unknown address", // Message when address is invalid
+		invalidCountryMessage: "Unknown country", // Message when the country is invalid
+		missingSecondaryMessage: "Did you forget your apt/suite number?", // Message when address is missing a secondary number
+		certifyMessage: "I'm okay with that. Just use it.",
+		missingInputMessage: "You didn't enter enough information<br>",
+		changeMessage: "Ok, I'll modify what I typed.",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last", // Selector to find a likely submit button or submit image (in a form)
 		target: "US"
@@ -1510,7 +1510,7 @@
 			var addr = data.address;
 			var response = data.response;
 			var corners = addr.corners();
-			corners.width = Math.max(corners.width, 300); // minimum width
+			corners.width = Math.max(corners.width, 320); // minimum width
 			corners.height = Math.max(corners.height, 180); // minimum height
 			if (config.enforceVerification) {
 				corners.height -= 49;
@@ -1577,7 +1577,7 @@
 			var addr = data.address;
 			var response = data.response;
 			var corners = addr.corners();
-			corners.width = Math.max(corners.width, 300); // minimum width
+			corners.width = Math.max(corners.width, 250); // minimum width
 			corners.height = Math.max(corners.height, 180); // minimum height
 			if (config.enforceVerification) {
 				corners.height -= 49;
