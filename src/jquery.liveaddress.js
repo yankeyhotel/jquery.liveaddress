@@ -27,7 +27,7 @@
 
 	var instance; // Contains public-facing functions and variables
 	var ui = new UI; // Internal use only, for UI-related tasks
-	var version = "3.1.0"; // Version of this copy of the script
+	var version = "3.1.1"; // Version of this copy of the script
 
 	var defaults = {
 		candidates: 3, // Number of suggestions to show if ambiguous
