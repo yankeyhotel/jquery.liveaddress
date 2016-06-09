@@ -36,13 +36,13 @@
 		requestUrlUS: "https://api.smartystreets.com/street-address", // US API endpoint
 		timeout: 5000, // How long to wait before the request times out (5000 = 5 seconds)
 		speed: "medium", // Animation speed
-		ambiguousMessage: "Which address did you mean?", // Message when address is ambiguous
+		ambiguousMessage: "Matched multiple addresses.<br>Which address did you mean?", // Message when address is ambiguous
 		invalidMessage: "You entered an unknown address", // Message when address is invalid
 		invalidCountryMessage: "Unknown country", // Message when the country is invalid
 		missingSecondaryMessage: "Did you forget your apt/suite number?", // Message when address is missing a secondary number
-		certifyMessage: "I'm okay with that. Just use it.",
+		certifyMessage: "Use it the way I typed it.",
 		missingInputMessage: "You didn't enter enough information<br>",
-		changeMessage: "Ok, I'll modify what I typed.",
+		changeMessage: "Take me back so I can try again.",
 		fieldSelector: "input[type=text], input:not([type]), textarea, select", // Selector for possible address-related form elements
 		submitSelector: "[type=submit], [type=image], [type=button]:last, button:last", // Selector to find a likely submit button or submit image (in a form)
 		target: "US"
@@ -524,7 +524,7 @@
 			".smarty-popup { border: 3px solid #4C4C4C; padding: 0; background: #F6F6F6; " +
 			"box-shadow: 0px 10px 35px rgba(0, 0, 0, .8); }" + ".smarty-popup-header { background: #DDD; height: 12px; " +
 			"text-transform: uppercase; font: bold 12px/1em 'Arial Black', sans-serif; padding: 12px; }" +
-			".smarty-popup-ambiguous-header { color: #333; }" + ".smarty-popup-invalid-header { color: #CC0000; }" +
+			".smarty-popup-ambiguous-header { color: #333; height: 20px; }" + ".smarty-popup-invalid-header { color: #CC0000; }" +
 			".smarty-popup-missing-input-header { color: #CC0000; height: 58px; }" +
 			".smarty-popup-close { color: #CC0000 !important; text-decoration: none !important; position: absolute; " +
 			"right: 15px; top: 10px; display: block; padding: 4px 6px; text-transform: uppercase; }" +
@@ -1383,7 +1383,7 @@
 			var response = data.response;
 			var corners = addr.corners();
 			corners.width = Math.max(corners.width, 300); // minimum width
-			corners.height = Math.max(corners.height, response.length * 63 + 119); // minimum height
+			corners.height = Math.max(corners.height, response.length * 63 + 127); // minimum height
 			if (config.enforceVerification) {
 				corners.height -= 49;
 			}
