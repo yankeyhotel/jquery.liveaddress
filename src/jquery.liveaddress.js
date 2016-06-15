@@ -3798,8 +3798,8 @@
 		this.isMissingSecondary = function (idx) {
 			idx = maybeDefault(idx);
 			checkBounds(idx);
-			return this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1 ||
-				this.raw[idx].analysis.dpv_footnotes.indexOf("R1") > -1 ||
+			return (this.raw[idx].analysis.dpv_footnotes && this.raw[idx].analysis.dpv_footnotes.indexOf("N1") > -1) ||
+				(this.raw[idx].analysis.dpv_footnotes && this.raw[idx].analysis.dpv_footnotes.indexOf("R1") > -1) ||
 				(this.raw[idx].analysis.footnotes && this.raw[idx].analysis.footnotes.indexOf("H#") > -1);
 		};
 	}
