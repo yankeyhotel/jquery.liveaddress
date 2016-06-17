@@ -52,5 +52,6 @@
   "download": "https://d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/3.1/jquery.liveaddress.min.js",
   "dependencies": {
     "jquery": ">=1.5.1"
-  }
+  },
+  "main": "src/jquery.liveaddress.js"
 }
